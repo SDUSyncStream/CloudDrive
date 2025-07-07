@@ -1,0 +1,36 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: file-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: clouddrive
+      config:
+        server-addr: localhost:8848
+        namespace: clouddrive
+        file-extension: yaml
+
+# Hadoop HDFS configuration
+hadoop:
+  namenode:
+    host: localhost
+    port: 9000
+  fs:
+    defaultFS: hdfs://localhost:9000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    cn.sdu.clouddrive: DEBUG

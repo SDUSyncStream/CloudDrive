@@ -1,0 +1,113 @@
+services:
+  # Core infrastructure
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=cloud_drive
+      - MYSQL_USER=cloud_drive
+      - MYSQL_PASSWORD=cloud123
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../sql:/docker-entrypoint-initdb.d
+    networks:
+      - cloud-drive-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - cloud-drive-network
+
+  # Nacos service registry
+  nacos:
+    image: nacos/nacos-server:v2.2.0
+    platform: linux/amd64
+    container_name: nacos-server
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+      - JVM_XMS=256m
+      - JVM_XMX=256m
+    volumes:
+      - nacos_data:/home/nacos/data
+    depends_on:
+      - mysql
+    networks:
+      - cloud-drive-network
+
+  # API Gateway
+  gateway:
+    build:
+      context: ../apps/gateway
+      dockerfile: ../../docker/Dockerfile.gateway
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - nacos
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    networks:
+      - cloud-drive-network
+
+  # User Service
+  user-service:
+    build:
+      context: ../apps/user-service
+      dockerfile: ../../docker/Dockerfile.user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    networks:
+      - cloud-drive-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ../apps/frontend
+      dockerfile: ../../docker/Dockerfile.frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gateway
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://gateway:8080
+    networks:
+      - cloud-drive-network
+
+volumes:
+  mysql_data:
+    driver: local
+  nacos_data:
+    driver: local
+
+networks:
+  cloud-drive-network:
+    driver: bridge

@@ -1,3 +1,4 @@
+// import path = require('path')
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
@@ -13,10 +14,37 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/LoginView.vue')
   },
   {
-    path: '/files',
-    name: 'Files',
-    component: () => import('../views/FilesView.vue'),
-    meta: { requiresAuth: true }
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/RegisterView.vue')
+  },
+  {
+    path: '/forget-password',
+    name: 'ForgetPassword',
+    component: () => import('../views/ForgetPwdView.vue')
+  },
+  {
+    path: '/main',
+    name: 'Main',
+    component: () => import('../views/MainView.vue'),
+    redirect: '/main/files',
+    children: [
+      {
+        path: '/main/files',
+        name: 'Files',  
+        component: () => import('../views/FilesView.vue'),
+      },
+      {
+        path: '/main/shared',
+        name: 'SharedFiles',
+        component: () => import('../views/SharedView.vue')
+      },
+      {
+        path: '/main/deleted',
+        name: 'Recycle',
+        component: () => import('../views/RecycleView.vue')
+      },
+    ]
   },
   {
     path: '/:pathMatch(.*)*',

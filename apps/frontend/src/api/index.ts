@@ -12,7 +12,7 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -32,11 +32,40 @@ api.interceptors.response.use(
     }
     return response
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+  async (error) => {
+    const originalRequest = error.config
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+      
+      // 尝试刷新Token
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (refreshToken) {
+        try {
+          const response = await axios.post('/api/auth/refresh', {
+            refreshToken: refreshToken
+          })
+          
+          const { accessToken } = response.data.data
+          localStorage.setItem('accessToken', accessToken)
+          
+          // 重新发送原始请求
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`
+          return api(originalRequest)
+          
+        } catch (refreshError) {
+          // 刷新失败，清除所有Token并跳转到登录页
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          window.location.href = '/login'
+          return Promise.reject(refreshError)
+        }
+      } else {
+        // 没有refreshToken，直接跳转登录页
+        window.location.href = '/login'
+      }
     }
+    
     return Promise.reject(error)
   }
 )
