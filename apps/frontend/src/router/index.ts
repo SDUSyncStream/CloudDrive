@@ -24,15 +24,27 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ForgetPwdView.vue')
   },
   {
-    path: '/files',
-    name: 'Files',
-    component: () => import('../views/FilesView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/main',
     name: 'Main',
     component: () => import('../views/MainView.vue'),
+    redirect: '/main/files',
+    children: [
+      {
+        path: '/main/files',
+        name: 'Files',  
+        component: () => import('../views/FilesView.vue'),
+      },
+      {
+        path: '/main/shared',
+        name: 'SharedFiles',
+        component: () => import('../views/SharedView.vue')
+      },
+      {
+        path: '/main/deleted',
+        name: 'Recycle',
+        component: () => import('../views/RecycleView.vue')
+      },
+    ]
   },
   {
     path: '/:pathMatch(.*)*',

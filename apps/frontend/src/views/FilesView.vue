@@ -1,90 +1,162 @@
 <template>
-  <div class="files-page">
-    <el-container>
-      <el-header>
-        <div class="header">
-          <h2>我的文件</h2>
-          <div class="header-actions">
-            <el-button type="primary" :icon="Upload">上传文件</el-button>
-            <el-button :icon="FolderAdd">新建文件夹</el-button>
-            <el-dropdown @command="handleUserAction">
-              <el-avatar :src="userStore.user?.avatar || undefined">
-                {{ userStore.user?.username?.charAt(0).toUpperCase() }}
-              </el-avatar>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-                  <el-dropdown-item command="settings">设置</el-dropdown-item>
-                  <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </div>
-      </el-header>
-      
-      <el-main>
-        <div class="toolbar">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item>根目录</el-breadcrumb-item>
-            <el-breadcrumb-item>文档</el-breadcrumb-item>
-          </el-breadcrumb>
-          
-          <div class="view-controls">
-            <el-button-group>
-              <el-button :type="viewMode === 'grid' ? 'primary' : 'default'" @click="viewMode = 'grid'">
-                <el-icon><Grid /></el-icon>
-              </el-button>
-              <el-button :type="viewMode === 'list' ? 'primary' : 'default'" @click="viewMode = 'list'">
-                <el-icon><List /></el-icon>
-              </el-button>
-            </el-button-group>
-          </div>
-        </div>
-        
-        <div class="file-list" v-if="viewMode === 'list'">
-          <el-table :data="mockFiles" style="width: 100%">
-            <el-table-column type="selection" width="55" />
-            <el-table-column prop="name" label="名称">
-              <template #default="{ row }">
-                <div class="file-name">
-                  <el-icon v-if="row.isDirectory"><Folder /></el-icon>
-                  <el-icon v-else><Document /></el-icon>
-                  <span>{{ row.name }}</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="size" label="大小" width="120">
-              <template #default="{ row }">
-                {{ row.isDirectory ? '-' : formatFileSize(row.size) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="updatedAt" label="修改时间" width="180">
-              <template #default="{ row }">
-                {{ formatDate(row.updatedAt) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150">
-              <template #default="{ row }">
-                <el-button link type="primary" size="small">下载</el-button>
-                <el-button link type="primary" size="small">分享</el-button>
-                <el-button link type="danger" size="small">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-        
-        <div class="file-grid" v-else>
-          <div class="file-item" v-for="file in mockFiles" :key="file.id">
-            <div class="file-icon">
-              <el-icon v-if="file.isDirectory" size="48"><Folder /></el-icon>
-              <el-icon v-else size="48"><Document /></el-icon>
+  <div class="files-view">
+    <div class="header">
+      <div class="main-header">
+        <el-button type="primary"><el-icon>
+            <Upload />
+          </el-icon>上传文件</el-button>
+        <el-button><el-icon>
+            <FolderAdd />
+          </el-icon>新建文件夹</el-button>
+      </div>
+      <div class="header-actions">
+        <el-button-group>
+          <el-button :type="viewMode === 'list' ? 'primary' : 'default'" @click="viewMode = 'list'">
+            <el-icon>
+              <List />
+            </el-icon>
+          </el-button>
+          <el-button :type="viewMode === 'grid' ? 'primary' : 'default'" @click="viewMode = 'grid'">
+            <el-icon>
+              <Grid />
+            </el-icon>
+          </el-button>
+        </el-button-group>
+      </div>
+    </div>
+
+    <!-- 路径导航 -->
+    <div class="breadcrumb-container">
+      <el-breadcrumb separator="/">
+        <el-breadcrumb-item :to="{ path: '/main/files' }">我的文件</el-breadcrumb-item>
+        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index" 
+          :to="index < currentPath.length - 1 ? { path: generatePath(index) } : undefined">
+          {{ path }}
+        </el-breadcrumb-item>
+      </el-breadcrumb>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-area">
+      <!-- List模式 -->
+      <el-table v-if="viewMode === 'list'" :data="tableData" stripe style="width: 100%" table-layout="fixed">
+        <el-table-column type="selection"/>
+        <el-table-column prop="name" label="文件名">
+          <template #default="{ row }">
+            <div class="file-item">
+              <el-icon class="file-icon">
+                <Document />
+              </el-icon>
+              <span>{{ row.name }}</span>
             </div>
-            <div class="file-name">{{ file.name }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="size" label="大小">
+          <template #default="{ row }">
+            {{ row.size || '--' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="date" label="修改时间">
+          <template #default="{ row }">
+            {{ formatDate(row.date) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button link type="primary" size="small" title="分享文件">
+                <el-icon><Share /></el-icon>
+              </el-button>
+              <el-button link type="primary" size="small" title="下载文件">
+                <el-icon><Download /></el-icon>
+              </el-button>
+              <el-dropdown trigger="click">
+                <el-button link type="primary" size="small" title="更多操作">
+                  <el-icon><MoreFilled /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item>
+                      <el-icon><FolderOpened /></el-icon>
+                      移动到
+                    </el-dropdown-item>
+                    <el-dropdown-item>
+                      <el-icon><CopyDocument /></el-icon>
+                      复制
+                    </el-dropdown-item>
+                    <el-dropdown-item>
+                      <el-icon><Edit /></el-icon>
+                      重命名
+                    </el-dropdown-item>
+                    <el-dropdown-item divided>
+                      <el-icon><Delete /></el-icon>
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- Grid模式 -->
+      <div v-else class="grid-container">
+        <div class="file-grid">
+          <div v-for="item in tableData" :key="item.name" class="file-card" @click="handleFileClick(item)">
+            <div class="file-card-header">
+              <el-icon class="file-icon-large">
+                <Document />
+              </el-icon>
+            </div>
+            <div class="file-card-content">
+              <div class="file-name" :title="item.name">{{ item.name }}</div>
+              <div class="file-info">
+                <span class="file-size">{{ item.size || '--' }}</span>
+                <span class="file-date">{{ formatDate(item.date) }}</span>
+              </div>
+            </div>
+            <div class="file-card-actions">
+              <div class="primary-actions">
+                <el-button link type="primary" size="small" title="分享文件">
+                  <el-icon><Share /></el-icon>
+                </el-button>
+                <el-button link type="primary" size="small" title="下载文件">
+                  <el-icon><Download /></el-icon>
+                </el-button>
+              </div>
+              <el-dropdown trigger="click">
+                <el-button text title="更多操作">
+                  <el-icon>
+                    <MoreFilled />
+                  </el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item>
+                      <el-icon><FolderOpened /></el-icon>
+                      移动到
+                    </el-dropdown-item>
+                    <el-dropdown-item>
+                      <el-icon><CopyDocument /></el-icon>
+                      复制
+                    </el-dropdown-item>
+                    <el-dropdown-item>
+                      <el-icon><Edit /></el-icon>
+                      重命名
+                    </el-dropdown-item>
+                    <el-dropdown-item divided>
+                      <el-icon><Delete /></el-icon>
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </div>
         </div>
-      </el-main>
-    </el-container>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -101,76 +173,63 @@ const userStore = useUserStore()
 
 const viewMode = ref<'grid' | 'list'>('list')
 
-// 模拟文件数据
-const mockFiles: CloudFile[] = [
+// 当前路径导航
+const currentPath = ref<string[]>(['文档', '项目文件', '2024年度'])
+
+// 生成路径的函数
+const generatePath = (index: number) => {
+  const pathSegments = currentPath.value.slice(0, index + 1)
+  return `/main/files/${pathSegments.join('/')}`
+}
+
+const tableData = [
   {
-    id: '1',
-    name: '文档',
-    path: '/documents',
-    size: 0,
-    type: 'folder',
-    mimeType: '',
-    isDirectory: true,
-    ownerId: 'user-1',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01')
+    date: '2016-05-03',
+    name: 'document1.pdf',
+    address: 'No. 189, Grove St, Los Angeles',
+    size: '2.3MB'
   },
   {
-    id: '2',
-    name: '项目计划.docx',
-    path: '/project-plan.docx',
-    size: 1024000,
-    type: 'document',
-    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    isDirectory: false,
-    ownerId: 'user-1',
-    createdAt: new Date('2024-01-02'),
-    updatedAt: new Date('2024-01-02')
+    date: '2016-05-02',
+    name: 'image.jpg',
+    address: 'No. 189, Grove St, Los Angeles',
+    size: '1.5MB'
   },
   {
-    id: '3',
-    name: '照片.jpg',
-    path: '/photo.jpg',
-    size: 2048000,
-    type: 'image',
-    mimeType: 'image/jpeg',
-    isDirectory: false,
-    ownerId: 'user-1',
-    createdAt: new Date('2024-01-03'),
-    updatedAt: new Date('2024-01-03')
-  }
+    date: '2016-05-04',
+    name: 'video.mp4',
+    address: 'No. 189, Grove St, Los Angeles',
+    size: '15.2MB'
+  },
+  {
+    date: '2016-05-01',
+    name: 'spreadsheet.xlsx',
+    address: 'No. 189, Grove St, Los Angeles',
+    size: '856KB'
+  },
 ]
 
-const handleUserAction = (command: string) => {
-  switch (command) {
-    case 'logout':
-      userStore.logout()
-      ElMessage.success('已退出登录')
-      router.push('/')
-      break
-    case 'profile':
-      ElMessage.info('个人资料功能开发中')
-      break
-    case 'settings':
-      ElMessage.info('设置功能开发中')
-      break
-  }
+const handleFileClick = (item: any) => {
+  console.log('File clicked:', item)
+  // 这里可以添加文件点击的处理逻辑
 }
 </script>
 
 <style scoped>
+.files-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 100%;
-  padding: 0 20px;
+  padding: 16px;
   border-bottom: 1px solid #e4e7ed;
-}
-
-.header h2 {
-  margin: 0;
-  color: #2c3e50;
+  background: #fff;
+  flex-shrink: 0;
 }
 
 .header-actions {
@@ -179,49 +238,140 @@ const handleUserAction = (command: string) => {
   gap: 12px;
 }
 
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
+.breadcrumb-container {
+  padding: 12px 16px;
+  background: #f8f9fa;
   border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.file-name {
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-item {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.file-icon {
+  color: #409eff;
+  font-size: 16px;
+}
+
+/* List模式样式 */
+.el-table {
+  flex: 1;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-actions .el-button .el-icon {
+  color: #677AFA !important;
+}
+
+/* Grid模式样式 */
+.grid-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
 .file-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
 }
 
-.file-item {
-  text-align: center;
-  padding: 16px;
+.file-card {
   border: 1px solid #e4e7ed;
   border-radius: 8px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.3s;
+  background: #fff;
+  position: relative;
 }
 
-.file-item:hover {
+.file-card:hover {
   border-color: #409eff;
-  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.1);
 }
 
-.file-icon {
+.file-card-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.file-icon-large {
+  font-size: 48px;
+  color: #409eff;
+}
+
+.file-card-content {
+  text-align: center;
+}
+
+.file-name {
+  font-weight: 500;
   margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
   color: #909399;
 }
 
-.file-item .file-name {
-  font-size: 12px;
-  color: #606266;
-  word-break: break-all;
+.file-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.file-card:hover .file-card-actions {
+  opacity: 1;
+}
+
+.primary-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.file-card-actions .el-button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  min-width: 24px;
+}
+
+.file-card-actions .el-button .el-icon {
+  color: #677AFA !important;
+  font-size: 14px;
 }
 </style>

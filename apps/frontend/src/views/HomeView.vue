@@ -11,7 +11,7 @@
             <el-button v-if="!isAuthenticated" type="primary" @click="$router.push('/login')">
               登录
             </el-button>
-            <el-button v-else type="primary" @click="$router.push('/files')">
+            <el-button v-else type="primary" @click="$router.push('/main')">
               进入云盘
             </el-button>
           </div>
