@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "echo 'No linting needed for types only'",
+    "test": "echo 'No tests for types only'"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

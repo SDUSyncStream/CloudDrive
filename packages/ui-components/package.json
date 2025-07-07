@@ -9,7 +9,9 @@
     "dev": "vite build --watch",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "echo 'No linting needed for ui-components'",
+    "test": "echo 'No tests for ui-components yet'"
   },
   "dependencies": {
     "@cloud-drive/shared-types": "workspace:*",
