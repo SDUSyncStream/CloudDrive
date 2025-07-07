@@ -1,0 +1,25 @@
+{
+  "name": "cloud-drive",
+  "version": "1.0.0",
+  "description": "一个基于 Vue + Spring Boot 的全栈云盘项目",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @cloud-drive/frontend dev\" \"pnpm --filter @cloud-drive/backend dev\"",
+    "build": "pnpm --filter @cloud-drive/frontend build && pnpm --filter @cloud-drive/backend build",
+    "test": "pnpm --filter \"@cloud-drive/*\" test",
+    "lint": "pnpm --filter \"@cloud-drive/*\" lint",
+    "clean": "pnpm --filter \"@cloud-drive/*\" clean",
+    "fresh": "pnpm clean && pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.1.1",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}

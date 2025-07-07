@@ -1,0 +1,19 @@
+{
+  "name": "@cloud-drive/eslint-config-custom",
+  "version": "1.0.0",
+  "description": "共享的ESLint配置",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "clean": "echo 'Nothing to clean'"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.18.1"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
