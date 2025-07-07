@@ -5,12 +5,17 @@
   "private": true,
   "scripts": {
     "dev": "echo 'Please install pnpm first: npm install -g pnpm'",
+    "dev:frontend": "cd apps/frontend && npm run dev",
     "build": "echo 'Please install pnpm first: npm install -g pnpm'",
+    "build:frontend": "cd apps/frontend && npm run build",
     "test": "echo 'Please install pnpm first: npm install -g pnpm'",
+    "test:frontend": "cd apps/frontend && npm run test",
     "lint": "echo 'Linting completed successfully - no files to lint yet'",
+    "lint:frontend": "cd apps/frontend && npm run lint",
     "clean": "echo 'Please install pnpm first: npm install -g pnpm'",
     "fresh": "echo 'Please install pnpm first: npm install -g pnpm'",
-    "install-pnpm": "npm install -g pnpm"
+    "install-pnpm": "npm install -g pnpm",
+    "setup:frontend": "cd apps/frontend && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
