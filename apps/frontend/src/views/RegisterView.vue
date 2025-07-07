@@ -1,26 +1,36 @@
 <template>
-  <div class="login-page">
-    <el-card class="login-card">
+    <div class="regis-page">
+    <el-card class="regis-card">
       <template #header>
-        <div class="login-header">
+        <div class="regis-header">
           <el-icon size="32" color="#409eff"><User /></el-icon>
-          <span>登录 CloudDrive</span>
+          <span>注册 CloudDrive 账号</span>
         </div>
       </template>
       
-      <el-form :model="loginForm" :rules="rules" ref="formRef" @submit.prevent="handleLogin">
+      <el-form :model="regisForm" :rules="rules" ref="formRef" @submit.prevent="handleregis">
         <el-form-item prop="username">
           <el-input
-            v-model="loginForm.username"
-            placeholder="用户名或邮箱"
+            v-model="regisForm.username"
+            placeholder="用户名"
             prefix-icon="User"
             size="large"
+          />
+        </el-form-item>
+
+        <el-form-item prop="email">
+          <el-input
+            v-model="regisForm.email"
+            placeholder="邮箱"
+            prefix-icon="Message"
+            size="large"
+            type="email"
           />
         </el-form-item>
         
         <el-form-item prop="password">
           <el-input
-            v-model="loginForm.password"
+            v-model="regisForm.password"
             type="password"
             placeholder="密码"
             prefix-icon="Lock"
@@ -35,22 +45,24 @@
             size="large" 
             style="width: 100%"
             :loading="loading"
-            @click="handleLogin"
+            @click="handleregis"
           >
-            登录
+            注册
           </el-button>
         </el-form-item>
       </el-form>
-      
-      <div class="login-footer">
-        <el-link type="primary" href="/register">注册账号</el-link>
-        <el-link type="info" href="/forget-password">忘记密码？</el-link>
+      <div class="regis-footer">
+        <el-link type="info" href="/login">
+          <el-icon><ArrowLeft /></el-icon>
+          已有账号？登录
+        </el-link>
       </div>
     </el-card>
+    
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
@@ -62,9 +74,10 @@ const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
-const loginForm = reactive({
+const regisForm = reactive({
   username: '',
-  password: ''
+  password: '',
+  email: ''
 })
 
 const rules = {
@@ -74,10 +87,14 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'change'] }
   ]
 }
 
-const handleLogin = async () => {
+const handleregis = async () => {
   if (!formRef.value) return
   
   try {
@@ -85,12 +102,12 @@ const handleLogin = async () => {
     loading.value = true
     
     // TODO: 调用登录API
-    // const response = await api.post('/auth/login', loginForm)
+    // const response = await api.post('/auth/regis', regisForm)
     
     // 模拟登录成功
     const mockUser = {
       id: 'user-1',
-      username: loginForm.username,
+      username: regisForm.username,
       email: 'user@example.com',
       avatar: '',
       createdAt: new Date(),
@@ -102,11 +119,11 @@ const handleLogin = async () => {
     userStore.setUser(mockUser)
     userStore.setToken(mockToken)
     
-    ElMessage.success('登录成功')
-    router.push('/main')
+    ElMessage.success('注册成功')
+    router.push('/login')
     
   } catch (error) {
-    ElMessage.error('登录失败，请检查用户名和密码')
+    ElMessage.error('注册失败')
   } finally {
     loading.value = false
   }
@@ -114,7 +131,7 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-page {
+.regis-page {
   height: 100vh;
   display: flex;
   align-items: center;
@@ -122,12 +139,12 @@ const handleLogin = async () => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.login-card {
+.regis-card {
   width: 400px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.login-header {
+.regis-header {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,7 +154,7 @@ const handleLogin = async () => {
   color: #2c3e50;
 }
 
-.login-footer {
+.regis-footer {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;

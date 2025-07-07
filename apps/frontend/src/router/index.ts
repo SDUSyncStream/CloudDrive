@@ -1,3 +1,4 @@
+// import path = require('path')
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
@@ -13,10 +14,25 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/LoginView.vue')
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/RegisterView.vue')
+  },
+  {
+    path: '/forget-password',
+    name: 'ForgetPassword',
+    component: () => import('../views/ForgetPwdView.vue')
+  },
+  {
     path: '/files',
     name: 'Files',
     component: () => import('../views/FilesView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/main',
+    name: 'Main',
+    component: () => import('../views/MainView.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
