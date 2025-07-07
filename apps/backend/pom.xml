@@ -11,6 +11,8 @@
     <packaging>pom</packaging>
     <modules>
         <module>services</module>
+        <module>model</module>
+        <module>gateway</module>
     </modules>
     <groupId>cn.sdu</groupId>
     <artifactId>backend</artifactId>
