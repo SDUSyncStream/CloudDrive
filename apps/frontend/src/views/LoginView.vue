@@ -84,29 +84,38 @@ const handleLogin = async () => {
     await formRef.value.validate()
     loading.value = true
     
-    // TODO: 调用登录API
-    // const response = await api.post('/auth/login', loginForm)
+    // 调用登录API
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: loginForm.username,
+        password: loginForm.password
+      })
+    })
     
-    // 模拟登录成功
-    const mockUser = {
-      id: 'user-1',
-      username: loginForm.username,
-      email: 'user@example.com',
-      avatar: '',
-      createdAt: new Date(),
-      updatedAt: new Date()
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      // 保存Token到localStorage
+      localStorage.setItem('accessToken', result.data.accessToken)
+      localStorage.setItem('refreshToken', result.data.refreshToken)
+      
+      // 更新用户状态
+      userStore.setUser(result.data.user)
+      userStore.setToken(result.data.accessToken)
+      
+      ElMessage.success('登录成功')
+      router.push('/main')
+    } else {
+      ElMessage.error(result.message || '登录失败')
     }
     
-    const mockToken = 'mock-jwt-token'
-    
-    userStore.setUser(mockUser)
-    userStore.setToken(mockToken)
-    
-    ElMessage.success('登录成功')
-    router.push('/main')
-    
   } catch (error) {
-    ElMessage.error('登录失败，请检查用户名和密码')
+    console.error('登录错误:', error)
+    ElMessage.error('登录失败，请检查网络连接')
   } finally {
     loading.value = false
   }
