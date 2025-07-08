@@ -11,6 +11,7 @@ services:
       - MYSQL_DATABASE=cloud_drive
       - MYSQL_USER=cloud_drive
       - MYSQL_PASSWORD=cloud123
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql_data:/var/lib/mysql
       - ../sql:/docker-entrypoint-initdb.d
@@ -37,6 +38,7 @@ services:
     image: nacos/nacos-server:v2.2.0
     platform: linux/amd64
     container_name: nacos-server
+    restart: always
     ports:
       - "8848:8848"
       - "9848:9848"
@@ -47,7 +49,14 @@ services:
     volumes:
       - nacos_data:/home/nacos/data
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     networks:
       - cloud-drive-network
 
@@ -57,10 +66,12 @@ services:
       context: ../apps/gateway
       dockerfile: ../../docker/Dockerfile.gateway
     container_name: gateway
+    restart: unless-stopped
     ports:
       - "8080:8080"
     depends_on:
-      - nacos
+      nacos:
+        condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
@@ -74,20 +85,21 @@ services:
       context: ../apps/user-service
       dockerfile: ../../docker/Dockerfile.user-service
     container_name: user-service
+    restart: unless-stopped
     ports:
       - "8081:8081"
     depends_on:
       mysql:
         condition: service_healthy
       nacos:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/user_service_db
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root123
       - SPRING_REDIS_HOST=redis

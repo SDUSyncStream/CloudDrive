@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8999
 
 spring:
   application:
@@ -8,12 +8,13 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
-        namespace: clouddrive
       config:
         server-addr: localhost:8848
-        namespace: clouddrive
         file-extension: yaml
     gateway:
+      discovery:
+        locator:
+          enabled: true
       routes:
         - id: user-service
           uri: lb://user-service
@@ -39,13 +40,17 @@ spring:
             - Path=/api/membership/**
           filters:
             - StripPrefix=1
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOriginPatterns: "*"
             allowedMethods: "*"
             allowedHeaders: "*"
-            allow-credentials: true
+#            allow-credentials: true
 
 management:
   endpoints:

@@ -24,6 +24,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ForgetPwdView.vue')
   },
   {
+    path: '/admin-login',
+    name: 'AdminLogin',
+    component: () => import('../views/AdminLoginView.vue')
+  },
+  {
     path: '/main',
     name: 'Main',
     component: () => import('../views/MainView.vue'),
@@ -44,6 +49,25 @@ const routes: RouteRecordRaw[] = [
         name: 'Recycle',
         component: () => import('../views/RecycleView.vue')
       },
+
+    ]
+  },
+  {
+    path: '/vip',
+    name: 'VIP',
+    component: () => import('../views/MainView.vue'),
+    redirect: '/vip/membership',
+    children: [
+      {
+        path: '/vip/membership',
+        name: 'Membership',
+        component: () => import('../views/MembershipView.vue')
+      },
+      {
+        path: '/vip/subscription-history',
+        name: 'SubscriptionHistory',
+        component: () => import('../views/SubscriptionHistoryView.vue')
+      },
     ]
   },
   {
@@ -59,7 +83,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const isAuthenticated = localStorage.getItem('token')
   
   if (to.meta.requiresAuth && !isAuthenticated) {
