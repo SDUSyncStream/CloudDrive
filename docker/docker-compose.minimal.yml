@@ -11,6 +11,7 @@ services:
       - MYSQL_DATABASE=cloud_drive
       - MYSQL_USER=cloud_drive
       - MYSQL_PASSWORD=cloud123
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql_data:/var/lib/mysql
       - ../sql:/docker-entrypoint-initdb.d
