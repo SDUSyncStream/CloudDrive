@@ -5,6 +5,7 @@
         <div class="login-header">
           <el-icon size="32" color="#409eff"><User /></el-icon>
           <span>登录 CloudDrive</span>
+
         </div>
       </template>
       
@@ -45,6 +46,8 @@
       <div class="login-footer">
         <el-link type="primary" href="/register">注册账号</el-link>
         <el-link type="info" href="/forget-password">忘记密码？</el-link>
+        <el-link type="primary" href="/admin-login">管理员入口</el-link>
+
       </div>
     </el-card>
   </div>
