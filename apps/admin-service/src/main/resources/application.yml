@@ -8,13 +8,27 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
+  datasource:
+    # 数据库驱动
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库连接地址, useSSL=false表示禁用SSL 改用用户名和密码认证, serverTimezone时区
+    url: jdbc:mysql://localhost:3306/cloud_drive?
+      useSSL=false&serverTimezone=Asia/Shanghai
+    # 数据库用户名
+    username: root
+    # 数据库密码
+    password: root
+  web:
+    resources:
+      static-locations: classpath:/static/, file:/D:/upload_image/
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
 logging:
   level:
     cn.sdu.clouddrive: DEBUG

@@ -1,5 +1,5 @@
 server:
-  port: 80
+  port: 8999
 
 spring:
   application:
@@ -40,7 +40,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOriginPatterns: "*"
             allowedMethods: "*"
             allowedHeaders: "*"
             allow-credentials: true
