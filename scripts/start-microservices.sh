@@ -1,5 +1,29 @@
 #!/bin/bash
 
+# ============================================================================
+# CloudDrive Full Microservices Start Script
+# ============================================================================
+# Description: 启动CloudDrive完整微服务栈
+#
+# 包含服务:
+# - 基础设施: MySQL, Redis, Nacos
+# - 微服务: Gateway, User, File, Admin, Membership Services
+# - 大数据: Hadoop HDFS, Apache Flink
+# - 前端: Vue 3应用
+#
+# 功能:
+# - 自动检测并构建所有服务
+# - 启动完整的微服务生态系统
+# - 提供所有功能的完整访问
+#
+# 使用方法: ./scripts/start-microservices.sh
+#
+# 要求:
+# - Docker Desktop
+# - Docker Compose
+# - 充足的系统资源 (推荐8GB+ RAM)
+# ============================================================================
+
 set -e  # Exit on any error
 
 echo "🚀 Starting CloudDrive microservices..."
