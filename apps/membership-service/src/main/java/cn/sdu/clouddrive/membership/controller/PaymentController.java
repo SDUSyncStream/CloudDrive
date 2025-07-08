@@ -11,7 +11,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/payment")
+@RequestMapping("/payment")
 @CrossOrigin(origins = "*")
 public class PaymentController {
 
