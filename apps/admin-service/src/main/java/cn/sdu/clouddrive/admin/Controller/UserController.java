@@ -14,7 +14,7 @@ import java.util.Map;
 
 // @RestController 是 @Controller 和 @ResponseBody 的结合，用于直接返回JSON/XML数据
 @RestController
-@RequestMapping("/admin") // 此Controller下的所有方法都以 /admin 开头
+@RequestMapping("/admin-api") // 此Controller下的所有方法都以 /admin-api 开头
 public class UserController {
 
     @Autowired
