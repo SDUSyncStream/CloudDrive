@@ -1,5 +1,25 @@
 #!/bin/bash
 
+# ============================================================================
+# CloudDrive Build All Script
+# ============================================================================
+# Description: 构建所有CloudDrive微服务和前端应用
+# 
+# 功能:
+# - 构建所有Spring Boot微服务 (Gateway, User, File, Admin, Membership)
+# - 构建Vue 3前端应用
+# - 自动检测并使用Maven或Maven Wrapper
+# - 验证Node.js和npm环境
+#
+# 使用方法: ./scripts/build-all.sh
+#
+# 要求:
+# - Java 17+
+# - Maven 3.6+ 或使用项目中的mvnw
+# - Node.js 16+
+# - npm
+# ============================================================================
+
 set -e  # Exit on any error
 
 echo "🚀 Building CloudDrive microservices..."
