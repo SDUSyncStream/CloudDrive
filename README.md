@@ -98,12 +98,99 @@ Frontend (Vue3) → Gateway (8080) → Microservices
 
 ## 🏃‍♂️ 快速开始
 
-### 前提条件
-- **Docker** & **Docker Compose** (推荐)
-- **Java 17+** & **Maven 3.6+** (本地开发)
-- **Node.js 18+** & **npm** (前端开发)
+### 📋 环境要求与安装指南
+
+#### 🪟 Windows 系统环境配置
+
+**前提条件：**
+- **Docker Desktop** for Windows
+- **WSL2** (推荐)
+- **Git** for Windows
+- **Java 17+** & **Maven 3.6+** (可选，用于本地开发)
+- **Node.js 18+** & **npm** (可选，用于前端开发)
+
+**安装步骤：**
+```powershell
+# 1. 安装 Docker Desktop
+# 下载地址: https://www.docker.com/products/docker-desktop/
+# 确保启用WSL2集成
+
+# 2. 验证Docker安装
+docker --version
+docker-compose --version
+
+# 3. 克隆项目
+git clone https://github.com/your-repo/CloudDrive.git
+cd CloudDrive
+
+# 4. 直接启动 (无需Shell脚本)
+docker-compose -f docker/docker-compose.microservices.yml up --build
+```
+
+#### 🍎 macOS 系统环境配置
+
+**前提条件：**
+- **Docker Desktop** for Mac
+- **Homebrew** (推荐)
+- **Java 17+** & **Maven 3.6+** (可选，用于本地开发)
+- **Node.js 18+** & **npm** (可选，用于前端开发)
+
+**安装步骤：**
+```bash
+# 1. 安装 Docker Desktop
+# 下载地址: https://www.docker.com/products/docker-desktop/
+
+# 2. 使用 Homebrew 安装开发工具 (可选)
+brew install openjdk@17 maven node
+
+# 3. 验证安装
+docker --version
+docker-compose --version
+
+# 4. 克隆项目
+git clone https://github.com/your-repo/CloudDrive.git
+cd CloudDrive
+
+# 5. 一键启动
+chmod +x scripts/*.sh
+./scripts/start-microservices.sh
+```
+
+#### 🐧 Linux 系统环境配置
+
+**前提条件：**
+- **Docker** & **Docker Compose**
+- **Java 17+** & **Maven 3.6+** (可选)
+- **Node.js 18+** & **npm** (可选)
+
+**安装步骤：**
+```bash
+# 1. 安装 Docker (Ubuntu/Debian)
+sudo apt update
+sudo apt install docker.io docker-compose
+
+# 2. 启动Docker服务
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 3. 添加用户到docker组 (避免sudo)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 4. 验证安装
+docker --version
+docker-compose --version
+
+# 5. 克隆并启动项目
+git clone https://github.com/your-repo/CloudDrive.git
+cd CloudDrive
+chmod +x scripts/*.sh
+./scripts/start-microservices.sh
+```
 
 ### 🚀 一键启动微服务 (推荐)
+
+#### 🍎 macOS / Linux 系统
 ```bash
 # 1. 克隆项目
 git clone <your-repo-url>
@@ -116,9 +203,43 @@ cd CloudDrive
 ./scripts/start-microservices.sh
 ```
 
-> 💡 **环境要求**: Docker + Node.js 18+  
+#### 🪟 Windows 系统
+```cmd
+# 1. 克隆项目
+git clone <your-repo-url>
+cd CloudDrive
+
+# 2. 启动最小可用版本 (推荐新手) - 包含前端
+docker-compose -f docker/docker-compose.minimal.yml up --build
+
+# 或启动完整微服务栈
+docker-compose -f docker/docker-compose.microservices.yml up --build
+```
+
+#### 🔧 PowerShell 替代方案 (Windows)
+```powershell
+# 1. 克隆项目
+git clone <your-repo-url>
+Set-Location CloudDrive
+
+# 2. 构建所有微服务
+Get-ChildItem -Path "apps" -Directory | ForEach-Object {
+    if (Test-Path "$($_.FullName)/pom.xml") {
+        Write-Host "Building $($_.Name)..."
+        Set-Location $_.FullName
+        mvn clean package -DskipTests
+        Set-Location ".."
+    }
+}
+
+# 3. 启动服务
+docker-compose -f docker/docker-compose.microservices.yml up --build
+```
+
+> 💡 **环境要求**: Docker + Docker Compose + Node.js 18+  
 > 🍎 **Apple Silicon用户**: 已完美支持ARM64架构，无需额外配置  
-> 📖 **详细安装指南**: [SETUP.md](./SETUP.md)
+> 🪟 **Windows用户**: 需要安装Docker Desktop，推荐使用WSL2  
+> 📖 **详细安装指南**: 参见下方系统特定说明
 
 ### 📱 访问服务
 启动成功后，可访问以下服务：
@@ -135,6 +256,8 @@ cd CloudDrive
 | ⚡ **Flink控制台** | http://localhost:8081 | 流处理监控 |
 
 ### 🔧 本地开发模式
+
+#### 🍎 macOS / Linux 系统
 ```bash
 # 1. 启动基础设施 (MySQL, Redis, Nacos)
 docker-compose -f docker/docker-compose.minimal.yml up mysql redis nacos -d
@@ -145,6 +268,120 @@ cd apps/gateway && mvn spring-boot:run       # API网关
 cd apps/frontend && npm run dev              # 前端
 
 # 3. 访问 http://localhost:3000
+```
+
+#### 🪟 Windows 系统
+```cmd
+REM 1. 启动基础设施 (MySQL, Redis, Nacos)
+docker-compose -f docker/docker-compose.minimal.yml up mysql redis nacos -d
+
+REM 2. 本地运行服务 (需要多个终端窗口)
+REM 终端1: 用户服务
+cd apps\user-service
+mvn spring-boot:run
+
+REM 终端2: API网关
+cd apps\gateway
+mvn spring-boot:run
+
+REM 终端3: 前端
+cd apps\frontend
+npm run dev
+
+REM 3. 访问 http://localhost:3000
+```
+
+### 🛠️ 故障排除指南
+
+#### 🪟 Windows 常见问题
+
+**问题1: Shell脚本无法执行**
+```cmd
+# 解决方案: 直接使用docker-compose命令
+docker-compose -f docker/docker-compose.microservices.yml up --build
+```
+
+**问题2: WSL2相关错误**
+```powershell
+# 确保WSL2已启用并设为默认
+wsl --set-default-version 2
+wsl --list --verbose
+
+# 重启Docker Desktop服务
+```
+
+**问题3: 端口冲突**
+```cmd
+# 检查端口占用
+netstat -ano | findstr :3000
+netstat -ano | findstr :8080
+
+# 结束占用进程
+taskkill /PID <进程ID> /F
+```
+
+**问题4: Docker构建失败**
+```cmd
+# 清理Docker缓存
+docker system prune -a
+docker-compose down --volumes
+
+# 重新构建
+docker-compose -f docker/docker-compose.microservices.yml up --build --force-recreate
+```
+
+#### 🍎 macOS 常见问题
+
+**问题1: Permission denied for shell scripts**
+```bash
+# 赋予执行权限
+chmod +x scripts/*.sh
+sudo chown -R $(whoami) scripts/
+```
+
+**问题2: Apple Silicon 兼容性**
+```bash
+# 项目已完美支持ARM64，如遇问题可强制使用x86_64
+docker run --platform linux/amd64 <image-name>
+```
+
+**问题3: 端口冲突 (MySQL 3306)**
+```bash
+# 项目使用3307端口避免冲突，如仍有问题：
+sudo lsof -i :3307
+sudo kill -9 <PID>
+```
+
+**问题4: Docker Desktop资源不足**
+```bash
+# 在Docker Desktop设置中增加资源分配：
+# Memory: 至少 4GB
+# CPUs: 至少 2核
+# Disk: 至少 10GB
+```
+
+#### 🐧 Linux 常见问题
+
+**问题1: Docker权限问题**
+```bash
+# 确保用户在docker组中
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 重启系统或重新登录
+```
+
+**问题2: 防火墙端口问题**
+```bash
+# Ubuntu/Debian
+sudo ufw allow 3000
+sudo ufw allow 8080
+sudo ufw allow 3307
+
+# CentOS/RHEL
+sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
 ```
 
 ### 🍎 Apple Silicon (ARM64) 支持
