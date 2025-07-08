@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        是整个 CloudDrive 项目的顶级父 POM 文件。
+        负责聚合所有顶级模块，并可以集中管理一些通用的配置和依赖版本。
+    -->
+
+    <!-- 继承 Spring Boot Starter Parent，这样可以统一管理 Spring Boot 的版本和一些默认配置 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>cn.sdu.clouddrive</groupId>
+    <artifactId>CloudDrive-Parent</artifactId> <!-- 整个父项目的 Artifact ID -->
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging> <!-- 必须是 pom，表示这是一个聚合项目 -->
+    <name>CloudDrive-Parent</name>
+    <description>Parent POM for CloudDrive Microservices Project</description>
+
+    <properties>
+        <java.version>17</java.version> <!-- 统一 Java 版本 -->
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+
+    </properties>
+
+    <modules>
+        <!--
+            在这里列出所有顶级子模块的相对路径。
+            这些路径是相对于这个总的 pom.xml 文件的。
+        -->
+        <module>admin-service</module>
+        <module>file-service</module>
+        <module>gateway</module> <!-- 假设这是顶级的 gateway 模块，不是 backend 下的那个 -->
+        <module>membership-service</module>
+        <module>user-service</module>
+        <!-- 如果还有其他顶级模块，请在这里添加 -->
+    </modules>
+
+
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version> <!-- 使用 Spring Boot 版本 -->
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <!-- ... 其他常用插件 -->
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>
