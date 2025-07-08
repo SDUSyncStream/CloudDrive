@@ -1,6 +1,6 @@
-package cn.sdu.user.service.Impl;
+package cn.sdu.clouddrive.user.service.Impl;
 
-import cn.sdu.user.service.UserService;
+import cn.sdu.clouddrive.user.service.UserService;
 import org.springframework.stereotype.Service;
 
 @Service

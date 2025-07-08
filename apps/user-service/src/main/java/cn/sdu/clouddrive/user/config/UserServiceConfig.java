@@ -1,4 +1,4 @@
-package cn.sdu.user.config;
+package cn.sdu.clouddrive.user.config;
 
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;

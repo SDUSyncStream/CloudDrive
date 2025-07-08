@@ -1,4 +1,4 @@
-package cn.sdu.user.feign;
+package cn.sdu.clouddrive.user.feign;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
