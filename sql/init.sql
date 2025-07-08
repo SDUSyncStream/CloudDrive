@@ -93,6 +93,26 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
     INDEX idx_status (status)
 );
 
+-- 支付订单表
+CREATE TABLE IF NOT EXISTS payment_orders (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    membership_level_id VARCHAR(36) NOT NULL,
+    order_number VARCHAR(50) NOT NULL UNIQUE,
+    amount DECIMAL(10,2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    status ENUM('pending', 'paid', 'failed', 'cancelled') NOT NULL DEFAULT 'pending',
+    transaction_id VARCHAR(100),
+    paid_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (membership_level_id) REFERENCES membership_levels(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_order_number (order_number),
+    INDEX idx_status (status)
+);
+
 -- 插入默认会员等级
 INSERT IGNORE INTO membership_levels (id, name, storage_quota, max_file_size, price, duration_days, features) VALUES 
 ('level-free', '免费版', 1073741824, 104857600, 0.00, 0, '1GB存储空间,单文件100MB'),

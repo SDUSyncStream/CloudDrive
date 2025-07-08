@@ -55,3 +55,51 @@ export interface FileUploadResponse {
   fileName: string;
   fileUrl: string;
 }
+
+export interface MembershipLevel {
+  id: string;
+  name: string;
+  storageQuota: number;
+  maxFileSize: number;
+  price: number;
+  durationDays: number;
+  features: string;
+  storageQuotaFormatted: string;
+  maxFileSizeFormatted: string;
+  isRecommended: boolean;
+}
+
+export interface UserSubscription {
+  id: string;
+  userId: string;
+  membershipLevelId: string;
+  membershipLevelName: string;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+  paymentMethod: string;
+  paymentAmount: number;
+  createdAt: Date;
+  isActive: boolean;
+  daysRemaining: number;
+}
+
+export interface PaymentOrder {
+  id: string;
+  userId: string;
+  membershipLevelId: string;
+  membershipLevelName: string;
+  orderNumber: string;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  transactionId?: string;
+  paidAt?: Date;
+  createdAt: Date;
+}
+
+export interface CreatePaymentOrderRequest {
+  userId: string;
+  membershipLevelId: string;
+  paymentMethod: string;
+}
