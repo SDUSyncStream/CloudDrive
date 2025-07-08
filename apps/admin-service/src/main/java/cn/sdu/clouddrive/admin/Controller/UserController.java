@@ -66,11 +66,15 @@ public class UserController {
             // 登录成功
             Map<String, Object> data = new HashMap<>();
             // 实际项目中不应该返回密码哈希，这里只返回必要的用户信息
-            data.put("userId", admin.getId());
+            data.put("userId", admin.getId());   //string
             data.put("username", admin.getUsername());
             data.put("userLevel", admin.getUserlevel());
-            // 如果有token机制，可以在这里生成并返回token
-            // data.put("token", "your_generated_jwt_token");
+            data.put("email", admin.getEmail());
+            data.put("avatar", admin.getAvatar());
+            data.put("storageQuota", admin.getStorageQuota()); //big int
+            data.put("storageUsed", admin.getStorageUsed()); //big int
+
+
 
             return ServerResult.ok(data, "登录成功"); // 假设 ServerResult 有 ok 方法
         } else {
