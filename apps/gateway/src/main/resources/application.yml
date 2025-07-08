@@ -1,5 +1,5 @@
 server:
-  port: 8999
+  port: 8080
 
 spring:
   application:
@@ -38,6 +38,18 @@ spring:
           uri: lb://membership-service
           predicates:
             - Path=/api/membership/**
+          filters:
+            - StripPrefix=1
+        - id: subscription-service
+          uri: lb://membership-service
+          predicates:
+            - Path=/api/subscription/**
+          filters:
+            - StripPrefix=1
+        - id: payment-service
+          uri: lb://membership-service
+          predicates:
+            - Path=/api/payment/**
           filters:
             - StripPrefix=1
         - id: auth-service
