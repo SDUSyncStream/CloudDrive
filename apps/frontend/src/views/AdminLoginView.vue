@@ -97,8 +97,7 @@ const handleAdminLogin = async () => {
     loading.value = true // 校验通过，显示加载状态
 
     // ** 核心：发送登录请求到后端 API **
-    // 假设后端管理员登录API是 `/api/admin/login`
-    const response = await fetch('/api/admin/login', {
+    const response = await fetch('/admin-api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
