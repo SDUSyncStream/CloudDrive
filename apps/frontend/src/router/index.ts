@@ -53,6 +53,24 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/vip',
+    name: 'VIP',
+    component: () => import('../views/MainView.vue'),
+    redirect: '/vip/membership',
+    children: [
+      {
+        path: '/vip/membership',
+        name: 'Membership',
+        component: () => import('../views/MembershipView.vue')
+      },
+      {
+        path: '/vip/subscription-history',
+        name: 'SubscriptionHistory',
+        component: () => import('../views/SubscriptionHistoryView.vue')
+      },
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFoundView.vue')
@@ -65,7 +83,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const isAuthenticated = localStorage.getItem('token')
   
   if (to.meta.requiresAuth && !isAuthenticated) {
