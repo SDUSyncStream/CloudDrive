@@ -8,6 +8,7 @@ USE cloud_drive;
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(36) PRIMARY KEY,
+    userlevel INT DEFAULT 0,    -- 若为1，则为管理员
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS files (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    path VARCHAR(1000) NOT NULL,
+    path VARCHAR(400) NOT NULL,
     size BIGINT NOT NULL DEFAULT 0,
     type VARCHAR(50) NOT NULL,
     mime_type VARCHAR(100),

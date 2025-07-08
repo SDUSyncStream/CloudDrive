@@ -24,6 +24,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ForgetPwdView.vue')
   },
   {
+    path: '/admin-login',
+    name: 'AdminLogin',
+    component: () => import('../views/AdminLoginView.vue')
+  },
+  {
     path: '/main',
     name: 'Main',
     component: () => import('../views/MainView.vue'),
@@ -44,6 +49,7 @@ const routes: RouteRecordRaw[] = [
         name: 'Recycle',
         component: () => import('../views/RecycleView.vue')
       },
+
     ]
   },
   {
