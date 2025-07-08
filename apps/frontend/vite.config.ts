@@ -12,10 +12,15 @@ export default defineConfig({
   server: {
     port: 8090,
     proxy: {
+      '/admin-api': {
+        target: 'http://localhost:8083',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8999',
         changeOrigin: true,
       },
+
     },
   },
   build: {

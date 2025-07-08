@@ -55,12 +55,18 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 
-// 导入 Element Plus Icons
+// 导入 Element Plus 图标
 // 确保这些图标已经通过 `npm install @element-plus/icons-vue` 安装
 import { User, Lock, Setting } from '@element-plus/icons-vue'
 
+// 导入 Pinia Store
+import { useAdminStore } from '../stores/admin' // <-- 确保路径正确
+
 // 获取 Vue Router 实例
 const router = useRouter()
+
+// 获取 Pinia Store 实例
+const adminStore = useAdminStore() // <-- 获取 Store 实例
 
 // 表单引用，用于触发表单校验
 const formRef = ref<FormInstance>()
@@ -97,9 +103,9 @@ const handleAdminLogin = async () => {
     loading.value = true // 校验通过，显示加载状态
 
     // ** 核心：发送登录请求到后端 API **
-    // 假设后端管理员登录API是 `/api/admin/login`
-    const response = await fetch('/api/admin/login', {
-      method: 'POST',
+    // 请确保这里的 URL '/admin-api/login' 与你的 Vite 代理配置以及后端 Controller 路径匹配
+    const response = await fetch('/admin-api/login', {
+      method: 'POST', // <-- 确保这里的 HTTP 方法与后端 Controller 的 @PostMapping 匹配
       headers: {
         'Content-Type': 'application/json',
         // 如果需要，可以在这里添加其他Header，例如客户端ID等
@@ -116,39 +122,40 @@ const handleAdminLogin = async () => {
     const result = await response.json()
 
     // 根据后端返回的 code 进行判断
-    if (result.code === 200) {
-      // 登录成功
+    if (result.code === 200 && result.data) { // 确保 result.data 存在
       ElMessage.success('管理员登录成功！正在跳转...')
 
-      // ** 重要：存储管理员相关的认证信息 (例如 Token)**
-      // 后端ServerResult通常会返回一个包含token的数据对象
-      if (result.data && result.data.accessToken) {
-        localStorage.setItem('adminAccessToken', result.data.accessToken)
-      }
-      if (result.data && result.data.refreshToken) {
-        localStorage.setItem('adminRefreshToken', result.data.refreshToken)
-      }
-      // 如果后端返回了其他管理员用户信息，也可以存储
-      // localStorage.setItem('adminUser', JSON.stringify(result.data.user))
+      adminStore.setAdminLoginInfo({
+        userId: result.data.userId,
+        username: result.data.username,
+        userLevel: result.data.userLevel,
+        email: result.data.email,         // <-- 对应后端返回的 email
+        avatar: result.data.avatar,       // <-- 对应后端返回的 avatar
+        storageQuota: result.data.storageQuota, // <-- 对应后端返回的 storageQuota
+        storageUsed: result.data.storageUsed,   // <-- 对应后端返回的 storageUsed
+        // 如果后端还在 data 中返回了 Token，也要传递给 Store
+        // accessToken: result.data.accessToken,   // <-- 后端返回 data 里包含 accessToken
+        // refreshToken: result.data.refreshToken, // <-- 后端返回 data 里包含 refreshToken
+      });
 
-      // ** 核心：登录成功后，导航到管理后台的主页 **
-      // 请确保你的 Vue Router 已经配置了 '/admin/dashboard' 路由
-      router.push('/admin/dashboard')
+      router.push('/admin')
+      adminStore.isLoggedIn = true
 
     } else {
       // 登录失败，显示后端返回的错误信息或默认错误信息
       ElMessage.error(result.message || '管理员登录失败，请检查用户名或密码。')
     }
 
-  } catch (error: any) { // 捕获表单校验失败或网络请求错误
-    // 如果是表单校验失败，validate() 会抛出包含错误信息的 Promise rejection
+  }
+  catch (error: any) { // 捕获表单校验失败或网络请求错误
+    // 如果是表单校验失败，validate() 会抛出 Promise rejection
     // 如果是网络请求错误，fetch 会抛出 TypeError
     if (error instanceof Error) {
       console.error('管理员登录错误:', error.message)
       ElMessage.error('管理员登录失败：' + error.message)
     } else if (Array.isArray(error) && error.length > 0) { // Element Plus validate 失败的错误结构
       console.error('表单校验失败:', error);
-      // ElMessage.error('表单填写不完整或有误。'); // validate 失败 ElMessage 默认不弹出，这里手动添加也可
+      // ElMessage.error('表单填写不完整或有误。'); // 如果需要，可以手动添加错误提示
     } else {
       console.error('管理员登录未知错误:', error);
       ElMessage.error('管理员登录发生未知错误，请稍后再试。');
@@ -173,6 +180,7 @@ const goToUserLogin = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 为管理员登录页设置一个不同的背景，以示区别 */
   background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%); /* 绿色系背景 */
 }
 
@@ -191,7 +199,7 @@ const goToUserLogin = () => {
   font-size: 24px; /* 稍微调大标题字号 */
   font-weight: 600;
   color: #2c3e50;
-  position: relative;
+  position: relative; /* 允许绝对定位 */
   padding-bottom: 10px; /* 增加内边距 */
   border-bottom: 1px solid #eee; /* 增加分割线 */
 }
@@ -219,7 +227,7 @@ const goToUserLogin = () => {
 
 .admin-login-footer {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 15px; /* 调整间距 */
+  justify-content: flex-end; /* 通常管理员登录页的底部链接会少一些 */
+  margin-top: 20px;
 }
 </style>
