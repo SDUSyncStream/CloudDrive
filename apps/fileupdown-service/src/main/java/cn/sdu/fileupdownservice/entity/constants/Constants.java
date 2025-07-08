@@ -71,12 +71,12 @@ public class Constants {
     public static final Integer REDIS_KEY_EXPIRES_FIVE_MIN = REDIS_KEY_EXPIRES_ONE_MIN * 5;
 
 
-    public static final String REDIS_KEY_DOWNLOAD = "easypan:download:";
+    public static final String REDIS_KEY_DOWNLOAD = "clouddrive:download:";
 
-    public static final String REDIS_KEY_SYS_SETTING = "easypan:syssetting:";
+    public static final String REDIS_KEY_SYS_SETTING = "clouddrive:syssetting:";
 
-    public static final String REDIS_KEY_USER_SPACE_USE = "easypan:user:spaceuse:";
+    public static final String REDIS_KEY_USER_SPACE_USE = "clouddrive:user:spaceuse:";
 
-    public static final String REDIS_KEY_USER_FILE_TEMP_SIZE = "easypan:user:file:temp:";
+    public static final String REDIS_KEY_USER_FILE_TEMP_SIZE = "clouddrive:user:file:temp:";
 
 }

@@ -12,12 +12,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.easypan</groupId>
-    <artifactId>easypan</artifactId>
+    <groupId>cn.sdu.clouddrive</groupId>
+    <artifactId>fileupdown-service</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
-    <name>easypan</name>
-    <description>easypan</description>
+    <name>CloudDrive File Service</name>
+    <description>File management service with Hadoop HDFS integration</description>
 
     <properties>
         <java.version>1.8</java.version>
@@ -36,9 +36,22 @@
         <commons.lang3.version>3.4</commons.lang3.version>
         <commons.codec.version>1.9</commons.codec.version>
         <commons.io.version>2.5</commons.io.version>
+        <spring-cloud.version>2021.0.3</spring-cloud.version>
+        <spring-cloud-alibaba.version>2021.0.1.0</spring-cloud-alibaba.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -54,12 +67,6 @@
             </exclusions>
         </dependency>
 
-        <!--邮件发送-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-            <version>${springboot.version}</version>
-        </dependency>
         <!--redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -134,8 +141,30 @@
             <artifactId>commons-io</artifactId>
             <version>${commons.io.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <build>
         <plugins>
             <plugin>

@@ -2,9 +2,11 @@
   <div class="files-view">
     <div class="header">
       <div class="main-header">
-        <el-button type="primary"><el-icon>
+        <el-button type="primary" @click="upload">
+          <el-icon>
             <Upload />
-          </el-icon>上传文件</el-button>
+          </el-icon>上传文件
+        </el-button>
         <el-button><el-icon>
             <FolderAdd />
           </el-icon>新建文件夹</el-button>
@@ -167,6 +169,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import { formatFileSize, formatDate } from '../utils'
 import type { CloudFile } from '../types'
+import axios from 'axios'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -212,7 +215,40 @@ const tableData = [
 const handleFileClick = (item: any) => {
   console.log('File clicked:', item)
   // 这里可以添加文件点击的处理逻辑
+
+
 }
+const upload=async () => {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.onchange = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      formData.append('filePid', '1'); // 示例父文件夹 ID
+      formData.append('fileMd5', '1234567890abcdef'); // 示例文件 MD5
+      formData.append('chunkIndex', '0'); // 示例分片索引
+      formData.append('chunks', '1'); // 示例总分片数
+
+      try {
+        const response = await axios.post('/file/uploadFile', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        ElMessage.success('文件上传成功');
+        console.log('Upload response:', response.data);
+      } catch (error) {
+        ElMessage.error('文件上传失败');
+        console.error('Upload error:', error);
+      }
+    }
+  };
+  fileInput.click();
+};
 </script>
 
 <style scoped>

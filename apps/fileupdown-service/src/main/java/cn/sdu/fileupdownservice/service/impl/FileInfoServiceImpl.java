@@ -1,6 +1,5 @@
 package cn.sdu.fileupdownservice.service.impl;
 
-
 import cn.sdu.fileupdownservice.component.RedisComponent;
 import cn.sdu.fileupdownservice.entity.config.AppConfig;
 import cn.sdu.fileupdownservice.entity.constants.Constants;
@@ -32,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
@@ -67,7 +65,6 @@ public class FileInfoServiceImpl implements FileInfoService {
     @Resource
     private RedisComponent redisComponent;
 
-
     /**
      * 根据条件查询列表
      */
@@ -83,52 +80,6 @@ public class FileInfoServiceImpl implements FileInfoService {
     public Integer findCountByParam(FileInfoQuery param) {
         return this.fileInfoMapper.selectCount(param);
     }
-
-    /**
-     * 分页查询方法
-     */
-    @Override
-    public PaginationResultVO<FileInfo> findListByPage(FileInfoQuery param) {
-        int count = this.findCountByParam(param);
-        int pageSize = param.getPageSize() == null ? PageSize.SIZE15.getSize() : param.getPageSize();
-
-        SimplePage page = new SimplePage(param.getPageNo(), count, pageSize);
-        param.setSimplePage(page);
-        List<FileInfo> list = this.findListByParam(param);
-        PaginationResultVO<FileInfo> result = new PaginationResultVO(count, page.getPageSize(), page.getPageNo(), page.getPageTotal(), list);
-        return result;
-    }
-
-    /**
-     * 新增
-     */
-    @Override
-    public Integer add(FileInfo bean) {
-        return this.fileInfoMapper.insert(bean);
-    }
-
-    /**
-     * 批量新增
-     */
-    @Override
-    public Integer addBatch(List<FileInfo> listBean) {
-        if (listBean == null || listBean.isEmpty()) {
-            return 0;
-        }
-        return this.fileInfoMapper.insertBatch(listBean);
-    }
-
-    /**
-     * 批量新增或者修改
-     */
-    @Override
-    public Integer addOrUpdateBatch(List<FileInfo> listBean) {
-        if (listBean == null || listBean.isEmpty()) {
-            return 0;
-        }
-        return this.fileInfoMapper.insertOrUpdateBatch(listBean);
-    }
-
     /**
      * 根据FileIdAndUserId获取对象
      */
@@ -145,13 +96,7 @@ public class FileInfoServiceImpl implements FileInfoService {
         return this.fileInfoMapper.updateByFileIdAndUserId(bean, fileId, userId);
     }
 
-    /**
-     * 根据FileIdAndUserId删除
-     */
-    @Override
-    public Integer deleteFileInfoByFileIdAndUserId(String fileId, String userId) {
-        return this.fileInfoMapper.deleteByFileIdAndUserId(fileId, userId);
-    }
+
 
 
     @Override
@@ -455,41 +400,6 @@ public class FileInfoServiceImpl implements FileInfoService {
         new File(tsPath).delete();
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public FileInfo rename(String fileId, String userId, String fileName) {
-        FileInfo fileInfo = this.fileInfoMapper.selectByFileIdAndUserId(fileId, userId);
-        if (fileInfo == null) {
-            throw new BusinessException("文件不存在");
-        }
-        if (fileInfo.getFileName().equals(fileName)) {
-            return fileInfo;
-        }
-        String filePid = fileInfo.getFilePid();
-        checkFileName(filePid, userId, fileName, fileInfo.getFolderType());
-        //文件获取后缀
-        if (FileFolderTypeEnums.FILE.getType().equals(fileInfo.getFolderType())) {
-            fileName = fileName + StringTools.getFileSuffix(fileInfo.getFileName());
-        }
-        Date curDate = new Date();
-        FileInfo dbInfo = new FileInfo();
-        dbInfo.setFileName(fileName);
-        dbInfo.setLastUpdateTime(curDate);
-        this.fileInfoMapper.updateByFileIdAndUserId(dbInfo, fileId, userId);
-
-        FileInfoQuery fileInfoQuery = new FileInfoQuery();
-        fileInfoQuery.setFilePid(filePid);
-        fileInfoQuery.setUserId(userId);
-        fileInfoQuery.setFileName(fileName);
-        fileInfoQuery.setDelFlag(FileDelFlagEnums.USING.getFlag());
-        Integer count = this.fileInfoMapper.selectCount(fileInfoQuery);
-        if (count > 1) {
-            throw new BusinessException("文件名" + fileName + "已经存在");
-        }
-        fileInfo.setFileName(fileName);
-        fileInfo.setLastUpdateTime(curDate);
-        return fileInfo;
-    }
 
     private void checkFileName(String filePid, String userId, String fileName, Integer folderType) {
         FileInfoQuery fileInfoQuery = new FileInfoQuery();
@@ -504,107 +414,7 @@ public class FileInfoServiceImpl implements FileInfoService {
         }
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public FileInfo newFolder(String filePid, String userId, String folderName) {
-        checkFileName(filePid, userId, folderName, FileFolderTypeEnums.FOLDER.getType());
-        Date curDate = new Date();
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFileId(StringTools.getRandomString(Constants.LENGTH_10));
-        fileInfo.setUserId(userId);
-        fileInfo.setFilePid(filePid);
-        fileInfo.setFileName(folderName);
-        fileInfo.setFolderType(FileFolderTypeEnums.FOLDER.getType());
-        fileInfo.setCreateTime(curDate);
-        fileInfo.setLastUpdateTime(curDate);
-        fileInfo.setStatus(FileStatusEnums.USING.getStatus());
-        fileInfo.setDelFlag(FileDelFlagEnums.USING.getFlag());
-        this.fileInfoMapper.insert(fileInfo);
 
-        FileInfoQuery fileInfoQuery = new FileInfoQuery();
-        fileInfoQuery.setFilePid(filePid);
-        fileInfoQuery.setUserId(userId);
-        fileInfoQuery.setFileName(folderName);
-        fileInfoQuery.setFolderType(FileFolderTypeEnums.FOLDER.getType());
-        fileInfoQuery.setDelFlag(FileDelFlagEnums.USING.getFlag());
-        Integer count = this.fileInfoMapper.selectCount(fileInfoQuery);
-        if (count > 1) {
-            throw new BusinessException("文件夹" + folderName + "已经存在");
-        }
-        fileInfo.setFileName(folderName);
-        fileInfo.setLastUpdateTime(curDate);
-        return fileInfo;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void changeFileFolder(String fileIds, String filePid, String userId) {
-        if (fileIds.equals(filePid)) {
-            throw new BusinessException(ResponseCodeEnum.CODE_600);
-        }
-        if (!Constants.ZERO_STR.equals(filePid)) {
-            FileInfo fileInfo = fileInfoService.getFileInfoByFileIdAndUserId(filePid, userId);
-            if (fileInfo == null || !FileDelFlagEnums.USING.getFlag().equals(fileInfo.getDelFlag())) {
-                throw new BusinessException(ResponseCodeEnum.CODE_600);
-            }
-        }
-        String[] fileIdArray = fileIds.split(",");
-
-        FileInfoQuery query = new FileInfoQuery();
-        query.setFilePid(filePid);
-        query.setUserId(userId);
-        List<FileInfo> dbFileList = fileInfoService.findListByParam(query);
-
-        Map<String, FileInfo> dbFileNameMap = dbFileList.stream().collect(Collectors.toMap(FileInfo::getFileName, Function.identity(), (file1, file2) -> file2));
-        //查询选中的文件
-        query = new FileInfoQuery();
-        query.setUserId(userId);
-        query.setFileIdArray(fileIdArray);
-        List<FileInfo> selectFileList = fileInfoService.findListByParam(query);
-
-        //将所选文件重命名
-        for (FileInfo item : selectFileList) {
-            FileInfo rootFileInfo = dbFileNameMap.get(item.getFileName());
-            //文件名已经存在，重命名被还原的文件名
-            FileInfo updateInfo = new FileInfo();
-            if (rootFileInfo != null) {
-                String fileName = StringTools.rename(item.getFileName());
-                updateInfo.setFileName(fileName);
-            }
-            updateInfo.setFilePid(filePid);
-            this.fileInfoMapper.updateByFileIdAndUserId(updateInfo, item.getFileId(), userId);
-        }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void removeFile2RecycleBatch(String userId, String fileIds) {
-        String[] fileIdArray = fileIds.split(",");
-        FileInfoQuery query = new FileInfoQuery();
-        query.setUserId(userId);
-        query.setFileIdArray(fileIdArray);
-        query.setDelFlag(FileDelFlagEnums.USING.getFlag());
-        List<FileInfo> fileInfoList = this.fileInfoMapper.selectList(query);
-        if (fileInfoList.isEmpty()) {
-            return;
-        }
-        List<String> delFilePidList = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfoList) {
-            findAllSubFolderFileIdList(delFilePidList, userId, fileInfo.getFileId(), FileDelFlagEnums.USING.getFlag());
-        }
-        //将目录下的所有文件更新为已删除
-        if (!delFilePidList.isEmpty()) {
-            FileInfo updateInfo = new FileInfo();
-            updateInfo.setDelFlag(FileDelFlagEnums.DEL.getFlag());
-            this.fileInfoMapper.updateFileDelFlagBatch(updateInfo, userId, delFilePidList, null, FileDelFlagEnums.USING.getFlag());
-        }
-
-        //将选中的文件更新为回收站
-        List<String> delFileIdList = Arrays.asList(fileIdArray);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRecoveryTime(new Date());
-        fileInfo.setDelFlag(FileDelFlagEnums.RECYCLE.getFlag());
-        this.fileInfoMapper.updateFileDelFlagBatch(fileInfo, userId, null, delFileIdList, FileDelFlagEnums.USING.getFlag());
-    }
 
 
     private void findAllSubFolderFileIdList(List<String> fileIdList, String userId, String fileId, Integer delFlag) {
@@ -620,59 +430,7 @@ public class FileInfoServiceImpl implements FileInfoService {
         }
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void recoverFileBatch(String userId, String fileIds) {
-        String[] fileIdArray = fileIds.split(",");
-        FileInfoQuery query = new FileInfoQuery();
-        query.setUserId(userId);
-        query.setFileIdArray(fileIdArray);
-        query.setDelFlag(FileDelFlagEnums.RECYCLE.getFlag());
-        List<FileInfo> fileInfoList = this.fileInfoMapper.selectList(query);
 
-        List<String> delFileSubFolderFileIdList = new ArrayList<>();
-        //找到所选文件子目录文件ID
-        for (FileInfo fileInfo : fileInfoList) {
-            if (FileFolderTypeEnums.FOLDER.getType().equals(fileInfo.getFolderType())) {
-                findAllSubFolderFileIdList(delFileSubFolderFileIdList, userId, fileInfo.getFileId(), FileDelFlagEnums.DEL.getFlag());
-            }
-        }
-        //查询所有跟目录的文件
-        query = new FileInfoQuery();
-        query.setUserId(userId);
-        query.setDelFlag(FileDelFlagEnums.USING.getFlag());
-        query.setFilePid(Constants.ZERO_STR);
-        List<FileInfo> allRootFileList = this.fileInfoMapper.selectList(query);
-
-        Map<String, FileInfo> rootFileMap = allRootFileList.stream().collect(Collectors.toMap(FileInfo::getFileName, Function.identity(), (file1, file2) -> file2));
-
-        //查询所有所选文件
-        //将目录下的所有删除的文件更新为正常
-        if (!delFileSubFolderFileIdList.isEmpty()) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setDelFlag(FileDelFlagEnums.USING.getFlag());
-            this.fileInfoMapper.updateFileDelFlagBatch(fileInfo, userId, delFileSubFolderFileIdList, null, FileDelFlagEnums.DEL.getFlag());
-        }
-        //将选中的文件更新为正常,且父级目录到跟目录
-        List<String> delFileIdList = Arrays.asList(fileIdArray);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setDelFlag(FileDelFlagEnums.USING.getFlag());
-        fileInfo.setFilePid(Constants.ZERO_STR);
-        fileInfo.setLastUpdateTime(new Date());
-        this.fileInfoMapper.updateFileDelFlagBatch(fileInfo, userId, null, delFileIdList, FileDelFlagEnums.RECYCLE.getFlag());
-
-        //将所选文件重命名
-        for (FileInfo item : fileInfoList) {
-            FileInfo rootFileInfo = rootFileMap.get(item.getFileName());
-            //文件名已经存在，重命名被还原的文件名
-            if (rootFileInfo != null) {
-                String fileName = StringTools.rename(item.getFileName());
-                FileInfo updateInfo = new FileInfo();
-                updateInfo.setFileName(fileName);
-                this.fileInfoMapper.updateByFileIdAndUserId(updateInfo, item.getFileId(), userId);
-            }
-        }
-    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -738,75 +496,18 @@ public class FileInfoServiceImpl implements FileInfoService {
         checkFilePid(rootFilePid, fileInfo.getFilePid(), userId);
     }
 
-    @Override
-    @Transactional
-    public void saveShare(String shareRootFilePid, String shareFileIds, String myFolderId, String shareUserId, String cureentUserId) {
-        String[] shareFileIdArray = shareFileIds.split(",");
-        //目标目录文件列表
-        FileInfoQuery fileInfoQuery = new FileInfoQuery();
-        fileInfoQuery.setUserId(cureentUserId);
-        fileInfoQuery.setFilePid(myFolderId);
-        List<FileInfo> currentFileList = this.fileInfoMapper.selectList(fileInfoQuery);
-        Map<String, FileInfo> currentFileMap = currentFileList.stream().collect(Collectors.toMap(FileInfo::getFileName, Function.identity(), (file1, file2) -> file2));
-        //选择的文件
-        fileInfoQuery = new FileInfoQuery();
-        fileInfoQuery.setUserId(shareUserId);
-        fileInfoQuery.setFileIdArray(shareFileIdArray);
-        List<FileInfo> shareFileList = this.fileInfoMapper.selectList(fileInfoQuery);
-        //重命名选择的文件
-        List<FileInfo> copyFileList = new ArrayList<>();
-        Date curDate = new Date();
-        for (FileInfo item : shareFileList) {
-            FileInfo haveFile = currentFileMap.get(item.getFileName());
-            if (haveFile != null) {
-                item.setFileName(StringTools.rename(item.getFileName()));
-            }
-            findAllSubFile(copyFileList, item, shareUserId, cureentUserId, curDate, myFolderId);
-        }
-        this.fileInfoMapper.insertBatch(copyFileList);
 
-        //更新空间
-        Long useSpace = this.fileInfoMapper.selectUseSpace(cureentUserId);
-        UserInfo dbUserInfo = this.userInfoMapper.selectByUserId(cureentUserId);
-        if (useSpace > dbUserInfo.getTotalSpace()) {
-            throw new BusinessException(ResponseCodeEnum.CODE_904);
-        }
-        UserInfo userInfo = new UserInfo();
-        userInfo.setUseSpace(useSpace);
-        this.userInfoMapper.updateByUserId(userInfo, cureentUserId);
-        //设置缓存
-        UserSpaceDto userSpaceDto = redisComponent.getUserSpaceUse(cureentUserId);
-        userSpaceDto.setUseSpace(useSpace);
-        redisComponent.saveUserSpaceUse(cureentUserId, userSpaceDto);
-    }
 
-    private void findAllSubFile(List<FileInfo> copyFileList, FileInfo fileInfo, String sourceUserId, String currentUserId, Date curDate, String newFilePid) {
-        String sourceFileId = fileInfo.getFileId();
-        fileInfo.setCreateTime(curDate);
-        fileInfo.setLastUpdateTime(curDate);
-        fileInfo.setFilePid(newFilePid);
-        fileInfo.setUserId(currentUserId);
-        String newFileId = StringTools.getRandomString(Constants.LENGTH_10);
-        fileInfo.setFileId(newFileId);
-        copyFileList.add(fileInfo);
-        if (FileFolderTypeEnums.FOLDER.getType().equals(fileInfo.getFolderType())) {
-            FileInfoQuery query = new FileInfoQuery();
-            query.setFilePid(sourceFileId);
-            query.setUserId(sourceUserId);
-            List<FileInfo> sourceFileList = this.fileInfoMapper.selectList(query);
-            for (FileInfo item : sourceFileList) {
-                findAllSubFile(copyFileList, item, sourceUserId, currentUserId, curDate, newFileId);
-            }
-        }
-    }
+
 
     @Override
     public Long getUserUseSpace(String userId) {
         return this.fileInfoMapper.selectUseSpace(userId);
     }
-
     @Override
     public void deleteFileByUserId(String userId) {
         this.fileInfoMapper.deleteFileByUserId(userId);
     }
 }
+
+

@@ -1,7 +1,6 @@
 package cn.sdu.fileupdownservice.service.impl;
 
 import cn.sdu.fileupdownservice.component.RedisComponent;
-import cn.sdu.fileupdownservice.entity.config.AppConfig;
 import cn.sdu.fileupdownservice.entity.constants.Constants;
 import cn.sdu.fileupdownservice.entity.enums.UserStatusEnum;
 import cn.sdu.fileupdownservice.entity.po.UserInfo;
