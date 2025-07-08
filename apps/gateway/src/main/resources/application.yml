@@ -12,6 +12,9 @@ spring:
         server-addr: localhost:8848
         file-extension: yaml
     gateway:
+      discovery:
+        locator:
+          enabled: true
       routes:
         - id: user-service
           uri: lb://user-service
@@ -37,13 +40,17 @@ spring:
             - Path=/api/membership/**
           filters:
             - StripPrefix=1
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
       globalcors:
         cors-configurations:
           '[/**]':
             allowedOriginPatterns: "*"
             allowedMethods: "*"
             allowedHeaders: "*"
-            allow-credentials: true
+#            allow-credentials: true
 
 management:
   endpoints:
