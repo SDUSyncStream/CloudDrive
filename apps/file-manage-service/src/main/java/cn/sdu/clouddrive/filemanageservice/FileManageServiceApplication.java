@@ -1,13 +1,13 @@
-package com.example.file_manage_server;
+package cn.sdu.clouddrive.filemanageservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FileManageServerApplication {
+public class FileManageServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(FileManageServerApplication.class, args);
+        SpringApplication.run(FileManageServiceApplication.class, args);
     }
 
 }

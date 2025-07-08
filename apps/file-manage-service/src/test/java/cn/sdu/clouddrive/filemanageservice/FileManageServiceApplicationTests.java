@@ -1,10 +1,10 @@
-package com.example.file_manage_server;
+package cn.sdu.clouddrive.filemanageservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class FileManageServerApplicationTests {
+class FileManageServiceApplicationTests {
 
     @Test
     void contextLoads() {
