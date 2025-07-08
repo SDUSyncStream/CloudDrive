@@ -58,6 +58,8 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '../stores/user'
+import { login } from '../api/auth'
+import axios from 'axios'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -81,44 +83,105 @@ const rules = {
 }
 
 const handleLogin = async () => {
+  // axios.request({
+  //   method: 'post',
+  //   url: '/api/auth/login',
+  //   data: {
+  //     username: loginForm.username,
+  //     passwordHash: loginForm.password
+  //   }
+  // }).then(response => {
+  //   if (response.data.code === 200) {
+  //     // 保存Token到localStorage
+  //     console.log('登录成功:', response.data.data)
+  //     localStorage.setItem('accessToken', response.data.data.token)
+  //     if (response.data.data.refreshToken) {
+  //       localStorage.setItem('refreshToken', response.data.data.refreshToken)
+  //     }
+
+  //     // 更新用户状态
+  //     userStore.setUser(response.data.data.userId)
+  //     userStore.setToken(response.data.data.token)
+
+  //     ElMessage.success('登录成功')
+  //     router.push('/main')
+  //   } else {
+  //     ElMessage.error(response.data.message || '登录失败')
+  //   }
+  // }).catch(error => {
+  //   console.error('登录错误:', error)
+  //   ElMessage.error(error.response?.data?.message || '登录失败，请稍后重试')
+  // })
   if (!formRef.value) return
   
   try {
     await formRef.value.validate()
     loading.value = true
     
+    console.log('发送登录请求:', { username: loginForm.username, password: '***' })
+    
     // 调用登录API
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: loginForm.username,
-        password: loginForm.password
-      })
-    })
+    const response = await login({ username: loginForm.username, passwordHash: loginForm.password })
+
+    console.log('登录响应:', response)
     
-    const result = await response.json()
-    
-    if (result.code === 200) {
+    if (response.data.code === 200) {
       // 保存Token到localStorage
-      localStorage.setItem('accessToken', result.data.accessToken)
-      localStorage.setItem('refreshToken', result.data.refreshToken)
-      
+      localStorage.setItem('accessToken', response.data.data.token)
+      if (response.data.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.data.refreshToken)
+      }
+
       // 更新用户状态
-      userStore.setUser(result.data.user)
-      userStore.setToken(result.data.accessToken)
-      
+      userStore.setUser(response.data.data.userId)
+      userStore.setToken(response.data.data.token)
+
       ElMessage.success('登录成功')
       router.push('/main')
     } else {
-      ElMessage.error(result.message || '登录失败')
+      ElMessage.error(response.data.message || '登录失败')
     }
     
-  } catch (error) {
-    console.error('登录错误:', error)
-    ElMessage.error('登录失败，请检查网络连接')
+  } catch (error: any) {
+    console.error('登录错误详情:', error)
+    console.error('错误响应:', error.response)
+    
+    // 处理不同类型的错误
+    let errorMessage = '登录失败'
+    
+    if (error.response) {
+      // 服务器响应了错误状态码
+      const status = error.response.status
+      const data = error.response.data
+      
+      console.log('错误状态码:', status)
+      console.log('错误数据:', data)
+      
+      switch (status) {
+        case 400:
+          errorMessage = data.message || '请求参数错误'
+          break
+        case 401:
+          errorMessage = data.message || '用户名或密码错误'
+          break
+        case 403:
+          errorMessage = data.message || '访问被拒绝，请检查凭据'
+          break
+        case 500:
+          errorMessage = '服务器内部错误，请稍后重试'
+          break
+        default:
+          errorMessage = data.message || `请求失败 (${status})`
+      }
+    } else if (error.request) {
+      // 网络错误
+      errorMessage = '网络连接失败，请检查网络设置'
+    } else if (error.message) {
+      // 其他错误
+      errorMessage = error.message
+    }
+    
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }

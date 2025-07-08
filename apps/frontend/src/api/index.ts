@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { ApiResponse } from '../types'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: '/api',  // 使用相对路径，通过Vite代理转发
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -26,10 +26,6 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
-    const data: ApiResponse = response.data
-    if (data.code !== 200) {
-      throw new Error(data.message || '请求失败')
-    }
     return response
   },
   async (error) => {
@@ -72,3 +68,48 @@ api.interceptors.response.use(
 
 export default api
 export { api as apiClient }
+
+// import axios from 'axios';
+// const baseURL = '/api';  // 使用代理，避免CORS问题
+// const instance = axios.create({
+//     timeout: 5000,
+//     baseURL
+// });
+
+
+// //http request 拦截器
+// instance.interceptors.request.use(
+//     config => {
+//       // 判断是否存在token，如果存在的话，则每个http header都加上token
+//       const token = window.localStorage.getItem('token');
+//       if (token) {
+//         config.headers.Authorization = "Bearer " + token;
+//       }
+//       config.headers['Content-Type'] = 'application/json';
+      
+//       return config;
+//     },
+//     error => {
+//       return Promise.reject(error);
+//     }
+// );
+
+
+// //http response 拦截器
+// // instance.interceptors.response.use(
+// //     response => {
+// //       return response;
+// //     },
+// //     error => {
+// //       const {response} = error;
+// //       if (response) {
+// //         // 请求已发出，但是不在2xx的范围
+// //         // showMessage(response.status);           // 传入响应码，匹配响应码对应信息
+// //         return Promise.reject(response.data);
+// //       } else {
+// //         ElMessage.warning('网络连接异常,请稍后再试!');
+// //       }
+// //     }
+// // );
+
+// export default instance;

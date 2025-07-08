@@ -1,10 +1,9 @@
-import api from './index';
+import request from './index';
 
-export const login = async (username,password) => {
-  return await api({
-    method: 'POST',
-    url: '/api/auth/login',
-    data: { username, password }
+export const login = async (data) => {
+  return await request({
+    method: 'post',
+    url: '/auth/login',  // 相对于baseURL的路径
+    data
   });
 }
-  
