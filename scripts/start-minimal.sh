@@ -1,8 +1,33 @@
 #!/bin/bash
 
+# ============================================================================
+# CloudDrive Minimal Backend Start Script
+# ============================================================================
+# Description: 启动CloudDrive最小后端微服务栈
+#
+# 包含服务:
+# - MySQL (3307) - 数据库
+# - Redis (6379) - 缓存
+# - Nacos (8848) - 服务注册发现中心
+# - Gateway (8080) - API网关
+# - User Service (8081) - 用户服务
+#
+# 功能:
+# - 自动构建必要的微服务
+# - 使用固定的Docker Compose配置
+# - 启动后端微服务栈
+# - 不包含前端服务 (使用start-frontend.sh单独启动)
+#
+# 使用方法: ./scripts/start-minimal.sh
+#
+# 要求:
+# - Docker Desktop
+# - Docker Compose
+# ============================================================================
+
 set -e  # Exit on any error
 
-echo "🚀 Starting CloudDrive minimal stack..."
+echo "🚀 Starting CloudDrive minimal backend stack..."
 
 # Function to check if command exists
 command_exists() {
@@ -37,124 +62,14 @@ fi
 DOCKER_COMPOSE_CMD=$(get_docker_compose_cmd)
 echo "✅ Docker environment OK"
 
-# Create minimal docker-compose override
-cat > docker/docker-compose.minimal.yml << 'EOF'
-services:
-  # Core infrastructure
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
-    restart: always
-    ports:
-      - "3307:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=root123
-      - MYSQL_DATABASE=cloud_drive
-      - MYSQL_USER=cloud_drive
-      - MYSQL_PASSWORD=cloud123
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ../sql:/docker-entrypoint-initdb.d
-    networks:
-      - cloud-drive-network
+# Check if docker-compose file exists
+if [ ! -f "docker/docker-compose.minimal.yml" ]; then
+    echo "❌ Error: docker/docker-compose.minimal.yml not found"
+    echo "💡 Make sure you are in the project root directory"
+    exit 1
+fi
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - cloud-drive-network
-
-  # Nacos service registry
-  nacos:
-    image: nacos/nacos-server:v2.2.0
-    platform: linux/amd64
-    container_name: nacos-server
-    ports:
-      - "8848:8848"
-      - "9848:9848"
-    environment:
-      - MODE=standalone
-      - JVM_XMS=256m
-      - JVM_XMX=256m
-    volumes:
-      - nacos_data:/home/nacos/data
-    depends_on:
-      - mysql
-    networks:
-      - cloud-drive-network
-
-  # API Gateway
-  gateway:
-    build:
-      context: ../apps/gateway
-      dockerfile: ../../docker/Dockerfile.gateway
-    container_name: gateway
-    ports:
-      - "8080:8080"
-    depends_on:
-      - nacos
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
-    networks:
-      - cloud-drive-network
-
-  # User Service
-  user-service:
-    build:
-      context: ../apps/user-service
-      dockerfile: ../../docker/Dockerfile.user-service
-    container_name: user-service
-    ports:
-      - "8081:8081"
-    depends_on:
-      - nacos
-      - mysql
-      - redis
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root123
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-    networks:
-      - cloud-drive-network
-
-  # Frontend
-  frontend:
-    build:
-      context: ../apps/frontend
-      dockerfile: ../../docker/Dockerfile.frontend
-    container_name: frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - gateway
-    environment:
-      - NODE_ENV=production
-      - VITE_API_URL=http://gateway:8080
-    networks:
-      - cloud-drive-network
-
-volumes:
-  mysql_data:
-    driver: local
-  nacos_data:
-    driver: local
-
-networks:
-  cloud-drive-network:
-    driver: bridge
-EOF
-
-echo "📝 Created minimal configuration"
+echo "📝 Using existing minimal backend configuration"
 
 # Check if built files exist
 echo "🔍 Checking if core services are built..."
@@ -198,22 +113,6 @@ if [ "$NEED_BUILD" = true ]; then
     # Build core services
     build_maven_service "Gateway" "apps/gateway"
     build_maven_service "User Service" "apps/user-service"
-    
-    # Build Frontend
-    echo "🎨 Building Frontend..."
-    if [ -d "apps/frontend" ]; then
-        cd apps/frontend
-        if [ ! -d "node_modules" ]; then
-            echo "📦 Installing frontend dependencies..."
-            npm install
-        fi
-        npm run build
-        echo "✅ Frontend built successfully"
-        cd - >/dev/null
-    else
-        echo "❌ Error: apps/frontend directory not found"
-        exit 1
-    fi
 fi
 
 echo ""
@@ -221,7 +120,7 @@ echo "🛑 Stopping any existing containers..."
 $DOCKER_COMPOSE_CMD -f docker/docker-compose.minimal.yml down 2>/dev/null || true
 
 echo ""
-echo "🏗️  Starting minimal microservices stack..."
+echo "🏗️  Starting minimal backend microservices stack..."
 $DOCKER_COMPOSE_CMD -f docker/docker-compose.minimal.yml up --build -d
 
 echo ""
@@ -229,11 +128,10 @@ echo "⏳ Waiting for services to start..."
 sleep 15
 
 echo ""
-echo "🎉 Minimal stack started successfully!"
+echo "🎉 Minimal backend stack started successfully!"
 echo ""
 echo "📱 Available Services:"
 echo "┌─────────────────────────────────────────────────────────┐"
-echo "│ 🎨 Frontend:        http://localhost:3000              │"
 echo "│ 🌐 API Gateway:     http://localhost:8080              │"
 echo "│ 👤 User Service:    http://localhost:8081              │"
 echo "│ 📊 Nacos Console:   http://localhost:8848/nacos        │"
@@ -242,11 +140,11 @@ echo "│ 🗄️  MySQL:           localhost:3307                    │"
 echo "│ 🔴 Redis:           localhost:6379                     │"
 echo "└─────────────────────────────────────────────────────────┘"
 echo ""
-echo "✨ This minimal stack includes:"
+echo "✨ This minimal backend stack includes:"
 echo "   • Core authentication and user management"
 echo "   • Service discovery and configuration"
 echo "   • Database and caching"
-echo "   • Frontend interface"
+echo "   • API Gateway for routing"
 echo ""
 echo "🔍 Check service status:"
 echo "   $DOCKER_COMPOSE_CMD -f docker/docker-compose.minimal.yml ps"

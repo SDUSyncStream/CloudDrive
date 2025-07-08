@@ -43,6 +43,7 @@
         <module>gateway</module> <!-- 假设这是顶级的 gateway 模块，不是 backend 下的那个 -->
         <module>membership-service</module>
         <module>user-service</module>
+        <module>auth-service</module>
         <!-- 如果还有其他顶级模块，请在这里添加 -->
     </modules>
 
@@ -66,6 +67,16 @@
                 <!-- ... 其他常用插件 -->
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>16</source>
+                    <target>16</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
 </project>
