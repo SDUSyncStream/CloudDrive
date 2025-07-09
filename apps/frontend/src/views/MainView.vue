@@ -13,7 +13,7 @@
                     <el-button type="primary" :icon="Bell" circle title="通知"></el-button>
                     <!-- <el-button :icon="FolderAdd">新建文件夹</el-button> -->
                     <el-dropdown @command="handleUserAction">
-                        <el-avatar :src="userStore.user?.avatar || undefined">
+                        <el-avatar :src="avatar || undefined">
                             {{ userStore.user?.username?.charAt(0).toUpperCase() }}
                         </el-avatar>
                         <template #dropdown>
@@ -21,7 +21,7 @@
                                 <div class="storage-info">
                                     <div class="storage-text">
                                         <span class="storage-used">{{ formatFileSize(storageUsed) }}</span>
-                                        <span class="storage-total">/ {{ formatFileSize(storageTotal) }}</span>
+                                        <span class="storage-total">/ {{ formatFileSize(storageQuota) }}</span>
                                     </div>
                                     <el-progress 
                                         :percentage="storagePercentage" 
@@ -84,7 +84,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, watch, onMounted, computed } from 'vue'
 import { formatFileSize } from '../utils'
-import { logout } from '@/api/auth'
+import { logout, getAvatarAndStorage } from '@/api/auth'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -93,12 +93,13 @@ const route = useRoute()
 const activeIndex = ref('/main/files')
 
 // 存储容量数据
-const storageUsed = ref(5368709120) // 5GB (示例数据)
-const storageTotal = ref(21474836480) // 20GB (示例数据)
+const storageUsed = ref(0) // 5GB (示例数据)
+const storageQuota = ref(0) // 20GB (示例数据)
+const avatar = ref('')
 
 // 计算存储使用百分比
 const storagePercentage = computed(() => {
-    return Math.round((storageUsed.value / storageTotal.value) * 100)
+    return Math.round((storageUsed.value / storageQuota.value) * 100)
 })
 
 // 获取存储进度条颜色
@@ -117,36 +118,46 @@ watch(() => route.path, (newPath) => {
 onMounted(() => {
     activeIndex.value = route.path
     // 获取用户存储使用情况
-    fetchStorageInfo()
+    // fetchStorageInfo()
+    getAvatarAndStorage(localStorage.getItem('UserId') || '').then(response => {
+        if (response.data.data) {
+            storageUsed.value = parseInt(response.data.data.storageUsed) || 0
+            storageQuota.value = parseInt(response.data.data.storageQuota) || 0
+            avatar.value = response.data.data.avatar || ''
+        }
+    }).catch(error => {
+        console.error('获取用户头像和存储信息失败:', error)
+    })
 })
 
 // 获取存储使用情况
-const fetchStorageInfo = async () => {
-    try {
-        // TODO: 调用API获取真实的存储数据
-        // const response = await api.get('/user/storage')
-        // storageUsed.value = response.data.used
-        // storageTotal.value = response.data.total
+// const fetchStorageInfo = async () => {
+//     try {
+//         // TODO: 调用API获取真实的存储数据
+//         // const response = await api.get('/user/storage')
+//         // storageUsed.value = response.data.used
+//         // storageTotal.value = response.data.total
         
-        // 模拟从用户store获取数据
-        const userPlan = (userStore.user as any)?.plan || 'free'
-        switch (userPlan) {
-            case 'free':
-                storageTotal.value = 5 * 1024 * 1024 * 1024 // 5GB
-                break
-            case 'premium':
-                storageTotal.value = 100 * 1024 * 1024 * 1024 // 100GB
-                break
-            case 'professional':
-                storageTotal.value = 1024 * 1024 * 1024 * 1024 // 1TB
-                break
-            default:
-                storageTotal.value = 5 * 1024 * 1024 * 1024 // 默认5GB
-        }
-    } catch (error) {
-        console.error('获取存储信息失败:', error)
-    }
-}
+//         // 模拟从用户store获取数据
+//         const userPlan = (userStore.user as any)?.plan || 'free'
+//         switch (userPlan) {
+//             case 'free':
+//                 storageTotal.value = 5 * 1024 * 1024 * 1024 // 5GB
+//                 break
+//             case 'premium':
+//                 storageTotal.value = 100 * 1024 * 1024 * 1024 // 100GB
+//                 break
+//             case 'professional':
+//                 storageTotal.value = 1024 * 1024 * 1024 * 1024 // 1TB
+//                 break
+//             default:
+//                 storageTotal.value = 5 * 1024 * 1024 * 1024 // 默认5GB
+//         }
+//     } catch (error) {
+//         console.error('获取存储信息失败:', error)
+//     }
+// }
+
 
 
 const handleUserAction = (command: string) => {

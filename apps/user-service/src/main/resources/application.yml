@@ -14,10 +14,15 @@ spring:
     resources:
       static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/
 
-# JWT??
+# JWT配置
 jwt:
   secret: mySecretKey123456789012345678901234567890
-  expiration: 86400000  # 24??????
+  expiration: 86400000  # 24小时
+
+# 图片托管平台配置
+image:
+  hosting:
+    token: 1311|DrXIuLwUup5B4kiakrbt4yl5aBNQD195AEQPcScj  # 请在这里填入你的图片托管平台token，格式如：1|1bJbwlqBfnggmOMEZqXT5XusaIwqiZjCDs7r1Ob5
 
 server:
   port: 8082

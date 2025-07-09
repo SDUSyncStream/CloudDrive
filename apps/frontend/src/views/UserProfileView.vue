@@ -23,7 +23,7 @@
           <div class="avatar-container">
             <el-avatar
               :size="120"
-              :src="`/api/user${userInfo.avatar}`"
+              :src="userInfo.avatar"
               class="user-avatar"
             >
               <el-icon><User /></el-icon>

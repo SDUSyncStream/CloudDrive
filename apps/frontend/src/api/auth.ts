@@ -41,6 +41,7 @@ export const updateUserInfo = async (data: any) => {
 export const uploadAvatar = async (file: File) => {
   const formData = new FormData();
   formData.append('avatar', file);
+  formData.append('userId', localStorage.getItem('UserId') || ''); // 添加用户ID到表单数据
   
   return await request({
     method: 'post',
@@ -82,4 +83,11 @@ export const rePwd = async (data) => {
     url: '/auth/refresh',
     data
   })
+}
+
+export const getAvatarAndStorage = async (userId) => {
+  return await request({
+    method: 'get',
+    url: `/user/avatarandstorage/${userId}`,  // 获取用户头像和存储信息
+  });
 }

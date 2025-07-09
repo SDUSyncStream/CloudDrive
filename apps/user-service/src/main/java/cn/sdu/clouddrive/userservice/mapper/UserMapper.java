@@ -15,4 +15,7 @@ public interface UserMapper
 
     @Update("update users set password_hash = #{newPassword} where id = #{userId} and password_hash = #{oldPassword}")
     public Boolean updatePwd(NewPwd newPwd);
+
+    @Update("update users set avatar = #{avatarUrl} where id = #{userId}")
+    public Boolean updateAvatar(String userId, String avatarUrl);
 }

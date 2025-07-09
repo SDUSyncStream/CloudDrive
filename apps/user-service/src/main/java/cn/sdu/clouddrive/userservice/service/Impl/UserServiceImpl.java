@@ -24,4 +24,17 @@ public class UserServiceImpl implements UserService
     {
         return userMapper.updatePwd(newPwd);
     }
+
+    @Override
+    public Boolean updateAvatar(String userId, String avatarUrl)
+    {
+        return userMapper.updateAvatar(userId, avatarUrl);
+    }
+
+    @Override
+    public User getAvatarAndStorage(String userId)
+    {
+        return userMapper.getUserInfo(userId);
+    }
+
 }
