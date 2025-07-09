@@ -280,13 +280,6 @@
 </template>
 
 <script setup lang="ts">
-<<<<<<< Updated upstream
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import SparkMD5 from 'spark-md5'
-import { formatDate } from '../utils'
-=======
 import {onMounted, ref} from 'vue'
 import { useRouter } from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
@@ -294,20 +287,13 @@ import { useUserStore } from '../stores/user'
 import { formatFileSize, formatDate } from '../utils'
 import type { CloudFile } from '../types'
 import axios from 'axios'
->>>>>>> Stashed changes
 
 const router = useRouter()
 
 const viewMode = ref<'grid' | 'list'>('list')
-<<<<<<< Updated upstream
-const showUploader = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
-const currentPath = ref<string[]>(['文档', '项目文件', '2024年度'])
-=======
 
 // 当前路径导航
 const currentPath = []
->>>>>>> Stashed changes
 
 // 文件上传相关状态和变量
 const STATUS = {
@@ -700,12 +686,7 @@ const generatePath = (index: number) => {
 }
 
 const handleFileClick = (item: any) => {
-<<<<<<< Updated upstream
   console.log('File clicked:', item)
-}
-=======
-
-
 }
 
 const handleViewClick = (item) => {
@@ -755,7 +736,6 @@ const upload=async () => {
   };
   fileInput.click();
 };
->>>>>>> Stashed changes
 </script>
 
 <style scoped>

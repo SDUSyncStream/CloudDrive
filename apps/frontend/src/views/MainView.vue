@@ -84,11 +84,8 @@ import { ElMessage } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, watch, onMounted, computed } from 'vue'
 import { formatFileSize } from '../utils'
-<<<<<<< Updated upstream
 import { logout, getAvatarAndStorage } from '@/api/auth'
-=======
 import axios from "axios";
->>>>>>> Stashed changes
 
 const userStore = useUserStore()
 const router = useRouter()
