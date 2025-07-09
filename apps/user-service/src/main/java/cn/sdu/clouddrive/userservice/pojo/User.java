@@ -15,4 +15,5 @@ public class User
     private BigInteger storageQuota;
     private BigInteger storageUsed;
     private Date createdAt;
+    private String membershipLevelId;
 }
