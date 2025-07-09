@@ -4,9 +4,8 @@
       <template #header>
         <div class="card-header">
           <h2>个人资料</h2>
-        </div>
-        <!--返回主页面-->
-        <el-button 
+          <!--返回主页面按钮 - 居右-->
+          <el-button 
             type="primary" 
             plain 
             @click="goBack"
@@ -15,6 +14,7 @@
             <el-icon><ArrowLeft /></el-icon>
             返回主页
           </el-button>
+        </div>
       </template>
 
       <div class="profile-content">
@@ -69,10 +69,10 @@
 
             <el-form-item label="会员等级">
               <el-tag
-                :type="getMembershipTagType(userInfo.membershipLevel)"
+                :type="getMembershipTagType(userInfo.membershipLevelId)"
                 size="large"
               >
-                {{ userInfo.membershipLevel || '普通用户' }}
+                {{ userInfo.membershipLevelId || '普通用户' }}
               </el-tag>
             </el-form-item>
 
@@ -194,7 +194,7 @@ const userInfo = ref<UserType>({
   updatedAt: new Date(),
   storageUsed: 0,
   storageQuota: 1024 * 1024 * 1024 * 5, // 5GB 默认
-  membershipLevel: '普通用户'
+  membershipLevelId: '普通用户'
 })
 
 // 密码修改表单
@@ -365,10 +365,10 @@ const formatDate = (date: Date | string): string => {
 
 const getMembershipTagType = (level?: string) => {
   switch (level) {
-    case '普通用户': return ''
-    case '高级用户': return 'success'
-    case 'VIP用户': return 'warning'
-    case '企业用户': return 'danger'
+    case 'level-free': return ''
+    case 'level-basic': return 'success'
+    case 'level-premium': return 'warning'
+    case 'level-enterprise': return 'danger'
     default: return ''
   }
 }
@@ -407,6 +407,11 @@ onMounted(() => {
   margin: 0;
   color: #2c3e50;
   font-weight: 600;
+}
+
+.back-button {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .profile-content {
