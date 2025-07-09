@@ -8,6 +8,7 @@ import cn.sdu.fileupdownservice.entity.query.UserInfoQuery;
 import cn.sdu.fileupdownservice.mappers.UserInfoMapper;
 import cn.sdu.fileupdownservice.service.FileInfoService;
 import cn.sdu.fileupdownservice.service.UserInfoService;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,5 +59,13 @@ public class UserInfoServiceImpl implements UserInfoService {
         Long space = changeSpace * Constants.MB;
         this.userInfoMapper.updateUserSpace(userId, null, space);
         redisComponent.resetUserSpaceUse(userId);
+    }
+    @Override
+    public UserInfo selectByUserId(String userId) {
+        return this.userInfoMapper.selectByUserId(userId);
+    }
+    @Override
+    public UserInfo selectUser( String userId) {
+        return this.userInfoMapper.selectUser(userId);
     }
 }
