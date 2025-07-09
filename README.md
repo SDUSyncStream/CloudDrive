@@ -8,11 +8,12 @@
 |------|------|------|
 | 🎨 **前端 (Vue 3)** | ✅ **完成** | 完整的用户界面，可独立运行 |
 | 🌐 **API网关** | ✅ **完成** | Spring Cloud Gateway (8080) |
-| 👤 **用户服务** | ✅ **完成** | JWT认证 + 用户管理 (8081) |
+| 🔐 **认证服务** | ✅ **完成** | JWT认证 + Redis Token管理 (8081) |
 | 📁 **文件服务** | ⏳ **架构完成** | Hadoop HDFS + Flink集成 (8082) |
 | 🛠️ **管理服务** | ⏳ **架构完成** | 系统管理 + 监控 (8083) |
-| 💎 **会员服务** | ⏳ **架构完成** | 订阅管理 + 支付 (8084) |
+| 💎 **会员服务** | ✅ **完成** | 订阅管理 + 支付 (8084) |
 | 📊 **服务注册** | ✅ **完成** | Nacos服务发现 + 配置中心 |
+| 🔴 **Redis缓存** | ✅ **完成** | Token存储 + 会话管理 |
 | 🐳 **容器化** | ✅ **完成** | 微服务Docker编排 |
 | 🗄️ **数据库** | ✅ **完成** | MySQL + 会员表设计 |
 | 🔄 **CI/CD** | ✅ **完成** | GitHub Actions自动化 |
@@ -49,17 +50,17 @@ Frontend (Vue3) → Gateway (8080) → Microservices
 │  Infrastructure Services                        │
 │  • Nacos (8848) - 服务发现 + 配置中心              │
 │  • MySQL - 业务数据                              │
-│  • Redis - 缓存                                 │
+│  • Redis - Token存储 + 缓存 ✅                   │
 │  • Hadoop HDFS - 分布式文件存储                   │
 │  • Flink - 实时流处理                            │
 └─────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────┐
 │  Business Microservices                         │
-│  • User Service (8081) - 用户认证               │
+│  • Auth Service (8081) - JWT认证 + Token管理 ✅ │
 │  • File Service (8082) - 文件操作               │
 │  • Admin Service (8083) - 系统管理              │
-│  • Membership Service (8084) - 会员管理         │
+│  • Membership Service (8084) - 会员管理 ✅      │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -394,13 +395,49 @@ sudo firewall-cmd --reload
 ### 🌟 功能体验
 **当前可体验的完整功能：**
 - ✅ **微服务架构** - 完整的Spring Cloud Alibaba技术栈
-- ✅ **用户认证** - JWT登录 + 注册功能
+- ✅ **用户认证** - JWT登录 + Redis Token管理 + 注册功能
 - ✅ **API网关** - 统一路由和负载均衡
 - ✅ **服务发现** - Nacos自动服务注册发现
 - ✅ **响应式前端** - Vue 3 + Element Plus UI (已集成到微服务)
 - ✅ **容器化部署** - 一键Docker启动
 - ✅ **跨平台支持** - 完美支持x86_64和ARM64(Apple Silicon)架构
 - ✅ **前后端联调** - 前端通过Gateway与微服务通信
+- ✅ **Redis集成** - Token存储 + 多数据库支持
+- ✅ **会员管理** - 完整的订阅和支付功能
+- ✅ **跨服务认证** - 微服务间Token验证API
+
+### 🔐 认证服务特性 (Redis配置已修复)
+**完整的企业级认证功能：**
+- ✅ **用户注册** - 支持用户名 + 邮箱注册，UUID生成
+- ✅ **JWT登录** - 安全的Token生成和验证
+- ✅ **Redis Token存储** - 分布式Token管理 (database 0)
+- ✅ **验证码系统** - 邮箱验证码存储 (database 1)
+- ✅ **Token验证API** - 供其他微服务调用的认证接口
+- ✅ **安全登出** - Token失效和清理
+- ✅ **密码重置** - 基于验证码的密码重置功能
+- ✅ **会话管理** - 完整的用户会话生命周期
+
+**测试命令示例：**
+```bash
+# 用户注册
+curl -X POST "http://localhost:8080/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "passwordHash": "hashed_password", "email": "test@example.com"}'
+
+# 用户登录
+curl -X POST "http://localhost:8080/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "passwordHash": "hashed_password"}'
+
+# Token验证 (跨服务调用)
+curl -X POST "http://localhost:8080/api/auth/verify" \
+  -H "Content-Type: application/json" \
+  -d '{"token": "your_jwt_token"}'
+
+# 安全登出
+curl -X POST "http://localhost:8080/api/auth/logout" \
+  -H "Authorization: Bearer your_jwt_token"
+```
 
 ## 📱 项目预览
 
@@ -451,13 +488,14 @@ sql/                        # 数据库 (已完成)
 
 ### 🗓️ 开发路线图
 
-#### Phase 1: 核心微服务完善 ⏳
-- [x] ✅ 用户服务 - JWT认证 + 用户管理
+#### Phase 1: 核心微服务完善 🎯
+- [x] ✅ 认证服务 - JWT + Redis Token管理 (完全完成)
 - [x] ✅ API网关 - 路由 + 负载均衡  
 - [x] ✅ 服务注册 - Nacos集成
+- [x] ✅ 会员服务 - 订阅 + 支付模块 (完全完成)
+- [x] ✅ Redis集成 - Token存储 + 多数据库支持
 - [ ] 🔄 文件服务 - Hadoop HDFS集成
 - [ ] 🔄 管理服务 - 跨服务管理APIs
-- [ ] 🔄 会员服务 - 订阅 + 支付模块
 
 #### Phase 2: 大数据集成 📊
 - [ ] 🔄 Flink流处理 - 文件实时处理
@@ -492,7 +530,16 @@ sql/                        # 数据库 (已完成)
 
 ## 📝 更新日志
 
-### v0.2.1 (当前版本) - 前端集成完成
+### v0.2.2 (当前版本) - 认证服务Redis配置修复
+- ✅ **Redis配置修复** - 完全解决auth-service的Redis连接问题
+- ✅ **认证功能完善** - 用户登录/登出/Token验证功能全部正常
+- ✅ **配置现代化** - 升级到Spring Boot 3.x推荐的Redis配置方式
+- ✅ **多数据库支持** - Redis database 0(token) + database 1(验证码)
+- ✅ **环境变量优化** - 完全通过环境变量控制Redis连接
+- ✅ **连接池优化** - 添加Jedis连接池配置，提升性能
+- ✅ **微服务认证** - 跨服务Token验证API完全可用
+
+### v0.2.1 - 前端集成完成
 - ✅ **前端微服务集成** - Vue 3前端完全集成到微服务架构
 - ✅ **ARM64完美支持** - Apple Silicon Mac零配置运行
 - ✅ **端口冲突解决** - MySQL使用3307端口避免冲突
