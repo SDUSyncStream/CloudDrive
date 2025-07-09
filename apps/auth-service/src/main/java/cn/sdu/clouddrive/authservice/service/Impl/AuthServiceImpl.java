@@ -23,25 +23,25 @@ public class AuthServiceImpl implements AuthService
     }
 
     @Override
-    public boolean register(RegisterInfo registerInfo)
+    public Boolean register(RegisterInfo registerInfo)
     {
         return authMapper.register(registerInfo);
     }
 
     @Override
-    public boolean isUsernameExist(String username)
+    public Boolean isUsernameExist(String username)
     {
         return authMapper.isUsernameExist(username);
     }
 
     @Override
-    public boolean isEmailExist(String email)
+    public Boolean isEmailExist(String email)
     {
         return authMapper.isEmailExist(email);
     }
 
     @Override
-    public boolean refresh(Map<String, String> map)
+    public Boolean refresh(Map<String, String> map)
     {
         return authMapper.refresh(map);
     }

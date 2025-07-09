@@ -73,6 +73,12 @@ spring:
             - Path=/api/auth/**
           filters:
             - RewritePath=/api/auth/(?<segment>.*),/api/auth/$\{segment}
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**.jpg
+          filters:
+            - RewritePath=/auth/(?<segment>.*),/$\{segment}
 
 
 management:

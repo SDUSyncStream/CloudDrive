@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -29,22 +30,30 @@ public class RegisterController {
 
         try {
             // 检查用户名是否已存在
-            if (authService.isUsernameExist(registerInfo.getUsername())) {
+            if (authService.isUsernameExist(registerInfo.getUsername())!=null) {
                 return ServerResult.error(409, "用户名已存在");
             }
 
             // 检查邮箱是否已存在（如果提供了邮箱）
             if (registerInfo.getEmail() != null && !registerInfo.getEmail().isEmpty()) {
-                if (authService.isEmailExist(registerInfo.getEmail())) {
+                if (authService.isEmailExist(registerInfo.getEmail())!=null) {
                     return ServerResult.error(409, "邮箱已被注册");
                 }
             }
+
+            // 检查完邮箱和用户名正确性后，生成UUID
+            String userId = UUID.randomUUID().toString();
+            registerInfo.setUserId(userId);
+
+            log.info("为用户 {} 生成UUID: {}", registerInfo.getUsername(), userId);
+
+            registerInfo.setAvatar("/user.jpg");
 
             // 执行注册
             boolean registerSuccess = authService.register(registerInfo);
 
             if (registerSuccess) {
-                log.info("用户 {} 注册成功", registerInfo.getUsername());
+                log.info("用户 {} 注册成功，用户ID: {}", registerInfo.getUsername(), userId);
                 return ServerResult.ok("注册成功");
             } else {
                 return ServerResult.error(500, "注册失败，请稍后重试");

@@ -84,7 +84,7 @@ public class AuthController
         }
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/api/auth/logout")
     public ServerResult<String> logout(@RequestHeader("Authorization") String token)
     {
         log.info("用户登出请求，token: {}", token);
@@ -119,7 +119,7 @@ public class AuthController
         }
     }
 
-    @PostMapping("/refresh")
+    @PostMapping("/api/auth/refresh")
     public ServerResult<Map<String, String>> refresh(@RequestBody Map<String, String> map)
     {
         //map中有username,email,验证码，新密码

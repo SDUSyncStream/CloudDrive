@@ -4,7 +4,9 @@ import lombok.Data;
 
 @Data
 public class RegisterInfo {
+    private String userId;
     private String username;
-    private String password;
+    private String passwordHash;
     private String email;
+    private String avatar;
 }

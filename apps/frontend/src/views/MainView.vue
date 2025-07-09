@@ -84,6 +84,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, watch, onMounted, computed } from 'vue'
 import { formatFileSize } from '../utils'
+import { logout } from '@/api/auth'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -157,9 +158,14 @@ const handleUserAction = (command: string) => {
             router.push('/vip')
             break
         case 'logout':
-            userStore.logout()
-            ElMessage.success('已退出登录')
-            router.push('/login')
+            logout().then(() => {
+                userStore.logout()
+                ElMessage.success('已成功退出登录')
+                router.push('/login')
+            }).catch(error => {
+                console.error('退出登录失败:', error)
+                ElMessage.error('退出登录失败，请稍后重试')
+            })
             break
         default:
             break

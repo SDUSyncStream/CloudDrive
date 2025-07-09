@@ -67,6 +67,8 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '../stores/user'
+import { register } from '@/api/auth'
+import { encryptPassword } from '@/utils/crypto'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -101,29 +103,37 @@ const handleregis = async () => {
     await formRef.value.validate()
     loading.value = true
     
-    // TODO: 调用登录API
-    // const response = await api.post('/auth/regis', regisForm)
+    console.log('原始密码长度:', regisForm.password.length)
     
-    // 模拟登录成功
-    const mockUser = {
-      id: 'user-1',
+    // 加密密码
+    const encryptedPassword = await encryptPassword(regisForm.password)
+    console.log('加密后密码长度:', encryptedPassword.length)
+    
+    // 准备发送的数据，使用加密后的密码
+    const requestData = {
       username: regisForm.username,
-      email: 'user@example.com',
-      avatar: '',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      passwordHash: encryptedPassword,  // 后端可能期望这个字段名
+      email: regisForm.email
     }
     
-    const mockToken = 'mock-jwt-token'
+    console.log('发送注册请求:', { ...requestData, passwordHash: '***' })
     
-    userStore.setUser(mockUser)
-    userStore.setToken(mockToken)
+    const response = await register(requestData)
+    console.log('注册响应:', response)
     
     ElMessage.success('注册成功')
     router.push('/login')
+  } catch (error: any) {
+    console.error('注册错误:', error)
     
-  } catch (error) {
-    ElMessage.error('注册失败')
+    let errorMessage = '注册失败'
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }
@@ -131,6 +141,11 @@ const handleregis = async () => {
 </script>
 
 <style scoped>
+.regis-page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+}
 .regis-page {
   height: 100vh;
   display: flex;
