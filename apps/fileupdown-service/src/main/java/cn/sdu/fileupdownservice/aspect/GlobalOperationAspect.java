@@ -67,9 +67,9 @@ public class GlobalOperationAspect {
             /**
              * 校验登录
              */
-            if (interceptor.checkLogin() || interceptor.checkAdmin()) {
-                checkLogin(interceptor.checkAdmin());
-            }
+//            if (interceptor.checkLogin() ) {
+//                checkLogin(false);
+//            }
             /**
              * 校验参数
              */

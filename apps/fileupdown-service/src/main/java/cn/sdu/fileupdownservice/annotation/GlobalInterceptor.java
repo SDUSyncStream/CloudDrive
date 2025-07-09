@@ -29,5 +29,5 @@ public @interface GlobalInterceptor {
      *
      * @return
      */
-    boolean checkAdmin() default false;
+   // boolean checkAdmin() default false;
 }

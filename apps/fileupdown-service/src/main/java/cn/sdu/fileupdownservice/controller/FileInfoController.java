@@ -4,7 +4,10 @@ import cn.sdu.fileupdownservice.annotation.GlobalInterceptor;
 import cn.sdu.fileupdownservice.annotation.VerifyParam;
 import cn.sdu.fileupdownservice.entity.dto.SessionWebUserDto;
 import cn.sdu.fileupdownservice.entity.dto.UploadResultDto;
+import cn.sdu.fileupdownservice.entity.po.UserInfo;
+import cn.sdu.fileupdownservice.entity.query.UserInfoQuery;
 import cn.sdu.fileupdownservice.entity.vo.ResponseVO;
+import cn.sdu.fileupdownservice.service.impl.UserInfoServiceImpl;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,9 +26,16 @@ import java.util.List;
 public class FileInfoController extends CommonFileController {
 
 
+    private final UserInfoServiceImpl userInfoService;
+
+    public FileInfoController(UserInfoServiceImpl userInfoService) {
+        super();
+        this.userInfoService = userInfoService;
+    }
+
     @RequestMapping("/uploadFile")
     @GlobalInterceptor(checkParams = true)
-    public ResponseVO uploadFile(HttpSession session,
+    public ResponseVO uploadFile(String userId,
                                  String fileId,
                                  MultipartFile file,
                                  @VerifyParam(required = true) String fileName,
@@ -34,8 +44,14 @@ public class FileInfoController extends CommonFileController {
                                  @VerifyParam(required = true) Integer chunkIndex,
                                  @VerifyParam(required = true) Integer chunks) {
 
-        SessionWebUserDto webUserDto = getUserInfoFromSession(session);
-
+        SessionWebUserDto webUserDto = new SessionWebUserDto();
+        UserInfoQuery query = new UserInfoQuery();
+        query.setUserId(userId);
+        List<UserInfo> userInfo = userInfoService.findListByParam(query);
+        webUserDto.setUserId(userId);
+        webUserDto.setNickName(userInfo.get(0).getNickName());
+        webUserDto.setAdmin(false);
+        webUserDto.setAvatar(userInfo.get(0).getQqAvatar());
         UploadResultDto resultDto = fileInfoService.uploadFile(webUserDto, fileId, file, fileName, filePid, fileMd5, chunkIndex, chunks);
         return getSuccessResponseVO(resultDto);
     }
@@ -75,7 +91,7 @@ public class FileInfoController extends CommonFileController {
     }
 
     @RequestMapping("/download/{code}")
-    @GlobalInterceptor(checkLogin = false, checkParams = true)
+    @GlobalInterceptor( checkParams = true)
     public void download(HttpServletRequest request, HttpServletResponse response, @PathVariable("code") @VerifyParam(required = true) String code) throws Exception {
         super.download(request, response, code);
     }

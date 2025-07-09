@@ -3,11 +3,13 @@ package cn.sdu.clouddrive.authservice.controller;
 import cn.sdu.clouddrive.authservice.mapper.AuthMapper;
 import cn.sdu.clouddrive.authservice.pojo.LoginInfo;
 import cn.sdu.clouddrive.authservice.pojo.ServerResult;
+
 import cn.sdu.clouddrive.authservice.pojo.UserBasicInfo;
 import cn.sdu.clouddrive.authservice.service.AuthService;
 import cn.sdu.clouddrive.authservice.service.Redis1Service;
 import cn.sdu.clouddrive.authservice.service.RedisService;
 import cn.sdu.clouddrive.authservice.util.JwtUtil;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
