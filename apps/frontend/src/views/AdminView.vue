@@ -66,13 +66,13 @@
               <el-icon><Folder /></el-icon>
               <span>文件管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin/settings">
-              <el-icon><Setting /></el-icon>
-              <span>系统设置</span>
+            <el-menu-item index="/admin/orders">
+              <el-icon><Tickets /></el-icon>
+              <span>订单管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin/security">
-              <el-icon><Lock /></el-icon>
-              <span>安全管理</span>
+            <el-menu-item index="/admin/dish">
+              <el-icon><Files /></el-icon>
+              <span>套餐设置</span>
             </el-menu-item>
           </el-menu>
         </el-aside>
@@ -92,7 +92,7 @@ import {
   Folder,        // 文件夹图标
   Setting,       // 设置图标
   Lock,          // 锁图标
-  Star           // 星星图标
+  Star, Shop, List, Tickets, Files           // 星星图标
 } from '@element-plus/icons-vue' // 导入所需的 Element Plus 图标
 
 import { useAdminStore } from '../stores/admin' //

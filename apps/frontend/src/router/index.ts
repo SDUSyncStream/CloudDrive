@@ -48,6 +48,16 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminFiles',
         component: () => import('../views/AdminFilesView.vue')
       },
+      {
+        path: '/admin/orders',
+        name: 'AdminOrders',
+        component: () => import('../views/AdminOrderView.vue')
+      },
+      {
+        path: '/admin/dish',
+        name: 'AdminDish',
+        component: () => import('../views/AdminDishView.vue')
+      }
     ]
   },
   {
