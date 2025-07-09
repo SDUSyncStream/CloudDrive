@@ -19,14 +19,6 @@ spring:
         server-addr: localhost:8848
         file-extension: yaml
 
-    # Hadoop HDFS configuration
-hadoop:
-  namenode:
-    host: localhost
-    port: 9000
-  fs:
-    defaultFS: hdfs://localhost:9000
-
 management:
   endpoints:
     web:
@@ -38,5 +30,7 @@ management:
 server:
   port: 8090
 mybatis:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath*:mappers/**/*.xml
+project:
+  folder: E:/IDEA java project/CloudDrive/
 

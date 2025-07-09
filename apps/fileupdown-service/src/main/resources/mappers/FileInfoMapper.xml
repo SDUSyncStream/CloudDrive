@@ -4,7 +4,7 @@
 <mapper namespace="cn.sdu.fileupdownservice.mappers.FileInfoMapper">
 
     <!--实体映射-->
-    <resultMap id="base_result_map" type="com.easypan.entity.po.FileInfo">
+    <resultMap id="base_result_map" type="cn.sdu.fileupdownservice.entity.po.FileInfo">
         <!--文件ID-->
         <result column="file_id" property="fileId"/>
         <!--用户ID-->
@@ -188,7 +188,7 @@
     </select>
 
     <!-- 插入 （匹配有值的字段）-->
-    <insert id="insert" parameterType="com.easypan.entity.po.FileInfo">
+    <insert id="insert" parameterType="cn.sdu.fileupdownservice.entity.po.FileInfo">
         INSERT INTO file_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="bean.fileId != null">
@@ -293,7 +293,7 @@
     </insert>
 
     <!-- 插入或者更新 （匹配有值的字段）-->
-    <insert id="insertOrUpdate" parameterType="com.easypan.entity.po.FileInfo">
+    <insert id="insertOrUpdate" parameterType="cn.sdu.fileupdownservice.entity.po.FileInfo">
         INSERT INTO file_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="bean.fileId != null">
@@ -449,7 +449,7 @@
     </insert>
 
     <!-- 添加 （批量插入）-->
-    <insert id="insertBatch" parameterType="com.easypan.entity.po.FileInfo">
+    <insert id="insertBatch" parameterType="cn.sdu.fileupdownservice.entity.po.FileInfo">
         INSERT INTO file_info(
         file_id,
         user_id,
@@ -491,7 +491,7 @@
     </insert>
 
     <!-- 批量新增修改 （批量插入）-->
-    <insert id="insertOrUpdateBatch" parameterType="com.easypan.entity.po.FileInfo">
+    <insert id="insertOrUpdateBatch" parameterType="cn.sdu.fileupdownservice.entity.po.FileInfo">
         INSERT INTO file_info(
         file_id,
         user_id,
@@ -550,7 +550,7 @@
     </insert>
 
     <!-- 根据FileIdAndUserId修改-->
-    <update id="updateByFileIdAndUserId" parameterType="com.easypan.entity.po.FileInfo">
+    <update id="updateByFileIdAndUserId" parameterType="cn.sdu.fileupdownservice.entity.po.FileInfo">
         UPDATE file_info
         <set>
             <if test="bean.fileMd5 != null">

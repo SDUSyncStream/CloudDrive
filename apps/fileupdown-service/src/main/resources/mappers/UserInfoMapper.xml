@@ -4,7 +4,7 @@
 <mapper namespace="cn.sdu.fileupdownservice.mappers.UserInfoMapper">
 
     <!--实体映射-->
-    <resultMap id="base_result_map" type="com.easypan.entity.po.UserInfo">
+    <resultMap id="base_result_map" type="cn.sdu.fileupdownservice.entity.po.UserInfo">
         <!--用户ID-->
         <result column="user_id" property="userId"/>
         <!--昵称-->
@@ -138,7 +138,7 @@
     </select>
 
     <!-- 插入 （匹配有值的字段）-->
-    <insert id="insert" parameterType="com.easypan.entity.po.UserInfo">
+    <insert id="insert" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         INSERT INTO user_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="bean.userId != null">
@@ -213,7 +213,7 @@
     </insert>
 
     <!-- 插入或者更新 （匹配有值的字段）-->
-    <insert id="insertOrUpdate" parameterType="com.easypan.entity.po.UserInfo">
+    <insert id="insertOrUpdate" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         INSERT INTO user_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="bean.userId != null">
@@ -324,7 +324,7 @@
     </insert>
 
     <!-- 添加 （批量插入）-->
-    <insert id="insertBatch" parameterType="com.easypan.entity.po.UserInfo">
+    <insert id="insertBatch" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         INSERT INTO user_info(
         user_id,
         nick_name,
@@ -356,7 +356,7 @@
     </insert>
 
     <!-- 批量新增修改 （批量插入）-->
-    <insert id="insertOrUpdateBatch" parameterType="com.easypan.entity.po.UserInfo">
+    <insert id="insertOrUpdateBatch" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         INSERT INTO user_info(
         user_id,
         nick_name,
@@ -400,7 +400,7 @@
     </insert>
 
     <!-- 根据UserId修改-->
-    <update id="updateByUserId" parameterType="com.easypan.entity.po.UserInfo">
+    <update id="updateByUserId" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         UPDATE user_info
         <set>
             <if test="bean.nickName != null">
@@ -452,7 +452,7 @@
     </select>
 
     <!-- 根据Email修改-->
-    <update id="updateByEmail" parameterType="com.easypan.entity.po.UserInfo">
+    <update id="updateByEmail" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         UPDATE user_info
         <set>
             <if test="bean.userId != null">
@@ -504,7 +504,7 @@
     </select>
 
     <!-- 根据NickName修改-->
-    <update id="updateByNickName" parameterType="com.easypan.entity.po.UserInfo">
+    <update id="updateByNickName" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         UPDATE user_info
         <set>
             <if test="bean.userId != null">
@@ -556,7 +556,7 @@
     </select>
 
     <!-- 根据QqOpenId修改-->
-    <update id="updateByQqOpenId" parameterType="com.easypan.entity.po.UserInfo">
+    <update id="updateByQqOpenId" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
         UPDATE user_info
         <set>
             <if test="bean.userId != null">
@@ -593,12 +593,7 @@
         where qq_open_id=#{qqOpenId}
     </update>
 
-    <!-- 根据QqOpenId删除-->
-    <delete id="deleteByQqOpenId">
-        delete
-        from user_info
-        where qq_open_id = #{qqOpenId}
-    </delete>
+
 
     <!-- 根据PrimaryKey获取对象-->
     <select id="selectByQqOpenId" resultMap="base_result_map">

@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8090,
+    port: 3000,
     proxy: {
       '/admin-api': {
         target: 'http://localhost:8083',
@@ -18,6 +18,10 @@ export default defineConfig({
       },
       '/api': {
         target: 'http://localhost:8999',
+        changeOrigin: true,
+      },
+      '/file/uploadFile': {
+        target: 'http://localhost:8090',
         changeOrigin: true,
       },
 

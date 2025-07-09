@@ -193,7 +193,7 @@ public class FileInfoServiceImpl implements FileInfoService {
             fileInfo.setDelFlag(FileDelFlagEnums.USING.getFlag());
             this.fileInfoMapper.insert(fileInfo);
 
-            Long totalSize = redisComponent.getFileTempSize(webUserDto.getUserId(), fileId);
+           Long totalSize = redisComponent.getFileTempSize(webUserDto.getUserId(), fileId);
             updateUserSpace(webUserDto, totalSize);
 
             resultDto.setStatus(UploadStatusEnums.UPLOAD_FINISH.getCode());
