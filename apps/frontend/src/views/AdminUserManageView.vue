@@ -8,7 +8,7 @@
           <el-input v-model="searchForm.keyword" placeholder="输入用户名或邮箱" clearable></el-input>
         </el-form-item>
         <el-form-item label="用户等级">
-          <el-select v-model="searchForm.userLevel" placeholder="选择用户等级" clearable>
+          <el-select v-model="searchForm.userLevel" placeholder="选择用户等级" clearable style="width: 150px;">
             <el-option label="所有" value=""></el-option>
             <el-option label="普通用户" :value="0"></el-option>
             <el-option label="管理员" :value="1"></el-option>
@@ -18,17 +18,12 @@
           <el-button type="primary" @click="searchUsers">
             <el-icon><Search /></el-icon> 搜索
           </el-button>
-          <el-button @click="resetSearch">
-            <el-icon><Refresh /></el-icon> 重置
-          </el-button>
+
         </el-form-item>
         <el-button type="success" @click="openAddUserDialog">
           <el-icon><Plus /></el-icon> 添加新用户
         </el-button>
       </el-form>
-      <div class="action-buttons">
-
-      </div>
     </el-card>
 
     <el-card shadow="hover" class="table-card">
@@ -38,10 +33,9 @@
           style="width: 100%"
           stripe
           border
-          height="calc(100vh - 400px)"
-          empty-text="暂无用户数据"
+          height="calc(100vh - 250px)" empty-text="暂无用户数据"
       >
-        <el-table-column prop="id" label="ID" width="80" sortable></el-table-column>
+        <el-table-column prop="id" label="ID" width="100" sortable show-overflow-tooltip></el-table-column>
         <el-table-column prop="username" label="用户名" width="150" show-overflow-tooltip></el-table-column>
         <el-table-column prop="email" label="邮箱" width="200" show-overflow-tooltip></el-table-column>
         <el-table-column prop="userlevel" label="用户等级" width="120" :formatter="formatUserLevel"></el-table-column>
@@ -52,19 +46,19 @@
                 :percentage="calculateStoragePercentage(scope.row)"
                 :color="getStorageColor(calculateStoragePercentage(scope.row))"
                 :stroke-width="8"
-                :format="() => `${formatFileSize(scope.row.storage_used)} / ${formatFileSize(scope.row.storage_quota)}`"
+                :format="() => `${formatFileSize(scope.row.storageUsed)} / ${formatFileSize(scope.row.storageQuota)}`"
             />
           </template>
         </el-table-column>
 
-        <el-table-column prop="created_at" label="注册时间" width="180" sortable>
+        <el-table-column prop="createdAt" label="注册时间" width="180" sortable>
           <template #default="scope">
-            {{ formatTime(scope.row.created_at) }}
+            {{ formatDateTime(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="updated_at" label="最后更新" width="180" sortable>
+        <el-table-column prop="updatedAt" label="最后更新" width="180" sortable>
           <template #default="scope">
-            {{ formatTime(scope.row.updated_at) }}
+            {{ formatDateTime(scope.row.updatedAt) }}
           </template>
         </el-table-column>
 
@@ -103,17 +97,17 @@
           <el-input v-model="userForm.email"></el-input>
         </el-form-item>
         <el-form-item label="密码" :prop="isEditMode ? '' : 'password'">
-          <el-input v-model="userForm.password" type="password" placeholder="留空则不修改密码" show-password></el-input>
+          <el-input v-model="userForm.password" type="password" placeholder="请输入密码" show-password></el-input>
         </el-form-item>
-        <el-form-item label="用户等级" prop="userlevel">
+        <el-form-item label="用户等级" prop="userlevel" >
           <el-select v-model="userForm.userlevel" placeholder="选择用户等级">
             <el-option label="普通用户" :value="0"></el-option>
             <el-option label="管理员" :value="1"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="存储配额" prop="storage_quota">
+        <el-form-item label="存储配额" prop="storageQuotaGB">
           <el-input-number
-              v-model="userForm.storage_quota"
+              v-model="userForm.storageQuotaGB"
               :min="1"
               :max="1000"
               :step="10"
@@ -123,11 +117,11 @@
             <el-icon><QuestionFilled /></el-icon>
           </el-tooltip>
         </el-form-item>
-        <el-form-item label="已使用" prop="storage_used" v-if="isEditMode">
+        <el-form-item label="已使用" prop="storageUsedGB" v-if="isEditMode">
           <el-input-number
-              v-model="userForm.storage_used"
+              v-model="userForm.storageUsedGB"
               :min="0"
-              :max="userForm.storage_quota"
+              :max="userForm.storageQuotaGB"
               placeholder="单位: GB"
           ></el-input-number> GB
         </el-form-item>
@@ -151,29 +145,48 @@ import {
   Search,
   Refresh,
   Plus,
-  QuestionFilled, // 疑问图标
-  UserFilled, // 导入所需图标
-  DataLine,
-  Files,
-  User,
+  QuestionFilled,
 } from '@element-plus/icons-vue'
 
 // 假设你的 utils 文件中有这些格式化函数
 import { formatFileSize } from '../utils'
 
-// 为了模拟时间格式化，这里添加一个简单的函数
-const formatTime = (timestamp: string) => {
-  if (!timestamp) return '-'
-  return new Date(timestamp).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+// 用于格式化日期时间 (适配 LocalDateTime)
+const formatDateTime = (datetime: string | null) => {
+  if (!datetime) return '--'
+  try {
+    const date = new Date(datetime);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date string');
+    }
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    console.error("Error formatting date:", datetime, e);
+    return datetime; // 返回原始字符串或错误提示
+  }
 }
 
+// --- 数据接口定义 ---
+// 与后端 User 实体类保持一致 (驼峰命名)
+interface User {
+  id: string;
+  userlevel: number;
+  username: string;
+  email: string;
+  passwordHash?: string; // 密码哈希，可选，因为更新时可能不传
+  avatar?: string;
+  storageQuota: number; // 对应 Long
+  storageUsed: number;  // 对应 Long
+  createdAt: string;    // 对应 LocalDateTime
+  updatedAt: string;    // 对应 LocalDateTime
+}
 
 // --- 数据定义 ---
 
@@ -182,20 +195,6 @@ const searchForm = reactive({
   keyword: '',
   userLevel: '' // 0: 普通用户, 1: 管理员, '': 所有
 })
-
-// 用户列表数据
-interface User {
-  id: string | number; // 根据你的ID类型
-  userlevel: number;
-  username: string;
-  email: string;
-  password_hash: string;
-  avatar: string;
-  storage_quota: number; // 单位：字节 (或根据你的数据库设计)
-  storage_used: number;  // 单位：字节
-  created_at: string;
-  updated_at: string;
-}
 
 const users = ref<User[]>([])
 const loading = ref(false) // 表格加载状态
@@ -214,10 +213,10 @@ const userForm = reactive({
   id: '',
   username: '',
   email: '',
-  password: '', // 密码在编辑时可选填，添加时必填
+  password: '', // 用于前端输入密码，后端自行处理哈希
   userlevel: 0,
-  storage_quota: 10, // 默认10GB
-  storage_used: 0, // 新增用户默认为0
+  storageQuotaGB: 10, // 默认10GB，用于前端GB单位输入
+  storageUsedGB: 0, // 新增用户默认已用空间为0，用于前端GB单位输入
 })
 
 // 弹窗表单验证规则
@@ -225,7 +224,6 @@ const userFormRules: FormRules = reactive({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' },
-    // 可以在这里添加自定义验证，例如检查用户名是否已存在
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -247,16 +245,23 @@ const userFormRules: FormRules = reactive({
   userlevel: [
     { required: true, message: '请选择用户等级', trigger: 'change' }
   ],
-  storage_quota: [
+  storageQuotaGB: [
     { required: true, message: '请输入存储配额', trigger: 'blur' },
     { type: 'number', min: 1, max: 1000, message: '配额范围1-1000 GB', trigger: 'blur' }
   ],
-  storage_used: [
+  storageUsedGB: [
     { validator: (rule, value, callback) => {
-        if (value > userForm.storage_quota) {
-          callback(new Error('已使用空间不能超过存储配额'))
+        // 只有编辑模式下才需要验证已使用空间
+        if (isEditMode.value) {
+          if (value === undefined || value === null) {
+            callback(new Error('请输入已使用空间'));
+          } else if (value !== undefined && value > userForm.storageQuotaGB) { // 检查值是否为undefined before comparison
+            callback(new Error('已使用空间不能超过存储配额'))
+          } else {
+            callback()
+          }
         } else {
-          callback()
+          callback(); // 新增模式不验证这个字段
         }
       },
       trigger: 'blur'
@@ -264,10 +269,9 @@ const userFormRules: FormRules = reactive({
   ]
 })
 
-
 // --- 计算属性 ---
 
-// 根据搜索条件过滤用户
+// 根据搜索条件过滤用户 (这里假设getAllUsers返回所有用户，前端再过滤)
 const filteredUsers = computed(() => {
   return users.value.filter(user => {
     const matchesKeyword = (user.username?.includes(searchForm.keyword) || user.email?.includes(searchForm.keyword))
@@ -292,8 +296,8 @@ const formatUserLevel = (row: User) => {
 
 // 计算存储百分比
 const calculateStoragePercentage = (row: User) => {
-  if (row.storage_quota === 0) return 0;
-  return Math.round((row.storage_used / row.storage_quota) * 100)
+  if (row.storageQuota === 0) return 0;
+  return Math.round((row.storageUsed / row.storageQuota) * 100)
 }
 
 // 获取存储进度条颜色
@@ -306,15 +310,15 @@ const getStorageColor = (percentage: number) => {
 // 搜索用户
 const searchUsers = () => {
   currentPage.value = 1 // 搜索时重置回第一页
-  // 实际项目中，这里会调用 API 重新获取数据
-  fetchUsers()
+  // fetchUsers 已经会根据过滤后的 users.value 进行分页和展示
 }
 
 // 重置搜索条件
 const resetSearch = () => {
   searchForm.keyword = ''
   searchForm.userLevel = ''
-  searchUsers() // 重置后重新搜索
+  currentPage.value = 1; // 重置搜索也重置到第一页
+  fetchUsers();
 }
 
 // 打开添加用户对话框
@@ -327,15 +331,15 @@ const openAddUserDialog = () => {
 // 打开编辑用户对话框
 const openEditUserDialog = (user: User) => {
   isEditMode.value = true
-  // 将用户数据填充到表单
+  // 将用户数据填充到表单，并转换字节为GB
   Object.assign(userForm, {
     id: user.id,
     username: user.username,
     email: user.email,
     password: '', // 编辑时不显示旧密码，留空则不修改
     userlevel: user.userlevel,
-    storage_quota: user.storage_quota / (1024 * 1024 * 1024), // 字节转GB
-    storage_used: user.storage_used / (1024 * 1024 * 1024), // 字节转GB
+    storageQuotaGB: user.storageQuota / (1024 * 1024 * 1024), // 字节转GB
+    storageUsedGB: user.storageUsed / (1024 * 1024 * 1024), // 字节转GB
   })
   dialogVisible.value = true
 }
@@ -348,65 +352,62 @@ const submitUserForm = async () => {
     formSubmitting.value = true
     await userFormRef.value.validate()
 
-    const payload = { ...userForm }
-    // 将GB转换为字节
-    payload.storage_quota = payload.storage_quota * 1024 * 1024 * 1024
-    payload.storage_used = payload.storage_used * 1024 * 1024 * 1024
+    // 构建发送给后端的数据对象，字段名与后端 User 实体类保持一致 (驼峰命名)
+    const payload: Partial<User> = { // Partial 使所有属性变为可选，因为新增时不传ID
+      username: userForm.username,
+      email: userForm.email,
+      userlevel: userForm.userlevel,
+      storageQuota: Math.round(userForm.storageQuotaGB * 1024 * 1024 * 1024), // GB转字节
+    };
 
-    let url = '/api/admin/users'
-    let method = 'POST'
+    // 密码字段处理
+    if (userForm.password !== '') {
+      payload.passwordHash = userForm.password; // 假设后端会将此字段作为密码进行哈希
+    }
+
+    let url = '';
+    let method = '';
+    let successMessage = '';
 
     if (isEditMode.value) {
-      url = `/api/admin/users/${userForm.id}`
-      method = 'PUT'
-      if (payload.password === '') {
-        delete payload.password // 如果密码为空，不发送密码字段
-      }
+      payload.id = userForm.id; // 编辑时需要ID
+      payload.storageUsed = Math.round(userForm.storageUsedGB * 1024 * 1024 * 1024); // 编辑时修改已用空间
+      url = '/admin-api/updateUser'; // <-- 修改点：API前缀
+      method = 'PUT';
+      successMessage = '编辑用户成功！';
     } else {
-      // 添加模式下，如果密码为空，不应通过验证，这里做个双重保险
-      if (payload.password === '') {
-        ElMessage.error('添加用户时密码不能为空！');
-        return;
-      }
+      // 新增用户默认已用空间为0字节
+      payload.storageUsed = 0;
+      url = '/admin-api/insertUser'; // <-- 修改点：API前缀
+      method = 'POST';
+      successMessage = '添加用户成功！';
+      // 注意: 后端 insertUser 会自动生成ID, 前端不需要传递ID
+      // 但为了匹配后端的@RequestBody User user，我们仍传递完整的User对象，后端会忽略ID。
     }
 
-    // 模拟 API 请求
-    console.log(`Sending ${method} request to ${url} with payload:`, payload);
-    const response = await new Promise(resolve => setTimeout(() => {
-      if (payload.username === 'testuser' && !isEditMode.value) {
-        resolve({ json: () => ({ code: 500, message: '用户名已存在' }) });
-      } else {
-        resolve({ json: () => ({ code: 200, message: '操作成功', data: { ...payload, id: isEditMode.value ? payload.id : 'new-user-id-' + Date.now(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() } }) });
-      }
-    }, 800));
-    const result = await (response as any).json();
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
 
-    // const response = await fetch(url, {
-    //   method: method,
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}` // 假设需要管理员Token
-    //   },
-    //   body: JSON.stringify(payload)
-    // })
-    // const result = await response.json()
+    const result = await response.json();
 
     if (result.code === 200) {
-      ElMessage.success(`${isEditMode.value ? '编辑' : '添加'}用户成功！`)
-      dialogVisible.value = false
-      fetchUsers() // 刷新用户列表
+      ElMessage.success(successMessage);
+      dialogVisible.value = false;
+      fetchUsers(); // 刷新用户列表
     } else {
-      ElMessage.error(result.message || `${isEditMode.value ? '编辑' : '添加'}用户失败！`)
+      ElMessage.error(result.message || `${isEditMode.value ? '编辑' : '添加'}用户失败！`);
     }
+
   } catch (error: any) {
-    console.error('提交用户表单错误:', error)
-    if (error.isFormValidationError) { // Element Plus 验证错误会有 `isFormValidationError` 属性
-      ElMessage.error('表单验证失败，请检查输入项。')
-    } else {
-      ElMessage.error('操作失败，请检查网络或表单内容。')
-    }
+    console.error('提交用户表单错误:', error);
+    ElMessage.error('操作失败，请检查网络或表单内容。');
   } finally {
-    formSubmitting.value = false
+    formSubmitting.value = false;
   }
 }
 
@@ -423,35 +424,30 @@ const deleteUser = async (user: User) => {
   )
       .then(async () => {
         try {
-          // 模拟 API 请求
-          console.log(`Sending DELETE request to /api/admin/users/${user.id}`);
-          const response = await new Promise(resolve => setTimeout(() => {
-            resolve({ json: () => ({ code: 200, message: '删除成功' }) });
-          }, 500));
-          const result = await (response as any).json();
+          const url = `/admin-api/deleteUser/${user.id}`; // <-- 修改点：API前缀
+          const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+              // 无需Authorization头
+            }
+          });
 
-          // const response = await fetch(`/api/admin/users/${user.id}`, {
-          //   method: 'DELETE',
-          //   headers: {
-          //     'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
-          //   }
-          // })
-          // const result = await response.json()
+          const result = await response.json();
 
           if (result.code === 200) {
-            ElMessage.success('用户删除成功！')
-            fetchUsers() // 刷新用户列表
+            ElMessage.success('用户删除成功！');
+            fetchUsers(); // 刷新用户列表
           } else {
-            ElMessage.error(result.message || '用户删除失败！')
+            ElMessage.error(result.message || '用户删除失败！');
           }
         } catch (error) {
-          console.error('删除用户错误:', error)
-          ElMessage.error('删除失败，请检查网络。')
+          console.error('删除用户错误:', error);
+          ElMessage.error('删除失败，请检查网络。');
         }
       })
       .catch(() => {
-        ElMessage.info('已取消删除操作。')
-      })
+        ElMessage.info('已取消删除操作。');
+      });
 }
 
 // 清空并重置对话框表单
@@ -459,14 +455,14 @@ const resetDialogForm = () => {
   if (userFormRef.value) {
     userFormRef.value.resetFields()
   }
-  Object.assign(userForm, { // 确保清除所有数据
+  Object.assign(userForm, { // 确保清除所有数据并设置默认值
     id: '',
     username: '',
     email: '',
     password: '',
     userlevel: 0,
-    storage_quota: 10,
-    storage_used: 0,
+    storageQuotaGB: 10,
+    storageUsedGB: 0,
   })
 }
 
@@ -481,46 +477,50 @@ const handleCurrentChange = (val: number) => {
   currentPage.value = val
 }
 
-// 获取用户列表数据（模拟）
+// 获取用户列表数据
 const fetchUsers = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    // 模拟从后端获取数据
-    // 实际的API请求可能是：
-    // const response = await fetch('/api/admin/users?keyword=${searchForm.keyword}&userLevel=${searchForm.userLevel}');
-    // const data = await response.json();
+    const response = await fetch('/admin-api/getAllUsers', { // <-- 修改点：API前缀
+      headers: {
+        // 无需Authorization头
+      }
+    });
 
-    // 模拟你的数据库截图数据
-    const mockUsers: User[] = [
-      { id: '1', userlevel: 0, username: 'Ono Kasumi', email: 'kona@outlook.com', password_hash: 'y1kSGuGgul', avatar: 'ZUu0RtL2bx', storage_quota: 658 * 1024 * 1024, storage_used: 394 * 1024 * 1024, created_at: '2019-08-01 08:36:59', updated_at: '2025-07-08 15:19:33' },
-      { id: '2', userlevel: 0, username: 'Eleanor Henders', email: 'ehenderson@mail.com', password_hash: '6no7mq7l1', avatar: 'jl4SwNBVCK', storage_quota: 528 * 1024 * 1024, storage_used: 201 * 1024 * 1024, created_at: '2014-03-23 12:21:39', updated_at: '2025-07-08 15:19:34' },
-      { id: '3', userlevel: 0, username: 'Saito Ikki', email: 'ikki4l2@icloud.com', password_hash: '0xMotWoqxw', avatar: 'VQv9mNkpA', storage_quota: 887 * 1024 * 1024, storage_used: 870 * 1024 * 1024, created_at: '2008-11-28 09:35:52', updated_at: '2025-07-08 15:19:36' },
-      { id: 'admin-user-id', userlevel: 1, username: 'admin', email: 'admin@clouddrive.com', password_hash: '0xMotWoqxw', avatar: 'ninii', storage_quota: 1073741824, storage_used: 4534, created_at: '2025-07-08 11:54:48', updated_at: '2025-07-08 17:24:45' },
-      // 额外一些模拟数据
-      { id: '4', userlevel: 0, username: 'Wang Li', email: 'wangli@example.com', password_hash: 'hash123', avatar: 'abc', storage_quota: 10 * 1024 * 1024 * 1024, storage_used: 2 * 1024 * 1024 * 1024, created_at: '2024-01-15 10:00:00', updated_at: '2025-07-01 10:00:00' },
-      { id: '5', userlevel: 0, username: 'Zhang San', email: 'zhangsan@example.com', password_hash: 'hash456', avatar: 'def', storage_quota: 20 * 1024 * 1024 * 1024, storage_used: 18 * 1024 * 1024 * 1024, created_at: '2023-05-20 11:30:00', updated_at: '2025-07-05 11:30:00' },
-      { id: '6', userlevel: 1, username: 'super_admin', email: 'super@clouddrive.com', password_hash: 'superhash', avatar: 'xyz', storage_quota: 50 * 1024 * 1024 * 1024, storage_used: 10 * 1024 * 1024 * 1024, created_at: '2022-03-01 09:00:00', updated_at: '2025-07-08 10:00:00' },
-      { id: '7', userlevel: 0, username: 'Liu Ming', email: 'liuming@example.com', password_hash: 'hash789', avatar: 'ghi', storage_quota: 5 * 1024 * 1024 * 1024, storage_used: 4 * 1024 * 1024 * 1024, created_at: '2024-11-11 14:00:00', updated_at: '2025-07-02 14:00:00' },
-      { id: '8', userlevel: 0, username: 'Chen Ying', email: 'chenying@example.com', password_hash: 'hashabc', avatar: 'jkl', storage_quota: 15 * 1024 * 1024 * 1024, storage_used: 5 * 1024 * 1024 * 1024, created_at: '2023-01-01 08:00:00', updated_at: '2025-06-28 08:00:00' },
-      { id: '9', userlevel: 0, username: 'Sun Hao', email: 'sunhao@example.com', password_hash: 'hashdef', avatar: 'mno', storage_quota: 8 * 1024 * 1024 * 1024, storage_used: 7 * 1024 * 1024 * 1024, created_at: '2024-03-03 16:00:00', updated_at: '2025-07-07 16:00:00' },
-      { id: '10', userlevel: 0, username: 'Zhao Wei', email: 'zhaowei@example.com', password_hash: 'hashghi', avatar: 'pqr', storage_quota: 12 * 1024 * 1024 * 1024, storage_used: 6 * 1024 * 1024 * 1024, created_at: '2023-08-08 12:00:00', updated_at: '2025-07-03 12:00:00' },
-      { id: '11', userlevel: 0, username: 'Zhou Jie', email: 'zhoujie@example.com', password_hash: 'hashjkl', avatar: 'stu', storage_quota: 7 * 1024 * 1024 * 1024, storage_used: 2 * 1024 * 1024 * 1024, created_at: '2024-02-20 09:00:00', updated_at: '2025-06-30 09:00:00' },
-    ]
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    await new Promise(resolve => setTimeout(resolve, 500)) // 模拟网络延迟
-    users.value = mockUsers
+    const result = await response.json();
 
+    if (result.code === 200) {
+      // 这里的 result.data 应该直接是 List<User>
+      users.value = result.data.map((user: any) => ({
+        ...user,
+        // 确保字段名与前端User接口的驼峰命名一致
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        storageQuota: Number(user.storageQuota),
+        storageUsed: Number(user.storageUsed)
+      }));
+    } else {
+      ElMessage.error(result.message || '获取用户列表失败！');
+    }
   } catch (error) {
-    console.error('获取用户列表失败:', error)
-    ElMessage.error('获取用户数据失败，请检查网络连接。')
+    console.error('获取用户列表失败:', error);
+    ElMessage.error('获取用户数据失败，请检查网络连接。');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
+// 由于没有 accessToken 相关的重定向，这里不需要 useRouter 实例
+// import { useRouter } from 'vue-router'; // 此行可以删除
+// const router = useRouter(); // 此行可以删除
+
 // 组件挂载时获取用户列表
 onMounted(() => {
-  fetchUsers()
+  fetchUsers();
 })
 </script>
 
