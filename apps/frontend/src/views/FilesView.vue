@@ -513,7 +513,7 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     const end = Math.min(start + chunkSize, fileSize);
     const chunkFile = file.slice(start, end);
     let  userId=localStorage.getItem('UserId');
-    userId='1000000001';
+    userId='274';
     const formData = new FormData();
     formData.append('file', chunkFile);
     formData.append('fileName', file.name);
@@ -522,6 +522,9 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     formData.append('chunks', chunks.toString());
     formData.append('filePid', currentFile.filePid);
     formData.append('userId',userId);
+    if(currentFile.fileId){
+      formData.append('fileId',currentFile.fileId);
+    }
 
     try {
       const response = await fetch('/file/uploadFile', {
@@ -539,6 +542,7 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       currentFile.chunkIndex = i;
       
       if (result.data.fileId) {
+      console.log(result);
         currentFile.fileId = result.data.fileId;
       }
       
