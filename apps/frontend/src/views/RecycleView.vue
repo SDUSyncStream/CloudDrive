@@ -42,44 +42,33 @@
           <template #default="{ row }">
             <div class="file-item">
               <el-icon class="file-icon">
-                <Document v-if="getFileType(row.fileName) === 'document'" />
-                <Picture v-else-if="getFileType(row.fileName) === 'image'" />
-                <VideoPlay v-else-if="getFileType(row.fileName) === 'video'" />
-                <Headphone v-else-if="getFileType(row.fileName) === 'audio'" />
-                <Document v-else />
+                <Document v-if="row.folderType == 0" />
+                <Folder v-else-if="row.folderType == 1" />
               </el-icon>
               <span>{{ row.fileName }}</span>
             </div>
           </template>
         </el-table-column>
         
-        <el-table-column prop="deleteTime" label="删除时间" width="180">
+        <el-table-column prop="deleteTime" label="最近更新时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.deleteTime) }}
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="remainingDays" label="剩余保留天数" width="150">
-          <template #default="{ row }">
-            <el-tag 
-              :type="getRemainingDaysType(row.remainingDays)" 
-              size="small"
-            >
-              {{ row.remainingDays }} 天
-            </el-tag>
+            {{ formatDate(row.lastUpdateTime) }}
           </template>
         </el-table-column>
         
         <el-table-column prop="size" label="大小" width="120">
           <template #default="{ row }">
-            {{ formatFileSize(row.size) }}
+            {{ formatFileSize(row.fileSize) }}
           </template>
         </el-table-column>
         
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button link type="primary" size="small" title="还原" @click="restoreFile(row)">
+              <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(row)">
+                <el-icon><View /></el-icon>
+              </el-button>
+              <el-button link type="primary" size="small" title="还原" @click="handleUnrecycle(row)">
                 <el-icon><RefreshRight /></el-icon>
               </el-button>
               <el-button link type="danger" size="small" title="彻底删除" @click="permanentlyDeleteFile(row)">
@@ -91,7 +80,7 @@
       </el-table>
       
       <!-- 空状态 -->
-      <div v-if="recycleData.length === 0" class="empty-state">
+      <div v-if="isEmpty == 1" class="empty-state">
         <el-icon class="empty-icon"><Delete /></el-icon>
         <p>回收站为空</p>
         <span>删除的文件将在此处保留30天</span>
@@ -101,72 +90,77 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import {onMounted, ref} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '../utils'
+import axios from "axios";
 
 // 响应式数据
 const selectedFiles = ref<any[]>([])
 
-// 回收站数据
-const recycleData = ref([
-  {
-    id: 1,
-    fileName: 'old-project.zip',
-    deleteTime: '2024-01-20 15:30:00',
-    remainingDays: 25,
-    size: 15728640, // 15MB
-    originalPath: '/documents/projects/'
-  },
-  {
-    id: 2,
-    fileName: 'temp-notes.txt',
-    deleteTime: '2024-01-18 09:15:00',
-    remainingDays: 23,
-    size: 2048, // 2KB
-    originalPath: '/documents/'
-  },
-  {
-    id: 3,
-    fileName: 'unused-image.png',
-    deleteTime: '2024-01-15 14:45:00',
-    remainingDays: 20,
-    size: 5242880, // 5MB
-    originalPath: '/images/'
-  },
-  {
-    id: 4,
-    fileName: 'backup-2023.sql',
-    deleteTime: '2024-01-10 11:20:00',
-    remainingDays: 15,
-    size: 104857600, // 100MB
-    originalPath: '/backups/'
-  },
-  {
-    id: 5,
-    fileName: 'deprecated-code.js',
-    deleteTime: '2024-01-05 16:30:00',
-    remainingDays: 10,
-    size: 8192, // 8KB
-    originalPath: '/projects/src/'
-  },
-  {
-    id: 6,
-    fileName: 'old-presentation.pptx',
-    deleteTime: '2024-01-02 10:15:00',
-    remainingDays: 7,
-    size: 25165824, // 24MB
-    originalPath: '/documents/presentations/'
-  },
-  {
-    id: 7,
-    fileName: 'expired-certificate.pdf',
-    deleteTime: '2023-12-28 14:20:00',
-    remainingDays: 3,
-    size: 1048576, // 1MB
-    originalPath: '/documents/certificates/'
+let isEmpty = ref(0);
+let nowFilePid = 1;
+let nowUserId = 2;
+
+onMounted(() => {
+  nowFilePid = 1;
+  getFileListinRecycle(nowFilePid, nowUserId);
+  if (recycleData.length == 0){
+    isEmpty = 1;
   }
-])
+  else{
+    isEmpty = 0;
+  }
+})
+
+const getFileListinRecycle = async(pid, userId) =>{
+  try {
+    const response = await axios.get(`/files/get/${pid}`, {
+      params: {
+        userId: userId,
+        delFlag: 1,
+      }
+    });
+    console.log('请求成功:', response.data);
+    updatetable(response.data.data);
+    // 处理响应数据
+  } catch (error) {
+    console.error('请求失败:', error);
+  }
+}
+
+const updatetable = (data) => {
+  console.log(data);
+  recycleData.value = data
+}
+
+const handleViewClick = (item) => {
+  if (item.folderType == 1){
+    getFileListinRecycle(item.fileId, item.userId)
+  }
+  else{
+
+  }
+}
+
+const handleUnrecycle = async (row) =>{
+  try {
+    const response = await axios.get(`/files/recycle/${row.fileId}`, {
+      params: {
+        userId: 2,
+        newDelFlag: 2,
+      }
+    });
+    console.log('请求成功:', response.data);
+    getFileListinRecycle(nowFilePid, nowUserId);
+    // 处理响应数据
+  } catch (error) {
+    console.error('请求失败:', error);
+  }
+}
+
+// 回收站数据
+const recycleData = ref([])
 
 // 获取文件类型
 const getFileType = (fileName: string) => {

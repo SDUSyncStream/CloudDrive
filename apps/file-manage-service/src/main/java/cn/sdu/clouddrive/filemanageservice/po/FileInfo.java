@@ -2,6 +2,9 @@ package cn.sdu.clouddrive.filemanageservice.po;
 
 import cn.sdu.clouddrive.filemanageservice.utils.DateUtil;
 import cn.sdu.clouddrive.filemanageservice.utils.enums.DateTimePatternEnum;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
@@ -17,12 +20,14 @@ import java.io.Serializable;
 /**
  * 文件信息
  */
+@TableName("file_info")
 public class FileInfo implements Serializable {
 
 
     /**
      * 文件ID
      */
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private String fileId;
 
     /**

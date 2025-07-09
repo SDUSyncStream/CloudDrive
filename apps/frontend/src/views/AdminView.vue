@@ -9,7 +9,7 @@
           <span>CloudDrive 管理后台</span>
         </div>
         <div class="header-actions">
-          <el-button type="primary" :icon="Bell" circle title="通知"></el-button>
+<!--          <el-button type="primary" :icon="Bell" circle title="通知"></el-button>-->
 
           <el-dropdown @command="handleAdminAction">
             <el-avatar :src="adminStore.avatar || undefined">
@@ -110,6 +110,7 @@ const route = useRoute()
 // 侧边菜单当前激活项
 const activeIndex = ref('/admin/dashboard') // 默认激活控制台
 
+
 // 存储容量数据 (从 adminStore 获取，或者在组件内部计算，这里为了演示，使用store中的数据)
 // 确保 adminStore 中有 storageUsed 和 storageQuota 字段
 const storageUsed = computed(() => adminStore.storageUsed || 0)
@@ -145,6 +146,7 @@ onMounted(() => {
     ElMessage.warning('请先登录管理后台。')
     router.push('/admin-login') // 未登录则跳转到管理员登录页
   } else {
+    router.push('/admin/dashboard') // 已登录则跳转到控制台
     // 如果需要，可以在这里触发重新加载管理员详细信息或存储配额的API
     // 例如：adminStore.fetchAdminDetails()
   }
