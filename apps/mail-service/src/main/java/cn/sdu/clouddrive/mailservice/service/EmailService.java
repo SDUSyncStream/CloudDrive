@@ -81,7 +81,7 @@ public class EmailService {
             "</div>" +
             "<p style='color: #dc3545; font-size: 14px;'><strong>重要提醒：</strong></p>" +
             "<ul style='color: #6c757d; font-size: 14px;'>" +
-            "<li>验证码有效期为15分钟，请及时使用</li>" +
+            "<li>验证码有效期为1分钟，请及时使用</li>" +
             "<li>请勿将验证码告知他人</li>" +
             "<li>如非本人操作，请忽略此邮件</li>" +
             "</ul>" +
