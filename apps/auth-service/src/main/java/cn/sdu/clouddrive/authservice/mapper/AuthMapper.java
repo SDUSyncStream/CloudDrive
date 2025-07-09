@@ -17,15 +17,15 @@ public interface AuthMapper extends BaseMapper<UserBasicInfo>
     @Select("select id,username from users where username = #{username} and password_hash = #{passwordHash}")
     public UserBasicInfo getUserBasicInfo(String username, String passwordHash);
 
-    @Insert("insert into users values (username,password,email)")
-    boolean register(RegisterInfo registerInfo);
+    @Insert("INSERT INTO users (id, username, password_hash, email,avatar) VALUES (#{userId}, #{username}, #{passwordHash}, #{email}, #{avatar})")
+    Boolean register(RegisterInfo registerInfo);
 
     @Select("select * from users where username = #{username}")
-    boolean isUsernameExist(String username);
+    Boolean isUsernameExist(String username);
 
     @Select("select * from users where email = #{email}")
-    boolean isEmailExist(String email);
+    Boolean isEmailExist(String email);
 
     @Update("update user set password_hash = #{newPassword} where username = #{username}")
-    boolean refresh(Map<String, String> map);
+    Boolean refresh(Map<String, String> map);
 }

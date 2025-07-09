@@ -13,17 +13,17 @@ public interface AuthService
     /**
      * 用户注册
      */
-    boolean register(RegisterInfo registerInfo);
+    Boolean register(RegisterInfo registerInfo);
 
     /**
      * 检查用户名是否已存在
      */
-    boolean isUsernameExist(String username);
+    Boolean isUsernameExist(String username);
 
     /**
      * 检查邮箱是否已存在
      */
-    boolean isEmailExist(String email);
+    Boolean isEmailExist(String email);
 
-    boolean refresh(Map<String, String> map);
+    Boolean refresh(Map<String, String> map);
 }

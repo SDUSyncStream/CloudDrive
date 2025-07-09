@@ -41,7 +41,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '/main/files',
-        name: 'Files',  
+        name: 'Files',
         component: () => import('../views/FilesView.vue'),
       },
       {
@@ -56,6 +56,11 @@ const routes: RouteRecordRaw[] = [
       },
 
     ]
+  },
+  {
+    path: '/profile',
+    name: 'UserProfile',
+    component: () => import('../views/UserProfileView.vue')
   },
   {
     path: '/vip',
@@ -90,7 +95,7 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, _from, next) => {
   const isAuthenticated = localStorage.getItem('token')
-  
+
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
   } else {

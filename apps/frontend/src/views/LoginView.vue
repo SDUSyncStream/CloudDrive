@@ -59,7 +59,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import { login } from '../api/auth'
-import axios from 'axios'
+import { encryptPassword } from '../utils/crypto'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -118,10 +118,19 @@ const handleLogin = async () => {
     await formRef.value.validate()
     loading.value = true
     
+    console.log('原始密码长度:', loginForm.password.length)
+    
+    // 加密密码
+    const encryptedPassword = await encryptPassword(loginForm.password)
+    console.log('加密后密码长度:', encryptedPassword.length)
+    
     console.log('发送登录请求:', { username: loginForm.username, password: '***' })
     
-    // 调用登录API
-    const response = await login({ username: loginForm.username, passwordHash: loginForm.password })
+    // 调用登录API，使用加密后的密码
+    const response = await login({ 
+      username: loginForm.username, 
+      passwordHash: encryptedPassword 
+    })
 
     console.log('登录响应:', response)
     
@@ -131,6 +140,7 @@ const handleLogin = async () => {
       if (response.data.data.refreshToken) {
         localStorage.setItem('refreshToken', response.data.data.refreshToken)
       }
+      localStorage.setItem('UserId', response.data.data.userId || 'user-01')
 
       // 更新用户状态
       userStore.setUser(response.data.data.userId)

@@ -1,0 +1,35 @@
+# Auth Service Dockerfile
+FROM --platform=linux/amd64 eclipse-temurin:17-jdk-alpine AS builder
+
+# Install Maven
+RUN apk add --no-cache maven
+
+WORKDIR /app
+
+# Copy pom.xml first for better caching
+COPY pom.xml .
+
+# Download dependencies
+RUN mvn dependency:go-offline -q
+
+# Copy source code
+COPY src ./src
+
+# Build the application
+RUN mvn clean package -Dmaven.test.skip=true -q
+
+# Verify build output
+RUN ls -la target/ && ls -la target/*.jar
+
+FROM --platform=linux/amd64 eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# Copy the built JAR file
+COPY --from=builder /app/target/*.jar app.jar
+
+# Expose port
+EXPOSE 8081
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]

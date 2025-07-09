@@ -65,6 +65,7 @@ services:
     build:
       context: ../apps/gateway
       dockerfile: ../../docker/Dockerfile.gateway
+    platform: linux/amd64
     container_name: gateway
     restart: unless-stopped
     ports:
@@ -79,12 +80,13 @@ services:
     networks:
       - cloud-drive-network
 
-  # User Service
-  user-service:
+  # Auth Service (Core for authentication)
+  auth-service:
     build:
-      context: ../apps/user-service
-      dockerfile: ../../docker/Dockerfile.user-service
-    container_name: user-service
+      context: ../apps/auth-service
+      dockerfile: ../../docker/Dockerfile.auth-service
+    platform: linux/amd64
+    container_name: auth-service
     restart: unless-stopped
     ports:
       - "8081:8081"
@@ -104,6 +106,52 @@ services:
       - SPRING_DATASOURCE_PASSWORD=root123
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+    networks:
+      - cloud-drive-network
+
+  # File Upload/Download Service (Core for file operations)
+  fileupdown-service:
+    build:
+      context: ../apps/fileupdown-service
+      dockerfile: ../../docker/Dockerfile.fileupdown-service
+    platform: linux/amd64
+    container_name: fileupdown-service
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    networks:
+      - cloud-drive-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ../apps/frontend
+      dockerfile: ../../docker/Dockerfile.frontend
+    platform: linux/amd64
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gateway
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://gateway:8080
     networks:
       - cloud-drive-network
 

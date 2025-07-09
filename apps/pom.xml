@@ -44,6 +44,7 @@
         <module>membership-service</module>
         <module>user-service</module>
         <module>auth-service</module>
+<!--        <module>backend</module>>-->
         <!-- 如果还有其他顶级模块，请在这里添加 -->
     </modules>
 
