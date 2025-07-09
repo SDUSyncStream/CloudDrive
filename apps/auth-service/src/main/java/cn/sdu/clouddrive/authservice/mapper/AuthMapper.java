@@ -28,4 +28,8 @@ public interface AuthMapper extends BaseMapper<UserBasicInfo>
 
     @Update("update users set password_hash = #{newPassword} where email = #{email}")
     Boolean refresh(String email,String newPassword);
+
+    @Insert("INSERT INTO user_subscriptions (id, user_id, membership_level_id, start_date, end_date, status, payment_method, payment_amount, created_at, updated_at) " +
+            "VALUES (#{subscriptionId}, #{userId}, 'level001', NOW(), '2099-12-31 23:59:59', 'active', 'free', 0.00, NOW(), NOW())")
+    Boolean insertUserSubscription(@Param("subscriptionId") String subscriptionId, @Param("userId") String userId);
 }

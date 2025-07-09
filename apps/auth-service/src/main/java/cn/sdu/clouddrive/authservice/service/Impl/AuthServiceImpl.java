@@ -46,4 +46,10 @@ public class AuthServiceImpl implements AuthService
         return authMapper.refresh(email,newPassword);
     }
 
+    @Override
+    public Boolean insertUserSubscription(String subscriptionId, String userId)
+    {
+        return authMapper.insertUserSubscription(subscriptionId, userId);
+    }
+
 }

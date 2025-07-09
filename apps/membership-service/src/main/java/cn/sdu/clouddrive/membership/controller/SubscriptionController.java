@@ -41,4 +41,18 @@ public class SubscriptionController {
             return Result.error("取消订阅失败: " + e.getMessage());
         }
     }
+
+    @PostMapping("/user/{userId}/default")
+    public Result<String> createDefaultSubscription(@PathVariable String userId) {
+        try {
+            boolean success = userSubscriptionService.createDefaultSubscription(userId);
+            if (success) {
+                return Result.success("默认订阅创建成功");
+            } else {
+                return Result.error("默认订阅创建失败");
+            }
+        } catch (Exception e) {
+            return Result.error("创建默认订阅失败: " + e.getMessage());
+        }
+    }
 }

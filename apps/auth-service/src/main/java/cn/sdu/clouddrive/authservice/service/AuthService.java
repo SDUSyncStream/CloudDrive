@@ -26,4 +26,9 @@ public interface AuthService
     Boolean isEmailExist(String email);
 
     Boolean refresh(String email,String newPassword);
+
+    /**
+     * 插入用户默认订阅
+     */
+    Boolean insertUserSubscription(String subscriptionId, String userId);
 }

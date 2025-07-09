@@ -54,6 +54,21 @@ public class RegisterController {
 
             if (registerSuccess) {
                 log.info("用户 {} 注册成功，用户ID: {}", registerInfo.getUsername(), userId);
+                
+                // 创建默认订阅
+                try {
+                    String subscriptionId = UUID.randomUUID().toString();
+                    boolean subscriptionSuccess = authService.insertUserSubscription(subscriptionId, userId);
+                    if (subscriptionSuccess) {
+                        log.info("用户 {} 默认订阅创建成功，订阅ID: {}", userId, subscriptionId);
+                    } else {
+                        log.error("创建默认订阅失败，用户ID: {}", userId);
+                    }
+                } catch (Exception e) {
+                    log.error("创建默认订阅失败，用户ID: {}, 错误: {}", userId, e.getMessage());
+                    // 订阅创建失败不影响注册成功
+                }
+                
                 return ServerResult.ok("注册成功");
             } else {
                 return ServerResult.error(500, "注册失败，请稍后重试");
