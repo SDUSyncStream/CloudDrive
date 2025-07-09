@@ -10,7 +10,7 @@
           </div>
           <div class="card-content">
             <div class="card-title">总用户数</div>
-            <div class="card-value">{{ totalUsers }}</div>
+            <div class="card-value">{{ overviewData.totalUsers !== null ? overviewData.totalUsers : '--' }}</div>
           </div>
         </el-card>
       </el-col>
@@ -21,9 +21,9 @@
           </div>
           <div class="card-content">
             <div class="card-title">总存储用量</div>
-            <div class="card-value">{{ formatFileSize(totalStorageUsed) }}</div>
+            <div class="card-value">{{ formatFileSize(overviewData.totalStorageUsed) }}</div>
             <div class="card-sub-value">
-              (已分配: {{ formatFileSize(totalStorageAllocated) }})
+              (已分配: {{ formatFileSize(overviewData.totalStorageQuota) }})
             </div>
           </div>
         </el-card>
@@ -35,7 +35,7 @@
           </div>
           <div class="card-content">
             <div class="card-title">文件总数</div>
-            <div class="card-value">{{ totalFiles }}</div>
+            <div class="card-value">{{ overviewData.totalFiles !== null ? overviewData.totalFiles : '--' }}</div>
           </div>
         </el-card>
       </el-col>
@@ -46,7 +46,7 @@
           </div>
           <div class="card-content">
             <div class="card-title">近7日新增用户</div>
-            <div class="card-value">{{ newUsersLastWeek }}</div>
+            <div class="card-value">{{ overviewData.newUsersLast7Days !== null ? overviewData.newUsersLast7Days : '--' }}</div>
           </div>
         </el-card>
       </el-col>
@@ -61,8 +61,8 @@
             </div>
           </template>
           <div class="chart-placeholder" ref="storageChart">
-            <p>（这里将是**存储空间使用趋势图**，例如折线图）</p>
-            <p>示例数据: {{ storageTrendData }}</p>
+            <p v-if="loadingCharts">图表加载中...</p>
+            <p v-else-if="!storageTrendData.labels.length">暂无数据</p>
           </div>
         </el-card>
       </el-col>
@@ -74,163 +74,247 @@
             </div>
           </template>
           <div class="chart-placeholder" ref="userGrowthChart">
-            <p>（这里将是**用户增长趋势图**，例如柱状图）</p>
-            <p>示例数据: {{ userGrowthData }}</p>
+            <p v-if="loadingCharts">图表加载中...</p>
+            <p v-else-if="!userGrowthData.labels.length">暂无数据</p>
           </div>
         </el-card>
       </el-col>
     </el-row>
-
-<!--    <el-row :gutter="20" class="dashboard-tables">-->
-<!--      <el-col :span="24">-->
-<!--        <el-card shadow="hover">-->
-<!--          <template #header>-->
-<!--            <div class="card-header">-->
-<!--              <span>近期操作日志</span>-->
-<!--              <el-button type="text" @click="goToSystemLogs">查看更多</el-button>-->
-<!--            </div>-->
-<!--          </template>-->
-<!--          <el-table :data="recentLogs" style="width: 100%" max-height="300">-->
-<!--            <el-table-column prop="time" label="时间" width="180"></el-table-column>-->
-<!--            <el-table-column prop="user" label="用户/系统" width="180"></el-table-column>-->
-<!--            <el-table-column prop="action" label="操作内容"></el-table-column>-->
-<!--            <el-table-column prop="ip" label="IP地址" width="150"></el-table-column>-->
-<!--          </el-table>-->
-<!--        </el-card>-->
-<!--      </el-col>-->
-<!--    </el-row>-->
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, reactive } from 'vue'
+import { ElMessage } from 'element-plus'
 import {
-  UserFilled, // 填充用户图标
-  DataLine,   // 数据线图标（表示存储/数据）
-  Files,      // 多个文件图标
-  User        // 用户图标
-} from '@element-plus/icons-vue' // 从 Element Plus 导入图标
+  UserFilled,
+  DataLine,
+  Files,
+  User
+} from '@element-plus/icons-vue'
 
 import { formatFileSize } from '../utils' // 确保你的 utils 文件中有这个函数
-import * as echarts from 'echarts';
-const router = useRouter()
+import * as echarts from 'echarts'
+import type { ECharts } from 'echarts'; // 引入 ECharts 类型
 
-// --- 示例数据 ---
-// 实际项目中，这些数据会从后端 API 获取
-const totalUsers = ref(5280) // 总用户数量
-const totalStorageUsed = ref(380 * 1024 * 1024 * 1024) // 380 GB
-const totalStorageAllocated = ref(800 * 1024 * 1024 * 1024) // 800 GB
-const totalFiles = ref(1250000) // 文件总数量
-const newUsersLastWeek = ref(128) // 最近一周新增用户数量
+// --- 响应式数据 ---
+const loadingCharts = ref(true); // 控制图表加载状态
 
-// 存储空间使用趋势数据（示例 Echarts 数据格式）
-const storageTrendData = ref({
-  labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-  data: [350, 360, 370, 375, 380, 385, 390] // 单位：GB
-})
+// 概览数据，初始值设为 null 或 0，表示待加载
+const overviewData = reactive({
+  totalUsers: null as number | null,
+  totalStorageUsed: null as number | null,
+  totalStorageQuota: null as number | null,
+  totalFiles: null as number | null,
+  newUsersLast7Days: null as number | null,
+});
 
-// 用户增长趋势数据（示例 Echarts 数据格式）
-const userGrowthData = ref({
-  labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
-  data: [1000, 1200, 1500, 1800, 2200, 2500] // 每月总用户数
-})
+// 存储空间使用趋势数据，初始为空
+const storageTrendData = reactive<{ labels: string[]; data: number[] }>({
+  labels: [],
+  data: []
+});
 
-// 近期操作日志（示例数据）
-const recentLogs = ref([
-  { time: '2025-07-07 10:30', user: 'admin', action: '创建了新用户: user001', ip: '192.168.1.100' },
-  { time: '2025-07-07 09:15', user: 'system', action: '存储清理任务完成', ip: 'N/A' },
-  { time: '2025-07-06 18:00', user: 'user005', action: '上传了文件: report.pdf', ip: '203.0.113.50' },
-  { time: '2025-07-06 14:20', user: 'admin', action: '修改了用户 user003 的存储配额', ip: '192.168.1.100' },
-  { time: '2025-07-05 11:00', user: 'system', action: '数据库备份成功', ip: 'N/A' },
-])
+// 用户增长趋势数据，初始为空
+const userGrowthData = reactive<{ labels: string[]; data: number[] }>({
+  labels: [],
+  data: []
+});
 
-// --- 图表引用 ---
-// ref 用于获取 DOM 元素，以便初始化 Echarts
-const storageChart = ref<HTMLElement | null>(null)
-const userGrowthChart = ref<HTMLElement | null>(null)
+// --- ECharts 实例引用 ---
+const storageChart = ref<HTMLElement | null>(null);
+const userGrowthChart = ref<HTMLElement | null>(null);
+let myStorageChart: ECharts | null = null;
+let myUserGrowthChart: ECharts | null = null;
 
 // --- 方法 ---
 
-// 初始化图表的方法（需要 Echarts 库）
+// 初始化图表的方法
 const initCharts = () => {
-  // 在实际项目中，你会在这里导入 echarts 并初始化图表
-  // 例如：
+  if (storageChart.value && !myStorageChart) {
+    myStorageChart = echarts.init(storageChart.value);
+  }
+  if (userGrowthChart.value && !myUserGrowthChart) {
+    myUserGrowthChart = echarts.init(userGrowthChart.value);
+  }
 
-
-
-  if (storageChart.value) {
-    const myStorageChart = echarts.init(storageChart.value);
+  // 配置存储空间使用趋势图
+  if (myStorageChart) {
     myStorageChart.setOption({
-      title: { text: '存储空间使用趋势' },
-      tooltip: {},
-      xAxis: { data: storageTrendData.value.labels },
-      yAxis: { type: 'value', name: '存储 (GB)' },
-      series: [{
-        name: '使用量',
-        type: 'line',
-        data: storageTrendData.value.data
-      }]
+      // title: { text: '存储空间使用趋势', left: 'center' }, // 根据需求决定是否保留标题
+      tooltip: {
+        trigger: 'axis',
+        formatter: function (params: any) {
+          if (params.length > 0) {
+            const param = params[0];
+            return `${param.name}<br/>${param.seriesName}: ${formatFileSize(param.value * 1024 * 1024 * 1024)}`; // 将GB转换为字节后格式化
+          }
+          return '';
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false, // 让折线图从Y轴开始
+        data: storageTrendData.labels
+      },
+      yAxis: {
+        type: 'value',
+        name: '存储 (GB)', // 明确Y轴单位
+        axisLabel: {
+          formatter: '{value}' // 直接显示数值，格式化在tooltip中处理
+        }
+      },
+      series: [
+        {
+          name: '存储用量',
+          type: 'line',
+          smooth: true, // 平滑曲线
+          data: storageTrendData.data,
+          areaStyle: {
+            // 区域填充
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(103, 194, 58, 0.3)' },
+              { offset: 1, color: 'rgba(103, 194, 58, 0)' }
+            ])
+          },
+          itemStyle: {
+            color: '#67c23a' // 折线颜色
+          }
+        }
+      ]
     });
+    myStorageChart.resize(); // 确保图表适应容器大小
   }
 
-  if (userGrowthChart.value) {
-    const myUserGrowthChart = echarts.init(userGrowthChart.value);
+  // 配置用户增长趋势图
+  if (myUserGrowthChart) {
     myUserGrowthChart.setOption({
-      title: { text: '用户增长趋势' },
-      tooltip: {},
-      xAxis: { data: userGrowthData.value.labels },
-      yAxis: { type: 'value', name: '用户数' },
-      series: [{
-        name: '用户数',
-        type: 'bar',
-        data: userGrowthData.value.data
-      }]
+      // title: { text: '用户增长趋势', left: 'center' }, // 根据需求决定是否保留标题
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: userGrowthData.labels,
+        axisTick: {
+          alignWithLabel: true
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: '用户数'
+      },
+      series: [
+        {
+          name: '新增用户',
+          type: 'bar',
+          barWidth: '60%',
+          data: userGrowthData.data,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#409eff' },
+              { offset: 1, color: '#79bbff' }
+            ])
+          },
+          emphasis: {
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#337ecc' },
+                { offset: 1, color: '#66b1ff' }
+              ])
+            }
+          }
+        }
+      ]
     });
+    myUserGrowthChart.resize(); // 确保图表适应容器大小
   }
-
-  console.log('--- 提示：图表功能需要安装 Echarts 等库并在此处初始化 ---');
 };
 
-// 跳转到系统日志页面
-const goToSystemLogs = () => {
-  router.push('/admin/logs'); // 假设系统日志的路由是 /admin/logs
-};
-
-// 组件挂载后执行
-onMounted(() => {
-  // 在这里可以发起 API 请求来获取真实的统计数据
-  // fetchDashboardData();
-
-  // 初始化图表（如果 Echarts 已安装）
-  initCharts();
-});
-
-// 模拟获取数据（实际会是 API 请求）
+// 获取仪表盘数据
 const fetchDashboardData = async () => {
-  // try {
-  //   const response = await fetch('/api/admin/dashboard-stats');
-  //   const data = await response.json();
-  //   if (data.code === 200) {
-  //     totalUsers.value = data.data.totalUsers;
-  //     totalStorageUsed.value = data.data.totalStorageUsed;
-  //     totalStorageAllocated.value = data.data.totalStorageAllocated;
-  //     totalFiles.value = data.data.totalFiles;
-  //     newUsersLastWeek.value = data.data.newUsersLastWeek;
-  //     storageTrendData.value = data.data.storageTrend;
-  //     userGrowthData.value = data.data.userGrowth;
-  //     recentLogs.value = data.data.recentLogs;
-  //     // 数据更新后重新初始化图表
-  //     initCharts();
-  //   } else {
-  //     ElMessage.error('获取控制台数据失败: ' + data.message);
-  //   }
-  // } catch (error) {
-  //   console.error('获取控制台数据错误:', error);
-  //   ElMessage.error('无法连接到服务器，请检查网络。');
-  // }
+  loadingCharts.value = true;
+  try {
+    const response = await fetch('/admin-api/dashboard/all-data', {
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}` // 如果需要认证
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.code === 200) {
+      const data = result.data;
+
+      // 更新概览数据
+      overviewData.totalUsers = data.overview.totalUsers;
+      overviewData.totalStorageUsed = data.overview.totalStorageUsed;
+      overviewData.totalStorageQuota = data.overview.totalStorageQuota;
+      overviewData.totalFiles = data.overview.totalFiles;
+      overviewData.newUsersLast7Days = data.overview.newUsersLast7Days;
+
+      // 更新存储趋势数据
+      storageTrendData.labels = data.storageTrend.map((item: { date: string }) => {
+        // 假设日期格式是 "YYYY-MM-DD"，这里提取月份和日期 "MM-DD"
+        return item.date.substring(5); // "07-04"
+      });
+      storageTrendData.data = data.storageTrend.map((item: { storageUsed: number }) => {
+        // 将字节转换为GB，以便图表显示，保留一位小数
+        return parseFloat((item.storageUsed / (1024 * 1024 * 1024)).toFixed(1));
+      });
+
+      // 更新用户增长趋势数据
+      userGrowthData.labels = data.userGrowthTrend.map((item: { date: string }) => {
+        // 假设日期格式是 "YYYY-MM-DD"，这里提取月份和日期 "MM-DD"
+        return item.date.substring(5);
+      });
+      userGrowthData.data = data.userGrowthTrend.map((item: { userCount: number }) => item.userCount);
+
+      // 数据更新后重新初始化/更新图表
+      initCharts();
+
+    } else {
+      ElMessage.error(result.message || '获取控制台数据失败！');
+    }
+  } catch (error) {
+    console.error('获取控制台数据错误:', error);
+    ElMessage.error('获取控制台数据失败，请检查网络连接。');
+  } finally {
+    loadingCharts.value = false;
+  }
 };
 
+// --- 生命周期钩子 ---
+onMounted(() => {
+  // 在组件挂载后立即获取数据
+  fetchDashboardData();
+
+  // 监听窗口大小变化以重绘 ECharts 图表
+  window.addEventListener('resize', () => {
+    myStorageChart?.resize();
+    myUserGrowthChart?.resize();
+  });
+});
 </script>
 
 <style scoped>
@@ -322,10 +406,12 @@ h2 {
 .dashboard-charts .el-card :deep(.el-card__body) {
   flex-grow: 1; /* 使 body 填充剩余空间 */
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: #909399;
+  /* 移除之前示例的居中p标签的样式，让echarts填充 */
+  align-items: center; /* 移除 */
+  justify-content: center; /* 移除 */
+  font-size: 16px; /* 移除 */
+  color: #909399; /* 移除 */
+  padding: 10px; /* 调整内边距 */
 }
 
 .chart-placeholder {
