@@ -1,8 +1,8 @@
-# Multi-stage build for User service
-FROM --platform=linux/amd64 eclipse-temurin:17-jdk as build
+# File Recycle Service Dockerfile
+FROM --platform=linux/amd64 eclipse-temurin:17-jdk-alpine AS builder
 
 # Install Maven
-RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache maven
 
 WORKDIR /app
 
@@ -21,14 +21,15 @@ RUN mvn clean package -Dmaven.test.skip=true -q
 # Verify build output
 RUN ls -la target/ && ls -la target/*.jar
 
-# Runtime stage
-FROM --platform=linux/amd64 eclipse-temurin:17-jre
+FROM --platform=linux/amd64 eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Copy built JAR from build stage
-COPY --from=build /app/target/*.jar app.jar
+# Copy the built JAR file
+COPY --from=builder /app/target/*.jar app.jar
 
-EXPOSE 8081
+# Expose port
+EXPOSE 8080
 
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

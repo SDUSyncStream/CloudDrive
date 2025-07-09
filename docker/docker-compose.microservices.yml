@@ -28,6 +28,7 @@ services:
     build:
       context: ../apps/gateway
       dockerfile: ../../docker/Dockerfile.gateway
+    platform: linux/amd64
     container_name: gateway
     restart: unless-stopped
     ports:
@@ -42,12 +43,13 @@ services:
     networks:
       - cloud-drive-network
 
-  # User Service
-  user-service:
+  # Auth Service
+  auth-service:
     build:
-      context: ../apps/user-service
-      dockerfile: ../../docker/Dockerfile.user-service
-    container_name: user-service
+      context: ../apps/auth-service
+      dockerfile: ../../docker/Dockerfile.auth-service
+    platform: linux/amd64
+    container_name: auth-service
     restart: unless-stopped
     ports:
       - "8081:8081"
@@ -70,15 +72,16 @@ services:
     networks:
       - cloud-drive-network
 
-  # File Service
-  file-service:
+  # File Upload/Download Service
+  fileupdown-service:
     build:
-      context: ../apps/file-service
-      dockerfile: ../../docker/Dockerfile.file-service
-    container_name: file-service
+      context: ../apps/fileupdown-service
+      dockerfile: ../../docker/Dockerfile.fileupdown-service
+    platform: linux/amd64
+    container_name: fileupdown-service
     restart: unless-stopped
     ports:
-      - "8082:8082"
+      - "8090:8090"
     depends_on:
       mysql:
         condition: service_healthy
@@ -86,8 +89,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      hadoop-namenode:
-        condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
@@ -97,8 +98,6 @@ services:
       - SPRING_DATASOURCE_PASSWORD=root123
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
-      - HADOOP_NAMENODE_HOST=hadoop-namenode
-      - HADOOP_NAMENODE_PORT=9000
     networks:
       - cloud-drive-network
 
@@ -107,6 +106,7 @@ services:
     build:
       context: ../apps/admin-service
       dockerfile: ../../docker/Dockerfile.admin-service
+    platform: linux/amd64
     container_name: admin-service
     restart: unless-stopped
     ports:
@@ -135,6 +135,7 @@ services:
     build:
       context: ../apps/membership-service
       dockerfile: ../../docker/Dockerfile.membership-service
+    platform: linux/amd64
     container_name: membership-service
     restart: unless-stopped
     ports:
@@ -158,11 +159,92 @@ services:
     networks:
       - cloud-drive-network
 
+  # File Management Service
+  file-manage-service:
+    build:
+      context: ../apps/file-manage-service
+      dockerfile: ../../docker/Dockerfile.file-manage-service
+    platform: linux/amd64
+    container_name: file-manage-service
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root123
+    networks:
+      - cloud-drive-network
+
+  # File Recycle Service
+  file-recycle-service:
+    build:
+      context: ../apps/file_recycle_server
+      dockerfile: ../../docker/Dockerfile.file-recycle-service
+    platform: linux/amd64
+    container_name: file-recycle-service
+    restart: unless-stopped
+    ports:
+      - "8086:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root123
+    networks:
+      - cloud-drive-network
+
+  # Mail Service
+  mail-service:
+    build:
+      context: ../apps/mail-service
+      dockerfile: ../../docker/Dockerfile.mail-service
+    platform: linux/amd64
+    container_name: mail-service
+    restart: unless-stopped
+    ports:
+      - "8087:8084"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+    networks:
+      - cloud-drive-network
+
   # Frontend
   frontend:
     build:
       context: ../apps/frontend
       dockerfile: ../../docker/Dockerfile.frontend
+    platform: linux/amd64
     container_name: frontend
     ports:
       - "3000:3000"
@@ -206,6 +288,27 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - cloud-drive-network
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3.11-management-alpine
+    platform: linux/amd64
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 30s
+      timeout: 15s
+      retries: 8
+      start_period: 150s
     networks:
       - cloud-drive-network
 
