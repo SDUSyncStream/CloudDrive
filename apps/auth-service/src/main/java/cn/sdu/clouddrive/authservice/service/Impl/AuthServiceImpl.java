@@ -41,9 +41,9 @@ public class AuthServiceImpl implements AuthService
     }
 
     @Override
-    public Boolean refresh(Map<String, String> map)
+    public Boolean refresh(String email,String newPassword)
     {
-        return authMapper.refresh(map);
+        return authMapper.refresh(email,newPassword);
     }
 
 }

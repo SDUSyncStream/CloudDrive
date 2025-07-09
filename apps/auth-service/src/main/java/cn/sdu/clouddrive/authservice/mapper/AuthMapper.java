@@ -26,6 +26,6 @@ public interface AuthMapper extends BaseMapper<UserBasicInfo>
     @Select("select * from users where email = #{email}")
     Boolean isEmailExist(String email);
 
-    @Update("update user set password_hash = #{newPassword} where username = #{username}")
-    Boolean refresh(Map<String, String> map);
+    @Update("update users set password_hash = #{newPassword} where email = #{email}")
+    Boolean refresh(String email,String newPassword);
 }

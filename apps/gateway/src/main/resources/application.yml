@@ -79,6 +79,11 @@ spring:
           filters:
             - RewritePath=/api/auth/(?<segment>.*),/api/auth/$\{segment}
 
+        - id: mail-service
+          uri: lb://mail-service
+          predicates:
+            - Path=/api/mail/**
+
 
 
 management:

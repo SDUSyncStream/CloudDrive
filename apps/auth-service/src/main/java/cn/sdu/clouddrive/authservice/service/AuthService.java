@@ -25,5 +25,5 @@ public interface AuthService
      */
     Boolean isEmailExist(String email);
 
-    Boolean refresh(Map<String, String> map);
+    Boolean refresh(String email,String newPassword);
 }
