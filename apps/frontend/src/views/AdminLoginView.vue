@@ -43,9 +43,9 @@
         </el-form-item>
       </el-form>
 
-      <div class="admin-login-footer">
-        <el-link type="warning" href="#">忘记管理员密码？</el-link>
-      </div>
+<!--      <div class="admin-login-footer">-->
+<!--        <el-link type="warning" href="#">忘记管理员密码？</el-link>-->
+<!--      </div>-->
     </el-card>
   </div>
 </template>

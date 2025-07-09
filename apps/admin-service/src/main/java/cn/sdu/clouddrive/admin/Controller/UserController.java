@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*; // 引入 @RequestBody, @PostMapping 等
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 //import static sun.security.util.Debug.println;
@@ -80,6 +81,45 @@ public class UserController {
         } else {
             // 登录失败
             return ServerResult.fail("用户名或密码不正确");
+        }
+    }
+    //得到所有用户
+    @GetMapping("/getAllUsers")
+    public ServerResult<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return ServerResult.ok(users, "获取所有用户成功");
+    }
+    //根据id删除用户
+    @DeleteMapping("/deleteUser/{id}")
+    public ServerResult<String> deleteUserById(@PathVariable String id) {
+        int result = userService.deleteUserById(id);
+        if (result > 0) {
+            return ServerResult.ok("删除用户成功");
+        } else {
+            return ServerResult.fail("删除用户失败");
+        }
+    }
+    //插入用户
+    @PostMapping("/insertUser")
+    public ServerResult<String> insertUser(@RequestBody User user) {
+        //生成UUID
+        String userId = java.util.UUID.randomUUID().toString();
+        user.setId(userId);
+        int result = userService.insertUser(user);
+        if (result > 0) {
+            return ServerResult.ok("插入用户成功");
+        } else {
+            return ServerResult.fail("插入用户失败");
+        }
+    }
+    //根据id更新用户
+    @PutMapping("/updateUser")
+    public ServerResult<String> updateUserById(@RequestBody User user) {
+        int result = userService.updateUserById(user);
+        if (result > 0) {
+            return ServerResult.ok("更新用户成功");
+        } else {
+            return ServerResult.fail("更新用户失败");
         }
     }
 }
