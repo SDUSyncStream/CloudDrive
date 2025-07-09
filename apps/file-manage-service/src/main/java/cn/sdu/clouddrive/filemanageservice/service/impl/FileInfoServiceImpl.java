@@ -35,6 +35,12 @@ public class FileInfoServiceImpl implements FileInfoService {
     public void NewFolder(String fileId, String userId, String filePid, String fileName){
         fileInfoMapper.NewFolder(fileId, userId, filePid, fileName);
     }
-
-
+    @Override
+    public void UpdateTime(String fileId, String userId){
+        fileInfoMapper.UpdateTime(fileId, userId);
+    }
+    @Override
+    public void CreateTime(String fileId, String userId){
+        fileInfoMapper.CreateTime(fileId, userId);
+    }
 }

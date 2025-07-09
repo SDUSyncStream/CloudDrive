@@ -10,6 +10,6 @@ public interface FileInfoService {
     void RecycleFile(String fileId, String userId, Integer del_flag, String newPid);
     void RenameFile(String fileId, String userId, String newName);
     void NewFolder(String fileId, String userId, String filePid, String fileName);
-
-
+    void UpdateTime(String fileId, String userId);
+    void CreateTime(String fileId, String userId);
 }

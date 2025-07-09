@@ -26,6 +26,8 @@ public class FileInfoController {
     public Result<String> CopyFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String targetId){
         String newFileId = UUID.randomUUID().toString();
         fileInfoService.CopyFile(fileId, userId, targetId, newFileId);
+        fileInfoService.CreateTime(fileId, userId);
+        fileInfoService.UpdateTime(newFileId, userId);
         return Result.success("粘贴成功");
     }
 
@@ -51,6 +53,7 @@ public class FileInfoController {
 
         String message = "重命名成功";
         fileInfoService.RenameFile(fileId, userId, newName);
+        fileInfoService.UpdateTime(fileId, userId);
         return Result.success(message);
     }
 
@@ -59,8 +62,9 @@ public class FileInfoController {
         String newFileId = UUID.randomUUID().toString();
         String message = "新建文件夹成功";
         fileInfoService.NewFolder(newFileId, userId, pid, newName);
+        fileInfoService.CreateTime(newFileId, userId);
+        fileInfoService.UpdateTime(newFileId, userId);
         return Result.success(message);
-
     }
 
 

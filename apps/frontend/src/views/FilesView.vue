@@ -145,11 +145,18 @@
     <!-- 路径导航 -->
     <div class="breadcrumb-container">
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/main/files' }">我的文件</el-breadcrumb-item>
-        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index"
-          :to="index < currentPath.length - 1 ? { path: generatePath(index) } : undefined">
-          {{ path }}
-        </el-breadcrumb-item>
+<!--        <el-breadcrumb-item :to="{ path: '/main/files' }">我的文件</el-breadcrumb-item>-->
+<!--        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index"-->
+<!--          :to="index < currentPath.length - 1 ? { path: generatePath(index) } : undefined">-->
+<!--          {{ path }}-->
+<!--        </el-breadcrumb-item>-->
+          <el-breadcrumb-item
+              v-for="item in breadcrumbList"
+              :key="index"
+              @click="handleBreadcrumbClick(item)"
+          >
+            {{ item.fileName }}
+          </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
 
@@ -352,6 +359,8 @@ onMounted(() => {
   getFileList(nowfilePid, nowUserId);
 })
 
+
+
 const getFileList = async(pid, userId) =>{
   try {
     const response = await axios.get(`/files/get/${pid}`, {
@@ -460,7 +469,44 @@ const updatetable = (data) => {
   tableData.value = data
 }
 
-let tableData = ref([])
+let tableData = ref([
+  {
+    fileId: 0,
+    fileName: "我的文件",
+  }
+])
+
+// 面包屑列表
+const breadcrumbList = ref([
+  {
+    fileId: 0,
+    fileName: "我的文件",
+    userId: nowUserId,
+  }
+]);
+
+// 更新面包屑列表
+const updateBreadcrumb = (item) => {
+  let i = 0;
+  for(i; i < breadcrumbList.value.length; i++){
+    if(breadcrumbList.value[i].fileId == item.fileId){
+      breadcrumbList.value.length = i + 1;
+      console.log(i);
+      break;
+    }
+  }
+  if(i == breadcrumbList.value.length){
+    breadcrumbList.value.push(item);
+  }
+  console.log("面包屑",breadcrumbList.value);
+}
+
+// 处理面包屑点击事件
+const handleBreadcrumbClick = async (item) => {
+  await getFileList(item.fileId, item.userId);
+  updateBreadcrumb(item);
+}
+
 
 // 显示文件选择器
 const showFileInput = () => {
@@ -692,7 +738,8 @@ const handleFileClick = (item: any) => {
 
 const handleViewClick = (item) => {
   if (item.folderType == 1){
-    getFileList(item.fileId, item.userId)
+    getFileList(item.fileId, item.userId);
+    updateBreadcrumb(item);
   }
   else{
 

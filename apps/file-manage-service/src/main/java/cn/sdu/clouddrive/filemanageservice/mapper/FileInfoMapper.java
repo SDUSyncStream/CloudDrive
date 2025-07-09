@@ -26,4 +26,10 @@ public interface FileInfoMapper extends BaseMapper<FileInfo> {
 
     @Insert("insert into file_info (file_id, user_id, file_pid, file_name, folder_type, del_flag) values(#{fileId}, #{userId}, #{filePid}, #{fileName}, 1, 2)")
     void NewFolder(String fileId, String userId, String filePid, String fileName);
+
+    @Update("update file_info set last_update_time = NOW() where file_id = #{fileId} and user_id = #{userId}")
+    void UpdateTime(String fileId, String userId);
+
+    @Update("update file_info set create_time = NOW() where file_id = #{fileId} and user_id = #{userId}")
+    void CreateTime(String fileId, String userId);
 }
