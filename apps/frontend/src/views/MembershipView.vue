@@ -154,7 +154,9 @@ const cancelLoading = ref(false)
 // 获取用户ID (这里应该从用户状态或token中获取)
 const getCurrentUserId = () => {
   // 临时使用固定用户ID，实际应用中应从用户状态获取
-  return 'user-001'
+  //return 'user-001'
+  let UserId = JSON.parse(localStorage.getItem('UserId') || '{}')
+  return UserId.id || ''
 }
 
 // 格式化日期

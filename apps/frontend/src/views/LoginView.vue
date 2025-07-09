@@ -131,6 +131,7 @@ const handleLogin = async () => {
       if (response.data.data.refreshToken) {
         localStorage.setItem('refreshToken', response.data.data.refreshToken)
       }
+      localStorage.setItem('UserId', response.data.data.userId || 'user-01')
 
       // 更新用户状态
       userStore.setUser(response.data.data.userId)
