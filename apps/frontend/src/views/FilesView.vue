@@ -117,9 +117,14 @@
             <Upload />
           </el-icon>上传文件
         </el-button>
-        <el-button><el-icon>
+        <el-button  @click="handleNewFolder()">
+          <el-icon>
             <FolderAdd />
-          </el-icon>新建文件夹</el-button>
+          </el-icon>新建文件夹
+        </el-button>
+        <el-button @click="handlePaste()" v-if="copied_fileId != -1">
+          粘贴
+        </el-button>
       </div>
       <div class="header-actions">
         <el-button-group>
@@ -156,26 +161,28 @@
         <el-table-column prop="name" label="文件名">
           <template #default="{ row }">
             <div class="file-item">
-              <el-icon class="file-icon">
-                <Document />
-              </el-icon>
-              <span>{{ row.name }}</span>
+              <el-icon v-if="row.folderType == 1"><Folder /></el-icon>
+              <el-icon v-else-if="row.folderType == 0"><Document /></el-icon>
+              <span>{{ row.fileName }}</span>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="size" label="大小">
           <template #default="{ row }">
-            {{ row.size || '--' }}
+            {{ row.fileSize || '--' }}
           </template>
         </el-table-column>
         <el-table-column prop="date" label="修改时间">
           <template #default="{ row }">
-            {{ formatDate(row.date) }}
+            {{ formatDate(row.lastUpdateTime) }}
           </template>
         </el-table-column>
         <el-table-column label="操作">
           <template #default="{ row }">
             <div class="table-actions">
+              <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(row)">
+                <el-icon><View /></el-icon>
+              </el-button>
               <el-button link type="primary" size="small" title="分享文件">
                 <el-icon><Share /></el-icon>
               </el-button>
@@ -188,19 +195,15 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item>
-                      <el-icon><FolderOpened /></el-icon>
-                      移动到
-                    </el-dropdown-item>
-                    <el-dropdown-item>
+                    <el-dropdown-item @click="handleCopy(row)">
                       <el-icon><CopyDocument /></el-icon>
                       复制
-                    </el-dropdown-item>
-                    <el-dropdown-item>
+                    </el-dropdown-item >
+                    <el-dropdown-item @click="handleRename(row)">
                       <el-icon><Edit /></el-icon>
                       重命名
-                    </el-dropdown-item>
-                    <el-dropdown-item divided>
+                    </el-dropdown-item >
+                    <el-dropdown-item divided @click="handleRecycle(row)">
                       <el-icon><Delete /></el-icon>
                       删除
                     </el-dropdown-item>
@@ -215,22 +218,21 @@
       <!-- Grid模式 -->
       <div v-else class="grid-container">
         <div class="file-grid">
-          <div v-for="item in tableData" :key="item.name" class="file-card" @click="handleFileClick(item)">
+          <div v-for="item in tableData" :key="item.file_id" class="file-card">
             <div class="file-card-header">
-              <el-icon class="file-icon-large">
-                <Document />
-              </el-icon>
+              <el-icon v-if="item.folderType == 1"><Folder /></el-icon>
+              <el-icon v-else-if="item.folderType == 0"><Document /></el-icon>
             </div>
             <div class="file-card-content">
-              <div class="file-name" :title="item.name">{{ item.name }}</div>
+              <div class="file-name" :title="item.fileName">{{ item.fileName }}</div>
               <div class="file-info">
-                <span class="file-size">{{ item.size || '--' }}</span>
-                <span class="file-date">{{ formatDate(item.date) }}</span>
+                <span class="file-size">{{ item.fileSize || '--' }}</span>
+                <span class="file-date">{{ formatDate(item.lastUpdateTime) }}</span>
               </div>
             </div>
             <div class="file-card-actions">
               <div class="primary-actions">
-                <el-button link type="primary" size="small" title="分享文件">
+                <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(item)">
                   <el-icon><Share /></el-icon>
                 </el-button>
                 <el-button link type="primary" size="small" title="下载文件">
@@ -245,10 +247,6 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item>
-                      <el-icon><FolderOpened /></el-icon>
-                      移动到
-                    </el-dropdown-item>
                     <el-dropdown-item>
                       <el-icon><CopyDocument /></el-icon>
                       复制
@@ -282,18 +280,34 @@
 </template>
 
 <script setup lang="ts">
+<<<<<<< Updated upstream
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SparkMD5 from 'spark-md5'
 import { formatDate } from '../utils'
+=======
+import {onMounted, ref} from 'vue'
+import { useRouter } from 'vue-router'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import { useUserStore } from '../stores/user'
+import { formatFileSize, formatDate } from '../utils'
+import type { CloudFile } from '../types'
+import axios from 'axios'
+>>>>>>> Stashed changes
 
 const router = useRouter()
 
 const viewMode = ref<'grid' | 'list'>('list')
+<<<<<<< Updated upstream
 const showUploader = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const currentPath = ref<string[]>(['文档', '项目文件', '2024年度'])
+=======
+
+// 当前路径导航
+const currentPath = []
+>>>>>>> Stashed changes
 
 // 文件上传相关状态和变量
 const STATUS = {
@@ -339,32 +353,127 @@ const chunkSize = 1024 * 512; // 512KB 分片大小
 const fileList = ref<any[]>([]);
 const delList = ref<any[]>([]);
 
-const tableData = [
-  {
-    date: '2016-05-03',
-    name: 'document1.pdf',
-    address: 'No. 189, Grove St, Los Angeles',
-    size: '2.3MB'
-  },
-  {
-    date: '2016-05-02',
-    name: 'image.jpg',
-    address: 'No. 189, Grove St, Los Angeles',
-    size: '1.5MB'
-  },
-  {
-    date: '2016-05-04',
-    name: 'video.mp4',
-    address: 'No. 189, Grove St, Los Angeles',
-    size: '15.2MB'
-  },
-  {
-    date: '2016-05-01',
-    name: 'spreadsheet.xlsx',
-    address: 'No. 189, Grove St, Los Angeles',
-    size: '856KB'
-  },
-]
+let nowfilePid = 0;
+let nowUserId = 2;
+onMounted(() => {
+//  userId = localStorage.getItem("UserId");
+  nowfilePid = 0;
+  getFileList(nowfilePid, nowUserId);
+})
+
+const getFileList = async(pid, userId) =>{
+  try {
+    const response = await axios.get(`/files/get/${pid}`, {
+      params: {
+        userId: userId,
+        delFlag: 2,
+      }
+    });
+    console.log('请求成功:', response.data);
+    updatetable(response.data.data);
+    nowfilePid = pid;
+    // 处理响应数据
+  } catch (error) {
+    console.error('请求失败:', error);
+  }
+}
+
+let copied_fileId = ref(-1);
+
+const handleCopy = (row) => {
+  copied_fileId.value = row.fileId;
+  ElMessage.success('文件复制成功');
+}
+
+const handlePaste = async () => {
+  if (copied_fileId == -1){
+    ElMessage.error("复制内容为空");
+  }
+  else{
+    try {
+      const response = await axios.get(`/files/copy/${copied_fileId}`, {
+        params: {
+          userId: 2,
+          targetId: nowfilePid,
+        }
+      });
+      console.log('请求成功:', response.data);
+      await getFileList(nowfilePid, nowUserId);
+      ElMessage.success('粘贴成功');
+      // 处理响应数据
+    } catch (error) {
+      console.error('请求失败:', error);
+    }
+  }
+}
+
+const handleNewFolder = async () => {
+  try {
+    const { value: newFileName } = await ElMessageBox.prompt('请输入新的文件夹名', '新建文件夹', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+    });
+
+    if (newFileName) {
+      const response = await axios.get(`/files/newfolder/${nowfilePid}`, {
+        params: {
+          userId: nowUserId,
+          newName: newFileName,
+        }
+      });
+      console.log('请求成功:', response.data);
+      await getFileList(nowfilePid, nowUserId);
+      ElMessage.success('新建成功');
+    }
+  } catch (error) {
+    console.error('新建操作取消或出错:', error);
+  }
+}
+
+const handleRecycle = async (row) =>{
+  try {
+    const response = await axios.get(`/files/recycle/${row.fileId}`, {
+      params: {
+        userId: 2,
+        newDelFlag: 1,
+      }
+    });
+    console.log('请求成功:', response.data);
+    await getFileList(nowfilePid, nowUserId);
+    // 处理响应数据
+  } catch (error) {
+    console.error('请求失败:', error);
+  }
+}
+
+const handleRename = async (row) => {
+  try {
+    const { value: newFileName } = await ElMessageBox.prompt('请输入新的文件名', '重命名', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+    });
+
+    if (newFileName) {
+      const response = await axios.get(`/files/rename/${row.fileId}`, {
+        params: {
+          userId: 2,
+          newName: newFileName,
+        }
+      });
+      ElMessage.success('重命名成功');
+      await getFileList(nowfilePid, nowUserId);
+    }
+  } catch (error) {
+    console.error('重命名操作取消或出错:', error);
+  }
+}
+
+const updatetable = (data) => {
+  console.log(data);
+  tableData.value = data
+}
+
+let tableData = ref([])
 
 // 显示文件选择器
 const showFileInput = () => {
@@ -591,8 +700,62 @@ const generatePath = (index: number) => {
 }
 
 const handleFileClick = (item: any) => {
+<<<<<<< Updated upstream
   console.log('File clicked:', item)
 }
+=======
+
+
+}
+
+const handleViewClick = (item) => {
+  if (item.folderType == 1){
+    getFileList(item.fileId, item.userId)
+  }
+  else{
+
+  }
+}
+
+const handleRowClick = (row) => {
+  // 在这里可以添加你需要执行的逻辑，比如跳转到详情页等
+};
+
+
+
+
+const upload=async () => {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.onchange = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      formData.append('filePid', '1'); // 示例父文件夹 ID
+      formData.append('fileMd5', '1234567890abcdef'); // 示例文件 MD5
+      formData.append('chunkIndex', '0'); // 示例分片索引
+      formData.append('chunks', '1'); // 示例总分片数
+
+      try {
+        const response = await axios.post('/file/uploadFile', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        ElMessage.success('文件上传成功');
+        console.log('Upload response:', response.data);
+      } catch (error) {
+        ElMessage.error('文件上传失败');
+        console.error('Upload error:', error);
+      }
+    }
+  };
+  fileInput.click();
+};
+>>>>>>> Stashed changes
 </script>
 
 <style scoped>
