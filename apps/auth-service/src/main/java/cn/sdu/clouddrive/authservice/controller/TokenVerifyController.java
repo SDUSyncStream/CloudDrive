@@ -74,4 +74,13 @@ public class TokenVerifyController {
             return ServerResult.error(500, "token验证失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 健康检查端点 - 测试服务是否正常运行
+     */
+    @GetMapping("/health")
+    public ServerResult<String> health() {
+        log.info("Auth service health check requested");
+        return ServerResult.ok("Auth Service is running and healthy");
+    }
 }

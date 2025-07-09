@@ -3,27 +3,31 @@ package cn.sdu.clouddrive.authservice.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 public class RedisConfig {
 
+    @Value("${spring.data.redis.host:localhost}")
+    private String host;
 
-    private int database0 = 0;
+    @Value("${spring.data.redis.port:6379}")
+    private int port;
 
+    @Value("${spring.data.redis.password:}")
+    private String password;
 
-    private int database1 = 1;
-
-
-    private int timeout = 10;
-
-    private int database2;
+    /**
+     * 默认Redis模板 - 使用database 0
+     */
     @Bean
+    @Primary
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
@@ -40,37 +44,43 @@ public class RedisConfig {
         return template;
     }
 
+    /**
+     * 专门用于验证码的Redis模板 - 使用database 1
+     */
     @Bean
-    public RedisTemplate<String, Object> redisTemplate0()
-    {
-        RedisTemplate<String, Object> redisTemplate0 = this.getRedisConnectionFactory(database0);
-        return redisTemplate0;
+    public RedisTemplate<String, Object> redisTemplate1() {
+        return createRedisTemplate(1);
     }
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate1()
-    {
-        RedisTemplate<String, Object> redisTemplate1 = this.getRedisConnectionFactory(database1);
-        return redisTemplate1;
-    }
+    /**
+     * 创建指定数据库的Redis模板
+     */
+    private RedisTemplate<String, Object> createRedisTemplate(int database) {
+        // 创建Redis连接配置
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(host);
+        config.setPort(port);
+        config.setDatabase(database);
+        
+        if (password != null && !password.trim().isEmpty()) {
+            config.setPassword(password);
+        }
 
-    public RedisTemplate<String, Object> getRedisConnectionFactory(int database) {
-        JedisConnectionFactory jedisFactory = new JedisConnectionFactory();
-//        jedisFactory.setHostName(host);
-//        jedisFactory.setPort(port);
-//        jedisFactory.setPassword(password);
-        jedisFactory.setDatabase(database);
+        // 创建连接工厂
+        JedisConnectionFactory jedisFactory = new JedisConnectionFactory(config);
+        jedisFactory.afterPropertiesSet();
 
-        JedisPoolConfig poolConfig = new JedisPoolConfig(); // 进行连接池配置
-        jedisFactory.setPoolConfig(poolConfig);
-        jedisFactory.afterPropertiesSet(); // 初始化连接池配置
-
-        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-        redisTemplate.setConnectionFactory(jedisFactory);
-        return redisTemplate;
+        // 创建RedisTemplate
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(jedisFactory);
+        
+        // 设置序列化器
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        
+        template.afterPropertiesSet();
+        return template;
     }
 }
