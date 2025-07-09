@@ -141,7 +141,7 @@
     <div class="breadcrumb-container">
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/main/files' }">我的文件</el-breadcrumb-item>
-        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index" 
+        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index"
           :to="index < currentPath.length - 1 ? { path: generatePath(index) } : undefined">
           {{ path }}
         </el-breadcrumb-item>
@@ -269,13 +269,13 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 隐藏的文件选择器 -->
-    <input 
-      type="file" 
-      ref="fileInput" 
-      @change="handleFileChange" 
-      style="display: none" 
+    <input
+      type="file"
+      ref="fileInput"
+      @change="handleFileChange"
+      style="display: none"
       multiple
     />
   </div>
@@ -403,14 +403,14 @@ const addFile = async (file: File, filePid: string) => {
     filePid: filePid,
     errorMsg: null,
   };
-  
+
   fileList.value.unshift(fileItem);
-  
+
   if (fileItem.totalSize === 0) {
     fileItem.status = STATUS.emptyfile.value;
     return;
   }
-  
+
   const md5FileUid = await computeMD5(fileItem);
   if (md5FileUid) {
     uploadFile(md5FileUid);
@@ -452,19 +452,19 @@ const computeMD5 = (fileItem: any) => {
     let currentChunk = 0;
     const spark = new SparkMD5.ArrayBuffer();
     const fileReader = new FileReader();
-    
+
     const loadNext = () => {
       const start = currentChunk * chunkSize;
       const end = Math.min(start + chunkSize, file.size);
       fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
     };
-    
+
     fileReader.onload = (e) => {
       if (!e.target?.result) return;
-      
+
       spark.append(e.target.result as ArrayBuffer);
       currentChunk++;
-      
+
       if (currentChunk < chunks) {
         const percent = Math.floor((currentChunk / chunks) * 100);
         fileItem.md5Progress = percent;
@@ -478,13 +478,13 @@ const computeMD5 = (fileItem: any) => {
         spark.destroy();
       }
     };
-    
+
     fileReader.onerror = () => {
       fileItem.md5Progress = -1;
       fileItem.status = STATUS.fail.value;
       resolve(null);
     };
-    
+
     loadNext();
   });
 };
@@ -493,11 +493,11 @@ const computeMD5 = (fileItem: any) => {
 const uploadFile = async (uid: string, chunkIndex = 0) => {
   const currentFile = getFileByUid(uid);
   if (!currentFile) return;
-  
+
   const file = currentFile.file;
   const fileSize = currentFile.totalSize;
   const chunks = Math.ceil(fileSize / chunkSize);
-  
+
   for (let i = chunkIndex; i < chunks; i++) {
     // 检查是否被删除
     if (delList.value.includes(uid)) {
@@ -505,10 +505,10 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       if (index !== -1) delList.value.splice(index, 1);
       break;
     }
-    
+
     // 检查是否暂停
     if (currentFile.pause) break;
-    
+
     const start = i * chunkSize;
     const end = Math.min(start + chunkSize, fileSize);
     const chunkFile = file.slice(start, end);
@@ -529,26 +529,26 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
         body: formData,
 
       });
-      
+
       if (!response.ok) {
         throw new Error(`上传失败: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       currentFile.status = STATUS[result.data.status].value;
       currentFile.chunkIndex = i;
-      
+
       if (result.data.fileId) {
         currentFile.fileId = result.data.fileId;
       }
-      
+
       // 更新上传进度
       currentFile.uploadSize = (i + 1) * chunkSize;
       if (currentFile.uploadSize > fileSize) {
         currentFile.uploadSize = fileSize;
       }
       currentFile.uploadProgress = Math.floor((currentFile.uploadSize / fileSize) * 100);
-      
+
       // 上传完成
       if (
         result.data.status === STATUS.upload_seconds.value ||
