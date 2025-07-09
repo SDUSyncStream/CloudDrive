@@ -394,8 +394,7 @@ const handlePaste = async () => {
 }
 
 const handleNewFolder = async () => {
-  try {
-    const { value: newFileName } = await ElMessageBox.prompt('请输入新的文件夹名', '新建文件夹', {
+    const {value: newFileName} = await ElMessageBox.prompt('请输入新的文件夹名', '新建文件夹', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
     });
@@ -411,9 +410,6 @@ const handleNewFolder = async () => {
       await getFileList(nowfilePid, nowUserId);
       ElMessage.success('新建成功');
     }
-  } catch (error) {
-    console.error('新建操作取消或出错:', error);
-  }
 }
 
 const handleRecycle = async (row) =>{
