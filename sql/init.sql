@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS users (
 -- 文件表
 DROP TABLE IF EXISTS `file_info`;
 CREATE TABLE `file_info`  (
-                              `file_id` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NOT NULL,
-                              `user_id` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NOT NULL,
-                              `file_md5` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NOT NULL,
-                              `file_pid` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NULL DEFAULT NULL,
+                              `file_id` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NOT NULL,
+                              `user_id` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NOT NULL,
+                              `file_md5` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NOT NULL,
+                              `file_pid` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NULL DEFAULT NULL,
                               `file_size` bigint NULL DEFAULT NULL,
                               `file_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NULL DEFAULT NULL,
                               `file_cover` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_zh_0900_as_cs NULL DEFAULT NULL,
@@ -59,13 +59,13 @@ CREATE TABLE `file_info`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `file_share`;
 CREATE TABLE `file_share` (
-                              `share_id` varchar(20) NOT NULL COMMENT '分享ID',
-                              `file_id` varchar(10) NOT NULL COMMENT '文件ID',
-                              `user_id` varchar(10) NOT NULL COMMENT '用户ID',
+                              `share_id` varchar(60) NOT NULL COMMENT '分享ID',
+                              `file_id` varchar(60) NOT NULL COMMENT '文件ID',
+                              `user_id` varchar(60) NOT NULL COMMENT '用户ID',
                               `valid_type` tinyint(1) DEFAULT NULL COMMENT '有效期类型 0:1天 1:7天 2:30天 3:永久有效',
                               `expire_time` datetime DEFAULT NULL COMMENT '失效时间',
                               `share_time` datetime DEFAULT NULL COMMENT '分享时间',
-                              `code` varchar(5) DEFAULT NULL COMMENT '提取码',
+                              `code` varchar(60) DEFAULT NULL COMMENT '提取码',
                               `show_count` int(11) DEFAULT '0' COMMENT '浏览次数',
                               PRIMARY KEY (`share_id`),
                               KEY `idx_file_id` (`file_id`),
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
     INDEX idx_user_id (user_id),
     INDEX idx_order_number (order_number),
     INDEX idx_status (status)
-);
+    );
 
 -- 插入默认会员等级
 INSERT IGNORE INTO membership_levels (id, name, storage_quota, max_file_size, price, duration_days, features) VALUES 
