@@ -113,6 +113,18 @@ CREATE TABLE IF NOT EXISTS payment_orders (
     INDEX idx_status (status)
 );
 
+-- 回收站表
+CREATE TABLE IF NOT EXISTS recycle_bin (
+    id VARCHAR(36) PRIMARY KEY,
+    file_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    deleted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE, -- 当原文件被彻底删除时，回收站记录也删除
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_file_id (file_id),
+    INDEX idx_user_id (user_id)
+);
+
 -- 插入默认会员等级
 INSERT IGNORE INTO membership_levels (id, name, storage_quota, max_file_size, price, duration_days, features) VALUES 
 ('level-free', '免费版', 1073741824, 104857600, 0.00, 0, '1GB存储空间,单文件100MB'),
