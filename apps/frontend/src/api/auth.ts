@@ -59,3 +59,27 @@ export const newPwd = async (data) => {
     data
   })
 }
+
+export const getVerifyCode = async (params) => {
+  return await request({
+    method: 'post',
+    url: '/mail/forgot-password',
+    params
+  })
+}
+
+export const verifyCode = async (params) => {
+  return await request({
+    method: 'post',
+    url: '/mail/verify',
+    params
+  })
+}
+
+export const rePwd = async (data) => {
+  return await request({
+    method: 'post',
+    url: '/auth/refresh',
+    data
+  })
+}

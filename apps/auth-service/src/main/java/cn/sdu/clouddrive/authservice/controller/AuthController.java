@@ -1,12 +1,10 @@
 package cn.sdu.clouddrive.authservice.controller;
 
-import cn.sdu.clouddrive.authservice.mapper.AuthMapper;
 import cn.sdu.clouddrive.authservice.pojo.LoginInfo;
 import cn.sdu.clouddrive.authservice.pojo.ServerResult;
 
 import cn.sdu.clouddrive.authservice.pojo.UserBasicInfo;
 import cn.sdu.clouddrive.authservice.service.AuthService;
-import cn.sdu.clouddrive.authservice.service.Redis1Service;
 import cn.sdu.clouddrive.authservice.service.RedisService;
 import cn.sdu.clouddrive.authservice.util.JwtUtil;
 
@@ -30,9 +28,6 @@ public class AuthController
 
     @Autowired
     private RedisService redisService;
-
-    @Autowired
-    private Redis1Service redis1Service;
 
 //    @GetMapping("/api/auth/login")
 //    public ServerResult<Map<String, String>> login(@RequestParam String username,@RequestParam String password)
@@ -122,28 +117,19 @@ public class AuthController
     }
 
     @PostMapping("/api/auth/refresh")
-    public ServerResult<Map<String, String>> refresh(@RequestBody Map<String, String> map)
+    public ServerResult<Void> refresh(@RequestBody Map<String, String> map)
     {
-        //map中有username,email,验证码，新密码
-        //验证验证码是否和redis中的相同，相同则更新密码，不同则返回
         log.info("收到密码重置请求");
 
+        System.out.println(map);
         try
         {
-            // 获取参数
-            String username = map.get("username");
             String email = map.get("email");
-            String verificationCode = map.get("verificationCode");
             String newPassword = map.get("newPassword");
-            if (verificationCode != redis1Service.getCode(email))
+
+            if (authService.refresh(email,newPassword))
             {
-                return ServerResult.error(500, "验证码有误");
-            }
-            if (authService.refresh(map))
-            {
-                Map<String, String> map1 = new HashMap<>();
-                map1.put("username", username);
-                return ServerResult.ok(map1);
+                return ServerResult.ok();
             }
             return ServerResult.error(500, "重置失败");
 

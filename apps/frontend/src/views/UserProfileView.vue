@@ -5,6 +5,16 @@
         <div class="card-header">
           <h2>个人资料</h2>
         </div>
+        <!--返回主页面-->
+        <el-button 
+            type="primary" 
+            plain 
+            @click="goBack"
+            class="back-button"
+          >
+            <el-icon><ArrowLeft /></el-icon>
+            返回主页
+          </el-button>
       </template>
 
       <div class="profile-content">
@@ -164,8 +174,10 @@ import { useUserStore } from '../stores/user'
 import { getUserInfo, uploadAvatar, newPwd } from '../api/auth'
 import { encryptPassword } from '../utils/crypto'
 import type { User as UserType } from '../types'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const router = useRouter()
 
 // 响应式数据
 const passwordDialogVisible = ref(false)
@@ -221,6 +233,10 @@ const storagePercentage = computed(() => {
   if (!userInfo.value.storageQuota || userInfo.value.storageQuota === 0) return 0
   return Math.round((userInfo.value.storageUsed || 0) / userInfo.value.storageQuota * 100)
 })
+
+const goBack = () => {
+  router.push('/main')
+}
 
 // 方法
 const loadUserInfo = async () => {
