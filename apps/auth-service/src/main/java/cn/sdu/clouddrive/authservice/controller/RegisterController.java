@@ -50,7 +50,14 @@ public class RegisterController {
             registerInfo.setAvatar("/user.jpg");
 
             // 执行注册
-            boolean registerSuccess = authService.register(registerInfo);
+            boolean registerSuccess = false;
+            try {
+                registerSuccess = authService.register(registerInfo);
+                log.info("用户 {} 注册结果: {}", registerInfo.getUsername(), registerSuccess);
+            } catch (Exception e) {
+                log.error("用户 {} 注册失败，错误: {}", registerInfo.getUsername(), e.getMessage(), e);
+                return ServerResult.error(500, "注册失败: " + e.getMessage());
+            }
 
             if (registerSuccess) {
                 log.info("用户 {} 注册成功，用户ID: {}", registerInfo.getUsername(), userId);
@@ -58,19 +65,21 @@ public class RegisterController {
                 // 创建默认订阅
                 try {
                     String subscriptionId = UUID.randomUUID().toString();
-                    boolean subscriptionSuccess = authService.insertUserSubscription(subscriptionId, userId);
-                    if (subscriptionSuccess) {
-                        log.info("用户 {} 默认订阅创建成功，订阅ID: {}", userId, subscriptionId);
+                    log.info("开始创建默认订阅，用户ID: {}, 订阅ID: {}", userId, subscriptionId);
+                    int subscriptionResult = authService.insertUserSubscription(subscriptionId, userId);
+                    if (subscriptionResult > 0) {
+                        log.info("用户 {} 默认订阅创建成功，订阅ID: {}, 影响行数: {}", userId, subscriptionId, subscriptionResult);
                     } else {
-                        log.error("创建默认订阅失败，用户ID: {}", userId);
+                        log.error("创建默认订阅失败，用户ID: {}, 影响行数: {}", userId, subscriptionResult);
                     }
                 } catch (Exception e) {
-                    log.error("创建默认订阅失败，用户ID: {}, 错误: {}", userId, e.getMessage());
+                    log.error("创建默认订阅失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
                     // 订阅创建失败不影响注册成功
                 }
                 
                 return ServerResult.ok("注册成功");
             } else {
+                log.error("用户 {} 注册失败，authService.register返回false", registerInfo.getUsername());
                 return ServerResult.error(500, "注册失败，请稍后重试");
             }
 

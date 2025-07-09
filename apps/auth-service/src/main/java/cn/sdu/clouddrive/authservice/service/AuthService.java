@@ -30,5 +30,5 @@ public interface AuthService
     /**
      * 插入用户默认订阅
      */
-    Boolean insertUserSubscription(String subscriptionId, String userId);
+    int insertUserSubscription(String subscriptionId, String userId);
 }

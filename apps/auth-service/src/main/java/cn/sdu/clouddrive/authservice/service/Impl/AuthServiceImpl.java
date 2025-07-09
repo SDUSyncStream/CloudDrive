@@ -47,7 +47,7 @@ public class AuthServiceImpl implements AuthService
     }
 
     @Override
-    public Boolean insertUserSubscription(String subscriptionId, String userId)
+    public int insertUserSubscription(String subscriptionId, String userId)
     {
         return authMapper.insertUserSubscription(subscriptionId, userId);
     }
