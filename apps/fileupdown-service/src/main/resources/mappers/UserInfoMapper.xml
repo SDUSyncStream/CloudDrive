@@ -4,11 +4,11 @@
 <mapper namespace="cn.sdu.fileupdownservice.mappers.UserInfoMapper">
 
     <!--实体映射-->
-    <resultMap id="base_result_map" type="cn.sdu.fileupdownservice.entity.po.UserInfo">
+    <resultMap id="base_result_map" type="cn.sdu.fileupdownservice.entity.po.Users">
         <!--用户ID-->
-        <result column="user_id" property="userId"/>
+        <result column="id" property="id"/>
         <!--昵称-->
-        <result column="nick_name" property="nickName"/>
+        <result column="username" property="username"/>
         <!--邮箱-->
         <result column="email" property="email"/>
         <!--qqOpenID-->
@@ -24,28 +24,28 @@
         <!--0:禁用 1:正常-->
         <result column="status" property="status"/>
         <!--使用空间单位byte-->
-        <result column="use_space" property="useSpace"/>
+        <result column="storage_used" property="storage_used"/>
         <!--总空间-->
-        <result column="total_space" property="totalSpace"/>
+        <result column="storage_quota" property="storage_quota"/>
     </resultMap>
 
     <select id="selectUser" parameterType="string" resultMap="base_result_map">
-        SELECT user_id,nick_name FROM user_info WHERE user_id = #{userId}
+        SELECT id,username FROM users WHERE id = #{userId}
     </select>
     <!-- 通用查询结果列-->
     <sql id="base_column_list">
-        user_id
-        ,nick_name,email,qq_open_id,qq_avatar,
-		 password,join_time,last_login_time,status,use_space,
-		 total_space
+        id
+        ,username,email,qq_open_id,qq_avatar,
+		 password,join_time,last_login_time,status,storage_used,
+		 storage_quota
     </sql>
 
     <sql id="base_condition_filed">
         <if test="query.userId != null and query.userId!=''">
-            and user_id = #{query.userId}
+            and id = #{query.userId}
         </if>
         <if test="query.nickName != null and query.nickName!=''">
-            and nick_name = #{query.nickName}
+            and username = #{query.nickName}
         </if>
         <if test="query.email != null and query.email!=''">
             and email = #{query.email}
@@ -69,10 +69,10 @@
             and status = #{query.status}
         </if>
         <if test="query.useSpace != null">
-            and use_space = #{query.useSpace}
+            and storage_used = #{query.useSpace}
         </if>
         <if test="query.totalSpace != null">
-            and total_space = #{query.totalSpace}
+            and storage_quota = #{query.totalSpace}
         </if>
     </sql>
     <!-- 通用条件列-->
@@ -87,10 +87,10 @@
         <where>
             <include refid="base_condition_filed"/>
             <if test="query.userIdFuzzy!= null  and query.userIdFuzzy!=''">
-                and user_id like concat('%', #{query.userIdFuzzy}, '%')
+                and id like concat('%', #{query.userIdFuzzy}, '%')
             </if>
             <if test="query.nickNameFuzzy!= null  and query.nickNameFuzzy!=''">
-                and nick_name like concat('%', #{query.nickNameFuzzy}, '%')
+                and username like concat('%', #{query.nickNameFuzzy}, '%')
             </if>
             <if test="query.emailFuzzy!= null  and query.emailFuzzy!=''">
                 and email like concat('%', #{query.emailFuzzy}, '%')
@@ -123,7 +123,7 @@
     <select id="selectList" resultMap="base_result_map">
         SELECT
         <include refid="base_column_list"/>
-        FROM user_info
+        FROM users
         <include refid="query_condition"/>
         <if test="query.orderBy!=null">
             order by ${query.orderBy}
@@ -135,19 +135,19 @@
 
     <!-- 查询数量-->
     <select id="selectCount" resultType="java.lang.Integer">
-        SELECT count(1) FROM user_info
+        SELECT count(1) FROM users
         <include refid="query_condition"/>
     </select>
 
     <!-- 插入 （匹配有值的字段）-->
-    <insert id="insert" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        INSERT INTO user_info
+    <insert id="insert" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        INSERT INTO users
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="bean.userId != null">
-                user_id,
+                id,
             </if>
             <if test="bean.nickName != null">
-                nick_name,
+                username,
             </if>
             <if test="bean.email != null">
                 email,
@@ -215,14 +215,14 @@
     </insert>
 
     <!-- 插入或者更新 （匹配有值的字段）-->
-    <insert id="insertOrUpdate" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        INSERT INTO user_info
+    <insert id="insertOrUpdate" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        INSERT INTO users
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="bean.userId != null">
-                user_id,
+                id,
             </if>
             <if test="bean.nickName != null">
-                nick_name,
+                username,
             </if>
             <if test="bean.email != null">
                 email,
@@ -290,10 +290,10 @@
         on DUPLICATE key update
         <trim prefix="" suffix="" suffixOverrides=",">
             <if test="bean.userId!=null">
-                user_id = VALUES(user_id),
+                id = VALUES(id),
             </if>
             <if test="bean.nickName!=null">
-                nick_name = VALUES(nick_name),
+                username = VALUES(username),
             </if>
             <if test="bean.email!=null">
                 email = VALUES(email),
@@ -317,19 +317,19 @@
                 status = VALUES(status),
             </if>
             <if test="bean.useSpace!=null">
-                use_space = VALUES(use_space),
+                storage_used = VALUES(use_space),
             </if>
             <if test="bean.totalSpace!=null">
-                total_space = VALUES(total_space),
+                storage_quota = VALUES(total_space),
             </if>
         </trim>
     </insert>
 
     <!-- 添加 （批量插入）-->
-    <insert id="insertBatch" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        INSERT INTO user_info(
-        user_id,
-        nick_name,
+    <insert id="insertBatch" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        INSERT INTO users(
+        id,
+        username,
         email,
         qq_open_id,
         qq_avatar,
@@ -358,10 +358,10 @@
     </insert>
 
     <!-- 批量新增修改 （批量插入）-->
-    <insert id="insertOrUpdateBatch" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        INSERT INTO user_info(
-        user_id,
-        nick_name,
+    <insert id="insertOrUpdateBatch" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        INSERT INTO users(
+        id,
+        username,
         email,
         qq_open_id,
         qq_avatar,
@@ -388,8 +388,8 @@
             )
         </foreach>
         on DUPLICATE key update
-        user_id = VALUES(user_id),
-        nick_name = VALUES(nick_name),
+        id = VALUES(id),
+        username = VALUES(username),
         email = VALUES(email),
         qq_open_id = VALUES(qq_open_id),
         qq_avatar = VALUES(qq_avatar),
@@ -402,11 +402,11 @@
     </insert>
 
     <!-- 根据UserId修改-->
-    <update id="updateByUserId" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        UPDATE user_info
+    <update id="updateByUserId" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        UPDATE users
         <set>
             <if test="bean.nickName != null">
-                nick_name = #{bean.nickName},
+                username = #{bean.nickName},
             </if>
             <if test="bean.email != null">
                 email = #{bean.email},
@@ -430,38 +430,38 @@
                 status = #{bean.status},
             </if>
             <if test="bean.useSpace != null">
-                use_space = #{bean.useSpace},
+                storage_used = #{bean.useSpace},
             </if>
             <if test="bean.totalSpace != null">
-                total_space = #{bean.totalSpace},
+                storage_quota = #{bean.totalSpace},
             </if>
         </set>
-        where user_id=#{userId}
+        where id=#{userId}
     </update>
 
     <!-- 根据UserId删除-->
     <delete id="deleteByUserId">
         delete
-        from user_info
-        where user_id = #{userId}
+        from users
+        where id = #{userId}
     </delete>
 
     <!-- 根据PrimaryKey获取对象-->
     <select id="selectByUserId" resultMap="base_result_map">
         select
         <include refid="base_column_list"/>
-        from user_info where user_id=#{userId}
+        from users where id=#{userId}
     </select>
 
     <!-- 根据Email修改-->
-    <update id="updateByEmail" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        UPDATE user_info
+    <update id="updateByEmail" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        UPDATE users
         <set>
             <if test="bean.userId != null">
-                user_id = #{bean.userId},
+                id = #{bean.userId},
             </if>
             <if test="bean.nickName != null">
-                nick_name = #{bean.nickName},
+                username = #{bean.nickName},
             </if>
             <if test="bean.qqOpenId != null">
                 qq_open_id = #{bean.qqOpenId},
@@ -494,7 +494,7 @@
     <!-- 根据Email删除-->
     <delete id="deleteByEmail">
         delete
-        from user_info
+        from users
         where email = #{email}
     </delete>
 
@@ -502,15 +502,15 @@
     <select id="selectByEmail" resultMap="base_result_map">
         select
         <include refid="base_column_list"/>
-        from user_info where email=#{email}
+        from users where email=#{email}
     </select>
 
     <!-- 根据NickName修改-->
-    <update id="updateByNickName" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        UPDATE user_info
+    <update id="updateByNickName" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        UPDATE users
         <set>
             <if test="bean.userId != null">
-                user_id = #{bean.userId},
+                id = #{bean.userId},
             </if>
             <if test="bean.email != null">
                 email = #{bean.email},
@@ -540,32 +540,32 @@
                 total_space = #{bean.totalSpace},
             </if>
         </set>
-        where nick_name=#{nickName}
+        where username=#{nickName}
     </update>
 
     <!-- 根据NickName删除-->
     <delete id="deleteByNickName">
         delete
-        from user_info
-        where nick_name = #{nickName}
+        from users
+        where username = #{nickName}
     </delete>
 
     <!-- 根据PrimaryKey获取对象-->
     <select id="selectByNickName" resultMap="base_result_map">
         select
         <include refid="base_column_list"/>
-        from user_info where nick_name=#{nickName}
+        from users where username=#{nickName}
     </select>
 
     <!-- 根据QqOpenId修改-->
-    <update id="updateByQqOpenId" parameterType="cn.sdu.fileupdownservice.entity.po.UserInfo">
-        UPDATE user_info
+    <update id="updateByQqOpenId" parameterType="cn.sdu.fileupdownservice.entity.po.Users">
+        UPDATE users
         <set>
             <if test="bean.userId != null">
-                user_id = #{bean.userId},
+                id = #{bean.userId},
             </if>
             <if test="bean.nickName != null">
-                nick_name = #{bean.nickName},
+                username = #{bean.nickName},
             </if>
             <if test="bean.email != null">
                 email = #{bean.email},
@@ -601,24 +601,24 @@
     <select id="selectByQqOpenId" resultMap="base_result_map">
         select
         <include refid="base_column_list"/>
-        from user_info where qq_open_id=#{qqOpenId}
+        from users where qq_open_id=#{qqOpenId}
     </select>
     <update id="updateUserSpace">
-        update user_info
+        update users
         <set>
             <if test="useSpace != null">
-                use_space = use_space + #{useSpace},
+                storage_used = storage_used + #{useSpace},
             </if>
             <if test="totalSpace != null">
-                total_space = total_space + #{totalSpace},
+                storage_quota = storage_quota + #{totalSpace},
             </if>
         </set>
-        where user_id = #{userId}
+        where id = #{userId}
         <if test="useSpace != null">
-            <![CDATA[ and (use_space + #{useSpace}) <= total_space ]]>
+            <![CDATA[ and (storage_used + #{useSpace}) <= storage_quota ]]>
         </if>
         <if test="totalSpace != null">
-            <![CDATA[ and (total_space + #{totalSpace}) >= use_space ]]>
+            <![CDATA[ and (storage_quota + #{totalSpace}) >= storage_used ]]>
         </if>
     </update>
 </mapper>

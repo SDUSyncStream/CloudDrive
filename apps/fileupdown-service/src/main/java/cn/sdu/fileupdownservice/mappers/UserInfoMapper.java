@@ -1,9 +1,8 @@
 package cn.sdu.fileupdownservice.mappers;
 
-import cn.sdu.fileupdownservice.entity.po.UserInfo;
+import cn.sdu.fileupdownservice.entity.po.Users;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 /**
  * 用户信息 数据库操作接口
@@ -19,5 +18,5 @@ public interface UserInfoMapper<T, P> extends BaseMapper<T, P> {
 
     Integer updateUserSpace(@Param("userId") String userId, @Param("useSpace") Long useSpace, @Param("totalSpace") Long totalSpace);
 
-    UserInfo selectUser(String userId);
+    Users selectUser(String userId);
 }

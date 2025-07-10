@@ -6,7 +6,7 @@ import cn.sdu.fileupdownservice.entity.config.AppConfig;
 import cn.sdu.fileupdownservice.entity.constants.Constants;
 import cn.sdu.fileupdownservice.entity.dto.SessionWebUserDto;
 import cn.sdu.fileupdownservice.entity.enums.ResponseCodeEnum;
-import cn.sdu.fileupdownservice.entity.po.UserInfo;
+import cn.sdu.fileupdownservice.entity.po.Users;
 import cn.sdu.fileupdownservice.entity.query.UserInfoQuery;
 import cn.sdu.fileupdownservice.exception.BusinessException;
 import cn.sdu.fileupdownservice.service.UserInfoService;
@@ -95,12 +95,12 @@ public class GlobalOperationAspect {
         HttpSession session = request.getSession();
         SessionWebUserDto sessionUser = (SessionWebUserDto) session.getAttribute(Constants.SESSION_KEY);
         if (sessionUser == null && appConfig.getDev() != null && appConfig.getDev()) {
-            List<UserInfo> userInfoList = userInfoService.findListByParam(new UserInfoQuery());
-            if (!userInfoList.isEmpty()) {
-                UserInfo userInfo = userInfoList.get(0);
+            List<Users> usersList = userInfoService.findListByParam(new UserInfoQuery());
+            if (!usersList.isEmpty()) {
+                Users users = usersList.get(0);
                 sessionUser = new SessionWebUserDto();
-                sessionUser.setUserId(userInfo.getUserId());
-                sessionUser.setNickName(userInfo.getNickName());
+                sessionUser.setUserId(users.getUserId());
+                sessionUser.setNickName(users.getNickName());
                 sessionUser.setAdmin(true);
                 session.setAttribute(Constants.SESSION_KEY, sessionUser);
             }

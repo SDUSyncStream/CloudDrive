@@ -54,4 +54,14 @@ public class PaymentController {
         List<PaymentOrderDTO> orders = paymentService.getUserPaymentOrders(userId);
         return Result.success(orders);
     }
+
+    @PostMapping("/orders/{orderId}/cancel")
+    public Result<PaymentOrderDTO> cancelPaymentOrder(@PathVariable String orderId) {
+        try {
+            PaymentOrderDTO order = paymentService.cancelPaymentOrder(orderId);
+            return Result.success("订单已取消", order);
+        } catch (Exception e) {
+            return Result.error("取消订单失败: " + e.getMessage());
+        }
+    }
 }

@@ -57,9 +57,9 @@ public class Constants {
     public static final Integer REDIS_KEY_EXPIRES_ONE_MIN = 60;
 
     /**
-     * 过期时间 1天
+     * 过期时间 1小时
      */
-    public static final Integer REDIS_KEY_EXPIRES_DAY = REDIS_KEY_EXPIRES_ONE_MIN * 60 * 24;
+    public static final Integer REDIS_KEY_EXPIRES_DAY = REDIS_KEY_EXPIRES_ONE_MIN * 60 ;
 
     public static final Integer REDIS_KEY_EXPIRES_ONE_HOUR = REDIS_KEY_EXPIRES_ONE_MIN * 60;
 
@@ -71,12 +71,12 @@ public class Constants {
     public static final Integer REDIS_KEY_EXPIRES_FIVE_MIN = REDIS_KEY_EXPIRES_ONE_MIN * 5;
 
 
-    public static final String REDIS_KEY_DOWNLOAD = "clouddrive:download:";
+    public static final String REDIS_KEY_DOWNLOAD = "cloud_drive:download:";
 
-    public static final String REDIS_KEY_SYS_SETTING = "clouddrive:syssetting:";
+    public static final String REDIS_KEY_SYS_SETTING = "cloud_drive:syssetting:";
 
-    public static final String REDIS_KEY_USER_SPACE_USE = "clouddrive:user:spaceuse:";
+    public static final String REDIS_KEY_USER_SPACE_USE = "cloud_drive:user:spaceused:";
 
-    public static final String REDIS_KEY_USER_FILE_TEMP_SIZE = "clouddrive:user:file:temp:";
+    public static final String REDIS_KEY_USER_FILE_TEMP_SIZE = "cloud_drive:user:file:temp:";
 
 }

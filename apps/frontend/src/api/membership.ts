@@ -64,6 +64,11 @@ export const membershipApi = {
   // 检查用户是否可以订阅特定等级
   canSubscribeToLevel: (userId: string, membershipLevelId: string): Promise<AxiosResponse<ApiResponse<boolean>>> => {
     return apiClient.get(`/subscription/user/${userId}/can-subscribe/${membershipLevelId}`)
+  },
+
+  // 取消支付订单
+  cancelPaymentOrder: (orderId: string): Promise<AxiosResponse<ApiResponse<PaymentOrder>>> => {
+    return apiClient.post(`/payment/orders/${orderId}/cancel`)
   }
 }
 

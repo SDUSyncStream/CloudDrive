@@ -8,11 +8,11 @@ import cn.sdu.fileupdownservice.entity.dto.UploadResultDto;
 import cn.sdu.fileupdownservice.entity.dto.UserSpaceDto;
 import cn.sdu.fileupdownservice.entity.enums.*;
 import cn.sdu.fileupdownservice.entity.po.FileInfo;
-import cn.sdu.fileupdownservice.entity.po.UserInfo;
+import cn.sdu.fileupdownservice.entity.po.Users;
 import cn.sdu.fileupdownservice.entity.query.FileInfoQuery;
 import cn.sdu.fileupdownservice.entity.query.SimplePage;
 import cn.sdu.fileupdownservice.entity.query.UserInfoQuery;
-import cn.sdu.fileupdownservice.entity.vo.PaginationResultVO;
+import cn.sdu.fileupdownservice.entity.vo.ResponseVO;
 import cn.sdu.fileupdownservice.exception.BusinessException;
 import cn.sdu.fileupdownservice.mappers.FileInfoMapper;
 import cn.sdu.fileupdownservice.mappers.UserInfoMapper;
@@ -30,14 +30,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 
 /**
@@ -60,7 +59,7 @@ public class FileInfoServiceImpl implements FileInfoService {
     private FileInfoMapper<FileInfo, FileInfoQuery> fileInfoMapper;
 
     @Resource
-    private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
+    private UserInfoMapper<Users, UserInfoQuery> userInfoMapper;
 
     @Resource
     private RedisComponent redisComponent;
@@ -97,7 +96,10 @@ public class FileInfoServiceImpl implements FileInfoService {
     }
 
 
-
+    public UserSpaceDto getUserSpace(@PathVariable String userId) {
+        UserSpaceDto spaceDto = redisComponent.getUserSpaceUse(userId);
+        return spaceDto;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -207,6 +209,7 @@ public class FileInfoServiceImpl implements FileInfoService {
             return resultDto;
         } catch (BusinessException e) {
             uploadSuccess = false;
+
             logger.error("文件上传失败", e);
             throw e;
         } catch (Exception e) {
@@ -471,9 +474,9 @@ public class FileInfoServiceImpl implements FileInfoService {
         this.fileInfoMapper.delFileBatch(userId, null, Arrays.asList(fileIdArray), adminOp ? null : FileDelFlagEnums.RECYCLE.getFlag());
 
         Long useSpace = this.fileInfoMapper.selectUseSpace(userId);
-        UserInfo userInfo = new UserInfo();
-        userInfo.setUseSpace(useSpace);
-        this.userInfoMapper.updateByUserId(userInfo, userId);
+        Users users = new Users();
+        users.setUseSpace(useSpace);
+        this.userInfoMapper.updateByUserId(users, userId);
 
         //设置缓存
         UserSpaceDto userSpaceDto = redisComponent.getUserSpaceUse(userId);

@@ -4,10 +4,12 @@ package cn.sdu.fileupdownservice.service;
 
 import cn.sdu.fileupdownservice.entity.dto.SessionWebUserDto;
 import cn.sdu.fileupdownservice.entity.dto.UploadResultDto;
+import cn.sdu.fileupdownservice.entity.dto.UserSpaceDto;
 import cn.sdu.fileupdownservice.entity.po.FileInfo;
 import cn.sdu.fileupdownservice.entity.query.FileInfoQuery;
 import cn.sdu.fileupdownservice.entity.vo.PaginationResultVO;
 import org.springframework.data.repository.query.Param;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -17,7 +19,7 @@ import java.util.List;
  * 文件信息 业务接口
  */
 public interface FileInfoService {
-
+    public UserSpaceDto getUserSpace(@PathVariable String userId) ;
     /**
      * 根据条件查询列表
      */

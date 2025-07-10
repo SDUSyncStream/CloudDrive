@@ -22,7 +22,7 @@
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
         <el-tab-pane label="全部" name="all"></el-tab-pane>
         <el-tab-pane label="待支付" name="pending"></el-tab-pane>
-        <el-tab-pane label="已完成" name="completed"></el-tab-pane>
+        <el-tab-pane label="已完成" name="paid"></el-tab-pane>
         <el-tab-pane label="已取消" name="cancelled"></el-tab-pane>
       </el-tabs>
     </div>
@@ -158,7 +158,7 @@ const getStatusType = (status: string) => {
   switch (status) {
     case 'pending':
       return 'warning'
-    case 'completed':
+    case 'paid':
       return 'success'
     case 'cancelled':
       return 'info'
@@ -174,7 +174,7 @@ const getStatusText = (status: string) => {
   switch (status) {
     case 'pending':
       return '待支付'
-    case 'completed':
+    case 'paid':
       return '已完成'
     case 'cancelled':
       return '已取消'
@@ -296,11 +296,16 @@ const handleCancelOrder = async (order: PaymentOrder) => {
       }
     )
     
-    // TODO: 实现取消订单的API
-    ElMessage.success('订单已取消')
-    await fetchOrders()
+    const response = await membershipApi.cancelPaymentOrder(order.id)
+    if (response.data.code === 200) {
+      ElMessage.success('订单已取消')
+      await fetchOrders()
+    } else {
+      ElMessage.error('取消订单失败: ' + response.data.message)
+    }
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('取消订单失败:', error)
       ElMessage.error('取消订单失败')
     }
   }

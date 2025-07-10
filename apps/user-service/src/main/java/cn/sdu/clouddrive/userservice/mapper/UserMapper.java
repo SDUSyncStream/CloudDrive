@@ -10,7 +10,13 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface UserMapper
 {
-    @Select("select username,email,avatar,storage_quota,storage_used,users.created_at,membership_level_id from users left join user_subscriptions on users.id = user_subscriptions.user_id where users.id = #{userId}")
+    @Select("select username,email,avatar,storage_quota,storage_used,users.created_at,membership_level_id " +
+            "from users " +
+            "left join user_subscriptions on users.id = user_subscriptions.user_id " +
+            "and user_subscriptions.status = 'active' " +
+            "where users.id = #{userId} " +
+            "order by user_subscriptions.created_at desc " +
+            "limit 1")
     public User getUserInfo(String userId);
 
     @Update("update users set password_hash = #{newPassword} where id = #{userId} and password_hash = #{oldPassword}")
