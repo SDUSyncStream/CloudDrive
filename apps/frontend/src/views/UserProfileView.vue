@@ -72,7 +72,7 @@
                 :type="getMembershipTagType(userInfo.membershipLevelId)"
                 size="large"
               >
-                {{ userInfo.membershipLevelId || '普通用户' }}
+                {{ getMembershipLevelText(userInfo.membershipLevelId) }}
               </el-tag>
             </el-form-item>
 
@@ -370,6 +370,16 @@ const getMembershipTagType = (level?: string) => {
     case 'level-premium': return 'warning'
     case 'level-enterprise': return 'danger'
     default: return ''
+  }
+}
+
+const getMembershipLevelText = (level?: string) => {
+  switch (level) {
+    case 'level-free': return '免费版'
+    case 'level-basic': return '基础版'
+    case 'level-premium': return '高级版'
+    case 'level-enterprise': return '企业版'
+    default: return '普通用户'
   }
 }
 
