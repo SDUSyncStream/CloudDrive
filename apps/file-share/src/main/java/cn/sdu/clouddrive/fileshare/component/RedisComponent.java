@@ -92,7 +92,7 @@ public class RedisComponent {
         spaceDto.setUseSpace(useSpace);
 
         UserInfo userInfo = this.userInfoMapper.selectByUserId(userId);
-        spaceDto.setTotalSpace(userInfo.getTotalSpace());
+        spaceDto.setTotalSpace(userInfo.getStorageQuota());
         redisUtils.setex(Constants.REDIS_KEY_USER_SPACE_USE + userId, spaceDto, Constants.REDIS_KEY_EXPIRES_DAY);
         return spaceDto;
     }

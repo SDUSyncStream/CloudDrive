@@ -149,11 +149,11 @@ public class FileInfoServiceImpl implements FileInfoService {
         //更新空间
         Long useSpace = this.fileInfoMapper.selectUseSpace(cureentUserId);
         UserInfo dbUserInfo = this.userInfoMapper.selectByUserId(cureentUserId);
-        if (useSpace > dbUserInfo.getTotalSpace()) {
+        if (useSpace > dbUserInfo.getStorageQuota()) {
             throw new BusinessException(ResponseCodeEnum.CODE_904);
         }
         UserInfo userInfo = new UserInfo();
-        userInfo.setUseSpace(useSpace);
+        userInfo.setStorageUsed(useSpace);
         this.userInfoMapper.updateByUserId(userInfo, cureentUserId);
         //设置缓存
         UserSpaceDto userSpaceDto = redisComponent.getUserSpaceUse(cureentUserId);
