@@ -1,18 +1,24 @@
 services:
-  # Frontend only
   frontend:
     build:
       context: ../apps/frontend
       dockerfile: ../../docker/Dockerfile.frontend
     container_name: frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - VITE_API_URL=http://localhost:8080
+      - VITE_API_URL=http://gateway:8080
     networks:
-      - cloud-drive-network
+      - services-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
-  cloud-drive-network:
-    driver: bridge
+  services-network:
+    external: true

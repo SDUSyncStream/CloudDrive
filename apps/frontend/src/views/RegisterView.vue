@@ -119,10 +119,20 @@ const handleregis = async () => {
     console.log('发送注册请求:', { ...requestData, passwordHash: '***' })
     
     const response = await register(requestData)
-    console.log('注册响应:', response)
-    
-    ElMessage.success('注册成功')
-    router.push('/login')
+    if(response.data.code === 200) {
+      console.log('注册响应:', response)
+      
+      ElMessage.success('注册成功')
+      
+      // 保存用户信息到状态管理
+      userStore.setUser(response.data.data.userId)
+      userStore.setToken(response.data.data.token)
+      
+      // 跳转到登录页面
+      router.push('/login')
+    } else {
+      ElMessage.error(response.data.message || '注册失败')
+    }
   } catch (error: any) {
     console.error('注册错误:', error)
     

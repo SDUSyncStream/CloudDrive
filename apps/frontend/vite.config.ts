@@ -24,6 +24,10 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/fileup': {
+        target: 'http://localhost:8090',
+        changeOrigin: true,
+      },
       '/file': {
         target: 'http://localhost:8099',
         changeOrigin: true,
