@@ -183,6 +183,7 @@ import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { membershipApi } from '../api/membership'
 import type { MembershipLevel, UserSubscription } from '../types'
+import { getUserInfo } from '@/api/auth'
 
 // 响应式数据
 const membershipLevels = ref<MembershipLevel[]>([])
