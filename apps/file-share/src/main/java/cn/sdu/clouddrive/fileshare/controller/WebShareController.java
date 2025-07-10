@@ -62,7 +62,7 @@ public class WebShareController extends CommonFileController {
         ShareInfoVO shareInfoVO = getShareInfoCommon(shareId);
         //判断是否是当前用户分享的文件
         SessionWebUserDto userDto = getUserInfoFromSession(session);
-        if (userDto != null && userDto.getUserId().equals(shareSessionDto.getShareUserId())) {
+        if (userDto != null && userDto.getUserId() != null && userDto.getUserId().equals(shareSessionDto.getShareUserId())) {
             shareInfoVO.setCurrentUser(true);
         } else {
             shareInfoVO.setCurrentUser(false);
@@ -228,6 +228,7 @@ public class WebShareController extends CommonFileController {
      * @param shareId
      * @param shareFileIds
      * @param myFolderId
+     * @param userId
      * @return
      */
     @RequestMapping("/saveShare")
@@ -235,13 +236,26 @@ public class WebShareController extends CommonFileController {
     public ResponseVO saveShare(HttpSession session,
                                 @VerifyParam(required = true) String shareId,
                                 @VerifyParam(required = true) String shareFileIds,
-                                @VerifyParam(required = true) String myFolderId) {
-        SessionShareDto shareSessionDto = checkShare(session, shareId);
-        SessionWebUserDto webUserDto = getUserInfoFromSession(session);
-        if (shareSessionDto.getShareUserId().equals(webUserDto.getUserId())) {
-            throw new BusinessException("自己分享的文件无法保存到自己的网盘");
+                                @VerifyParam(required = true) String myFolderId,
+                                @VerifyParam(required = true) String userId) {
+        try {
+            SessionShareDto shareSessionDto = checkShare(session, shareId);
+            
+            // 参数校验
+            if (userId == null || userId.isEmpty()) {
+                throw new BusinessException("用户ID不能为空");
+            }
+            
+            // 使用前端传递的userId，防止自己保存自己的分享
+            if (shareSessionDto.getShareUserId().equals(userId)) {
+                throw new BusinessException("自己分享的文件无法保存到自己的网盘");
+            }
+            
+            fileInfoService.saveShare(shareSessionDto.getFileId(), shareFileIds, myFolderId, shareSessionDto.getShareUserId(), userId);
+            return getSuccessResponseVO(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
-        fileInfoService.saveShare(shareSessionDto.getFileId(), shareFileIds, myFolderId, shareSessionDto.getShareUserId(), webUserDto.getUserId());
-        return getSuccessResponseVO(null);
     }
 }
