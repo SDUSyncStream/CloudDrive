@@ -12,12 +12,13 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api/showShare': {
-        target: 'http://localhost:8093',
-        changeOrigin: true,
-      },
+      
       '/admin-api': {
         target: 'http://localhost:8083',
+        changeOrigin: true,
+      },
+      '/api/showShare': {
+        target: 'http://localhost:8093',
         changeOrigin: true,
       },
       '/api': {
@@ -32,6 +33,12 @@ export default defineConfig({
         target: 'http://localhost:8099',
         changeOrigin: true,
       },
+      // 优化 /api/showShare 代理，匹配所有 /api/showShare 及其子路径
+      '/share/shareFile': {
+        target: 'http://localhost:8093/api',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/share/, '/share'),
+      },
       '/share/loadShareList': {
         target: 'http://localhost:8093/api',
         changeOrigin: true,
@@ -42,6 +49,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/share/, '/share'),
       },
+      
     },
   },
   build: {

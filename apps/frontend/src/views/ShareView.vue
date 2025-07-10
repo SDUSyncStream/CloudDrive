@@ -34,7 +34,7 @@
           <el-icon><ArrowLeft /></el-icon>返回上一级
         </el-button>
         <el-button
-          v-if="!shareInfo.currentUser"
+          v-if="userId !== String(shareInfo.userId)"
           type="primary"
           :disabled="selected.length===0"
           @click="saveToDriveBatch"
@@ -97,9 +97,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { FolderOpened, User, Download, Folder, Document, ArrowLeft } from '@element-plus/icons-vue'
 
+const downloadingFiles = ref<Set<string>>(new Set());
+
 const router = useRouter()
 const route = useRoute()
 const shareId = route.params.shareId as string
+
+const userId = localStorage.getItem('UserId') || localStorage.getItem('userId')
 
 const shareInfo = ref<any>({})
 const fileList = ref<any[]>([])
@@ -170,17 +174,78 @@ const previewFile = (row: any) => {
   // 可扩展为弹窗预览
 }
 
-const downloadFile = (row: any) => {
-  ElMessage.success(`下载：${row.fileName}`)
-  // 实际下载逻辑可补充
+const downloadFile = async (row: any) => {
+  // 如果是文件夹，提示不能下载
+  if (row.folderType === 1) {
+    ElMessage.warning('文件夹不支持下载');
+    return;
+  }
+
+  // 检查是否正在下载
+  if (downloadingFiles?.value?.has && downloadingFiles.value.has(row.fileId)) {
+    ElMessage.info('文件正在下载中，请稍候');
+    return;
+  }
+
+  try {
+    // 标记为下载中
+    if (downloadingFiles?.value?.add) downloadingFiles.value.add(row.fileId);
+    ElMessage.info(`开始下载: ${row.fileName}`);
+
+    // 1. 创建下载链接获取code
+    const userId = shareInfo.value.userId; // 用分享者 userId
+    const createUrlRes = await fetch(`/fileup/createDownloadUrl/${row.fileId}?userId=${userId}`)
+      .then(r => r.json());
+    if (createUrlRes.code !== 200) {
+      throw new Error(createUrlRes.message || '获取下载链接失败');
+    }
+    const downloadcode = createUrlRes.data;
+    if (downloadcode == null || downloadcode === undefined) {
+      throw new Error('获取下载链接失败');
+    }
+
+    // 2. 使用code下载文件
+    const downloadRes = await fetch(`/fileup/download/${downloadcode}`);
+    const blob = await downloadRes.blob();
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', row.fileName);
+    document.body.appendChild(link);
+    link.click();
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    ElMessage.success(`下载完成: ${row.fileName}`);
+  } catch (error: any) {
+    console.error('下载失败:', error);
+    ElMessage.error(`下载失败: ${error.message || '未知错误'}`);
+  } finally {
+    if (downloadingFiles?.value?.delete) downloadingFiles.value.delete(row.fileId);
+  }
 }
 
 // 目录选择弹窗相关逻辑
 const saveToDriveBatch = async () => {
-  if (!localStorage.getItem('token')) {
+  const token = localStorage.getItem('accessToken')
+  const userId = localStorage.getItem('UserId') || localStorage.getItem('userId')
+  
+  console.log('Token:', token)
+  console.log('UserId:', userId)
+  
+  if (!token) {
+    ElMessage.warning('请先登录后再保存文件到网盘')
     router.push('/login?redirectUrl=' + route.fullPath)
     return
   }
+  
+  if (!userId) {
+    ElMessage.warning('用户ID不存在，请重新登录')
+    router.push('/login?redirectUrl=' + route.fullPath)
+    return
+  }
+  
   if (selected.value.length === 0) return
   saveFileIds.value = selected.value.map(f => f.fileId)
   await loadFolderTree()
@@ -188,12 +253,39 @@ const saveToDriveBatch = async () => {
 }
 
 const loadFolderTree = async () => {
-  // 假设接口为 /api/folder/list，返回 [{id, name, children:[]}]，token按需传递
-  const res = await fetch('/api/folder/list', {
-    headers: { Authorization: localStorage.getItem('token') || '' }
-  }).then(r => r.json())
-  folderTree.value = res.data || []
-  selectedFolderId.value = folderTree.value[0]?.id || ''
+  const userId = localStorage.getItem('UserId') || localStorage.getItem('userId')
+  try {
+    // 使用与 FilesView 相同的接口获取根目录文件列表
+    const res = await fetch(`/files/get/0?userId=${userId}&delFlag=2`, {
+      headers: { Authorization: localStorage.getItem('accessToken') || '' }
+    }).then(r => r.json())
+    
+    if (res && res.data) {
+      // 过滤出文件夹类型的数据
+      const folders = res.data.filter((item: any) => item.folderType === 1)
+      // 转换为树形结构，添加根目录
+      folderTree.value = [
+        {
+          id: '0',
+          name: '我的文件',
+          children: folders.map((folder: any) => ({
+            id: folder.fileId,
+            name: folder.fileName,
+            children: []
+          }))
+        }
+      ]
+      selectedFolderId.value = '0'
+    } else {
+      folderTree.value = [{ id: '0', name: '我的文件', children: [] }]
+      selectedFolderId.value = '0'
+    }
+  } catch (error) {
+    console.error('获取文件夹列表失败:', error)
+    ElMessage.error('获取文件夹列表失败')
+    folderTree.value = [{ id: '0', name: '我的文件', children: [] }]
+    selectedFolderId.value = '0'
+  }
 }
 
 const onFolderNodeClick = (data: any) => {
@@ -203,19 +295,37 @@ const onFolderNodeClick = (data: any) => {
 const onFolderSelect = async () => {
   showFolderSelect.value = false
   if (!selectedFolderId.value) return
-  const res = await fetch('/api/showShare/saveShare', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('token') || '' },
-    body: JSON.stringify({
-      shareId,
-      shareFileIds: saveFileIds.value.join(','),
-      myFolderId: selectedFolderId.value
-    })
-  }).then(r => r.json())
-  if (res && res.code === 0) {
-    ElMessage.success('保存成功')
-  } else {
-    ElMessage.error(res?.info || '保存失败')
+  const userId = localStorage.getItem('UserId') || localStorage.getItem('userId')
+  const token = localStorage.getItem('accessToken')
+
+  // 新增：禁止保存到自己的网盘根目录
+  if (userId === String(shareInfo.value.userId) && selectedFolderId.value === '0') {
+    ElMessage.error('不能保存自己的文件')
+    return
+  }
+
+  const params = new URLSearchParams({
+    shareId,
+    shareFileIds: saveFileIds.value.join(','),
+    myFolderId: selectedFolderId.value,
+    userId
+  })
+  try {
+    const res = await fetch(`/api/showShare/saveShare?${params.toString()}`, {
+      method: 'GET',
+      headers: { Authorization: token || '' }
+    }).then(r => r.json())
+    if (res && (res.code === 0 || res.code === 200)) {
+      ElMessage.success('保存成功')
+    } else if (res && res.code === 401) {
+      ElMessage.error('登录已过期，请重新登录')
+      router.push('/login?redirectUrl=' + route.fullPath)
+    } else {
+      ElMessage.error(res?.info || res?.message || '保存失败')
+    }
+  } catch (error) {
+    console.error('保存文件失败:', error)
+    ElMessage.error('保存失败，请重试')
   }
 }
 const onFolderDialogClose = () => {
