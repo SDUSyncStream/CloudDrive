@@ -52,7 +52,7 @@ public class UserController
             @RequestParam("userId") String userId) {
 
         try {
-            log.info("收到头像上传请求，用户ID: {}, 文件名: {}", userId, file.getOriginalFilename());
+//            log.info("收到头像上传请求，用户ID: {}, 文件名: {}", userId, file.getOriginalFilename());
 
             // 验证文件
             if (!imageHostingService.isValidImage(file)) {
@@ -70,15 +70,15 @@ public class UserController
                 result.put("avatarUrl", imageUrl);
                 result.put("userId", userId);
 
-                log.info("头像上传成功，用户ID: {}, 图片URL: {}", userId, imageUrl);
+//                log.info("头像上传成功，用户ID: {}, 图片URL: {}", userId, imageUrl);
                 return ServerResult.ok(result);
             } else {
-                log.error("更新数据库头像失败，用户ID: {}", userId);
+//                log.error("更新数据库头像失败，用户ID: {}", userId);
                 return ServerResult.error(500, "更新头像失败");
             }
 
         } catch (Exception e) {
-            log.error("头像上传失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+//            log.error("头像上传失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
             return ServerResult.error(500, "头像上传失败: " + e.getMessage());
         }
     }
