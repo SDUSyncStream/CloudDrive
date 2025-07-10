@@ -15,6 +15,10 @@ import java.util.Map;
 
 @Slf4j
 @Service
+/**
+ * 图片托管服务
+ * 负责将用户上传的图片文件上传到指定的图片托管平台
+ */
 public class ImageHostingService {
 
     @Autowired
@@ -68,6 +72,7 @@ public class ImageHostingService {
                 Map.class
             );
 
+            // 检查响应状态
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 Map<String, Object> responseBody = response.getBody();
                 Boolean status = (Boolean) responseBody.get("status");
