@@ -32,4 +32,7 @@ public interface FileInfoMapper extends BaseMapper<FileInfo> {
 
     @Update("update file_info set create_time = NOW() where file_id = #{fileId} and user_id = #{userId}")
     void CreateTime(String fileId, String userId);
+
+    @Update("update file_info set del_flag = 0 where del_flag = 1 and user_id = #{userId}")
+    void clearRecycle(String userId);
 }

@@ -12,4 +12,6 @@ public interface FileInfoService {
     void NewFolder(String fileId, String userId, String filePid, String fileName);
     void UpdateTime(String fileId, String userId);
     void CreateTime(String fileId, String userId);
+    void clearRecycle(String userId);
+    void deleteFile(String fileId, String userId);
 }

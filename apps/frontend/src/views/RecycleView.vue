@@ -71,7 +71,7 @@
               <el-button link type="primary" size="small" title="还原" @click="handleUnrecycle(row)">
                 <el-icon><RefreshRight /></el-icon>
               </el-button>
-              <el-button link type="danger" size="small" title="彻底删除" @click="permanentlyDeleteFile(row)">
+              <el-button link type="danger" size="small" title="彻底删除" @click="handleDelete(row)">
                 <el-icon><DeleteFilled /></el-icon>
               </el-button>
             </div>
@@ -153,6 +153,24 @@ const handleUnrecycle = async (row) =>{
     });
     console.log('请求成功:', response.data);
     getFileListinRecycle(nowFilePid, nowUserId);
+
+    ElMessage.success("还原成功");
+    // 处理响应数据
+  } catch (error) {
+    console.error('请求失败:', error);
+  }
+}
+
+const handleDelete = async (row) => {
+  try {
+    const response = await axios.get(`/files/recycle/delete/${row.fileId}`, {
+      params: {
+        userId: 2,
+      }
+    });
+    console.log('请求成功:', response.data);
+    getFileListinRecycle(nowFilePid, nowUserId);
+    ElMessage.success("删除成功");
     // 处理响应数据
   } catch (error) {
     console.error('请求失败:', error);
@@ -313,22 +331,25 @@ const permanentlyDelete = async () => {
 const clearRecycleBin = async () => {
   try {
     await ElMessageBox.confirm(
-      `确定要清空回收站吗？这将彻底删除所有文件，此操作不可撤销！`,
-      '确认清空回收站',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
+        `确定要清空回收站吗？这将彻底删除所有文件，此操作不可撤销！`,
+        '确认清空回收站',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
     )
-    
-    const fileCount = recycleData.value.length
-    recycleData.value = []
-    selectedFiles.value = []
-    
-    ElMessage.success(`已清空回收站，彻底删除了 ${fileCount} 个文件`)
-  } catch {
-    ElMessage.info('已取消操作')
+    const response = await axios.get(`/files/recycle/delete/all`, {
+      params: {
+        userId: 2,
+      }
+    });
+    console.log('请求成功:', response.data);
+    getFileListinRecycle(nowFilePid, nowUserId);
+    ElMessage.success("删除成功");
+    // 处理响应数据
+  } catch (error) {
+    console.error('请求失败:', error);
   }
 }
 </script>
