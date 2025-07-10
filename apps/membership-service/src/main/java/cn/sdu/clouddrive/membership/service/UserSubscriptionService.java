@@ -33,14 +33,8 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
     }
 
     public UserSubscriptionDTO getCurrentSubscription(String userId) {
-        QueryWrapper<UserSubscription> wrapper = new QueryWrapper<>();
-        wrapper.eq("user_id", userId)
-                .eq("status", "active")
-                .gt("end_date", LocalDateTime.now())
-                .orderByDesc("end_date")
-                .last("LIMIT 1");
-        
-        UserSubscription subscription = getOne(wrapper);
+        // 使用自定义SQL查询，按会员等级价格(优先级)降序排序，然后按结束时间降序排序
+        UserSubscription subscription = getBaseMapper().selectCurrentSubscription(userId);
         return subscription != null ? convertToDTO(subscription) : null;
     }
 

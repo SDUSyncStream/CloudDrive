@@ -155,8 +155,12 @@ const cancelLoading = ref(false)
 const getCurrentUserId = () => {
   // 临时使用固定用户ID，实际应用中应从用户状态获取
   //return 'user-001'
-  let UserId = JSON.parse(localStorage.getItem('UserId') || '{}')
-  return UserId.id || ''
+  const userId = localStorage.getItem('UserId')
+  if (!userId) {
+    console.warn('No UserId found in localStorage')
+    return ''
+  }
+  return userId
 }
 
 // 格式化日期
@@ -182,12 +186,25 @@ const fetchMembershipLevels = async () => {
 const fetchCurrentSubscription = async () => {
   try {
     const userId = getCurrentUserId()
+    if (!userId) {
+      console.warn('无法获取用户ID')
+      return
+    }
+    
+    console.log('正在获取用户订阅信息:', userId)
     const response = await membershipApi.getCurrentSubscription(userId)
+    console.log('订阅信息响应:', response.data)
+    
     if (response.data.code === 200) {
       currentSubscription.value = response.data.data
+      console.log('当前订阅已更新:', currentSubscription.value)
+    } else {
+      console.log('获取订阅失败:', response.data.message)
+      currentSubscription.value = null
     }
   } catch (error) {
-    console.log('暂无有效订阅')
+    console.log('暂无有效订阅或获取失败:', error)
+    currentSubscription.value = null
   }
 }
 
@@ -234,7 +251,12 @@ const handlePayment = async () => {
         ElMessage.success('支付成功！')
         paymentDialogVisible.value = false
         
-        // 刷新当前订阅状态
+        // 延迟刷新当前订阅状态，确保后端数据已更新
+        setTimeout(async () => {
+          await fetchCurrentSubscription()
+        }, 1000)
+        
+        // 立即刷新一次
         await fetchCurrentSubscription()
       } else {
         ElMessage.error('支付失败: ' + paymentResponse.data.message)

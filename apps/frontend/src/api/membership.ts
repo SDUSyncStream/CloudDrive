@@ -6,58 +6,59 @@ import type {
   CreatePaymentOrderRequest,
   ApiResponse 
 } from '../types'
+import type { AxiosResponse } from 'axios'
 
 export const membershipApi = {
   // 获取所有会员等级
-  getAllLevels: (): Promise<ApiResponse<MembershipLevel[]>> => {
-    return apiClient.get('/api/membership/levels')
+  getAllLevels: (): Promise<AxiosResponse<ApiResponse<MembershipLevel[]>>> => {
+    return apiClient.get('/membership/levels')
   },
 
   // 根据ID获取会员等级
-  getLevelById: (id: string): Promise<ApiResponse<MembershipLevel>> => {
-    return apiClient.get(`/api/membership/levels/${id}`)
+  getLevelById: (id: string): Promise<AxiosResponse<ApiResponse<MembershipLevel>>> => {
+    return apiClient.get(`/membership/levels/${id}`)
   },
 
   // 根据名称获取会员等级
-  getLevelByName: (name: string): Promise<ApiResponse<MembershipLevel>> => {
-    return apiClient.get(`/api/membership/levels/name/${name}`)
+  getLevelByName: (name: string): Promise<AxiosResponse<ApiResponse<MembershipLevel>>> => {
+    return apiClient.get(`/membership/levels/name/${name}`)
   },
 
   // 获取用户所有订阅
-  getUserSubscriptions: (userId: string): Promise<ApiResponse<UserSubscription[]>> => {
-    return apiClient.get(`/api/subscription/user/${userId}`)
+  getUserSubscriptions: (userId: string): Promise<AxiosResponse<ApiResponse<UserSubscription[]>>> => {
+    return apiClient.get(`/subscription/user/${userId}`)
   },
 
   // 获取用户当前有效订阅
-  getCurrentSubscription: (userId: string): Promise<ApiResponse<UserSubscription>> => {
-    return apiClient.get(`/api/subscription/user/${userId}/current`)
+  getCurrentSubscription: (userId: string): Promise<AxiosResponse<ApiResponse<UserSubscription>>> => {
+    return apiClient.get(`/subscription/user/${userId}/current`)
   },
 
   // 取消订阅
-  cancelSubscription: (subscriptionId: string): Promise<ApiResponse<string>> => {
-    return apiClient.post(`/api/subscription/${subscriptionId}/cancel`)
+  cancelSubscription: (subscriptionId: string): Promise<AxiosResponse<ApiResponse<string>>> => {
+    return apiClient.post(`/subscription/${subscriptionId}/cancel`)
   },
 
   // 创建支付订单
-  createPaymentOrder: (request: CreatePaymentOrderRequest): Promise<ApiResponse<PaymentOrder>> => {
-    return apiClient.post('/api/payment/orders', request)
+  createPaymentOrder: (request: CreatePaymentOrderRequest): Promise<AxiosResponse<ApiResponse<PaymentOrder>>> => {
+    return apiClient.post('/payment/orders', request)
   },
 
   // 处理支付
-  processPayment: (orderId: string, transactionId: string): Promise<ApiResponse<PaymentOrder>> => {
-    return apiClient.post(`/api/payment/orders/${orderId}/pay`, null, {
+  processPayment: (orderId: string, transactionId: string): Promise<AxiosResponse<ApiResponse<PaymentOrder>>> => {
+    return apiClient.post(`/payment/orders/${orderId}/pay`, null, {
       params: { transactionId }
     })
   },
 
   // 获取支付订单详情
-  getPaymentOrder: (orderId: string): Promise<ApiResponse<PaymentOrder>> => {
-    return apiClient.get(`/api/payment/orders/${orderId}`)
+  getPaymentOrder: (orderId: string): Promise<AxiosResponse<ApiResponse<PaymentOrder>>> => {
+    return apiClient.get(`/payment/orders/${orderId}`)
   },
 
   // 获取用户所有支付订单
-  getUserPaymentOrders: (userId: string): Promise<ApiResponse<PaymentOrder[]>> => {
-    return apiClient.get(`/api/payment/orders/user/${userId}`)
+  getUserPaymentOrders: (userId: string): Promise<AxiosResponse<ApiResponse<PaymentOrder[]>>> => {
+    return apiClient.get(`/payment/orders/user/${userId}`)
   }
 }
 

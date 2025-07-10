@@ -21,10 +21,6 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/file': {
-        target: 'http://localhost:8090',
-        changeOrigin: true,
-      },
-      '/file': {
         target: 'http://localhost:8099',
         changeOrigin: true,
       },
