@@ -12,6 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+
+
+
+
+/**
+ * 邮件控制器
+ * 处理邮件相关的请求，如发送忘记密码验证码和验证邮箱验证码
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/mail")
