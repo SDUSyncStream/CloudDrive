@@ -127,39 +127,46 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
             throw new RuntimeException("订单状态不正确");
         }
 
-        // 更新订单状态
-        order.setStatus("paid");
-        order.setTransactionId(transactionId);
-        order.setPaidAt(LocalDateTime.now());
-        order.setUpdatedAt(LocalDateTime.now());
-        updateById(order);
-
-        // 创建订阅记录
-        userSubscriptionService.createSubscription(
-            order.getUserId(),
-            order.getMembershipLevelId(),
-            order.getPaymentMethod(),
-            order.getAmount()
-        );
-
-        // 更新用户存储配额
-        MembershipLevel level = membershipLevelService.getById(order.getMembershipLevelId());
-        if (level != null) {
-            boolean updateResult = userService.updateUserStorageQuota(order.getUserId(), level.getStorageQuota());
-            if (!updateResult) {
-                // 记录警告日志，但不影响支付流程
-                System.err.println("Warning: Failed to update user storage quota for user: " + order.getUserId());
-            }
-        }
-
-        // 确认订单支付，标记订单已处理（避免被自动取消）
         try {
-            orderMessageProducer.confirmOrderPayment(orderId);
-        } catch (Exception e) {
-            System.err.println("Warning: Failed to confirm order payment for order: " + orderId + ", error: " + e.getMessage());
-        }
+            // 首先尝试创建订阅记录（这里会进行权限检查）
+            userSubscriptionService.createSubscription(
+                order.getUserId(),
+                order.getMembershipLevelId(),
+                order.getPaymentMethod(),
+                order.getAmount()
+            );
 
-        return convertToDTO(order);
+            // 订阅创建成功，更新订单状态
+            order.setStatus("paid");
+            order.setTransactionId(transactionId);
+            order.setPaidAt(LocalDateTime.now());
+            order.setUpdatedAt(LocalDateTime.now());
+            updateById(order);
+
+            // 更新用户存储配额
+            MembershipLevel level = membershipLevelService.getById(order.getMembershipLevelId());
+            if (level != null) {
+                boolean updateResult = userService.updateUserStorageQuota(order.getUserId(), level.getStorageQuota());
+                if (!updateResult) {
+                    // 记录警告日志，但不影响支付流程
+                    System.err.println("Warning: Failed to update user storage quota for user: " + order.getUserId());
+                }
+            }
+
+            // 确认订单支付，标记订单已处理（避免被自动取消）
+            try {
+                orderMessageProducer.confirmOrderPayment(orderId);
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to confirm order payment for order: " + orderId + ", error: " + e.getMessage());
+            }
+
+            return convertToDTO(order);
+            
+        } catch (RuntimeException e) {
+            // 如果创建订阅失败（比如权限检查失败），订单状态保持pending
+            // 这样前端可以检测到失败并取消订单
+            throw e;
+        }
     }
 
     public List<PaymentOrderDTO> getUserPaymentOrders(String userId) {

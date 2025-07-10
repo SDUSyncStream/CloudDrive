@@ -466,7 +466,12 @@ const handlePayment = async () => {
       // 如果当前订阅等级优先级 >= 要支付的订单等级优先级，说明订单无效
       if (currentLevelPriority >= orderLevelPriority) {
         // 自动取消这个无效订单
-        await membershipApi.cancelPaymentOrder(pendingOrder.value.id)
+        try {
+          await membershipApi.cancelPaymentOrder(pendingOrder.value.id)
+          console.log('无效订单已自动取消:', pendingOrder.value.id)
+        } catch (cancelError) {
+          console.warn('取消订单失败:', cancelError)
+        }
         
         ElMessage.warning(`您当前已是${currentSubscription.membershipLevelName}，无需支付${pendingOrder.value.membershipLevelName}订单。该订单已自动取消。`)
         
@@ -495,11 +500,53 @@ const handlePayment = async () => {
       // 立即刷新一次
       await fetchCurrentSubscription()
     } else {
-      ElMessage.error('支付失败: ' + paymentResponse.data.message)
+      // 检查是否是会员等级冲突错误
+      if (paymentResponse.data.message && paymentResponse.data.message.includes('会员等级已包含此权限')) {
+        // 如果是会员等级冲突，自动取消订单
+        try {
+          await membershipApi.cancelPaymentOrder(pendingOrder.value.id)
+          console.log('冲突订单已自动取消:', pendingOrder.value.id)
+        } catch (cancelError) {
+          console.warn('取消订单失败:', cancelError)
+        }
+        
+        ElMessage.warning(`您当前的会员等级已包含此权限，无需重复购买。该订单已自动取消。`)
+        
+        // 关闭对话框并刷新状态
+        paymentDialogVisible.value = false
+        pendingOrder.value = null
+        await fetchCurrentSubscription()
+      } else {
+        ElMessage.error('支付失败: ' + paymentResponse.data.message)
+      }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('支付失败:', error)
-    ElMessage.error('支付失败')
+    
+    // 检查是否是会员等级冲突错误
+    if (error.response && error.response.data && error.response.data.message) {
+      const errorMessage = error.response.data.message
+      if (errorMessage.includes('会员等级已包含此权限')) {
+        // 如果是会员等级冲突，自动取消订单
+        try {
+          await membershipApi.cancelPaymentOrder(pendingOrder.value.id)
+          console.log('冲突订单已自动取消:', pendingOrder.value.id)
+        } catch (cancelError) {
+          console.warn('取消订单失败:', cancelError)
+        }
+        
+        ElMessage.warning(`您当前的会员等级已包含此权限，无需重复购买。该订单已自动取消。`)
+        
+        // 关闭对话框并刷新状态
+        paymentDialogVisible.value = false
+        pendingOrder.value = null
+        await fetchCurrentSubscription()
+      } else {
+        ElMessage.error('支付失败: ' + errorMessage)
+      }
+    } else {
+      ElMessage.error('支付失败')
+    }
   } finally {
     paymentLoading.value = false
     selectedLevelId.value = ''
