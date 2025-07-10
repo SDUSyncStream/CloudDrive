@@ -21,6 +21,20 @@ spring:
   web:
     resources:
       static-locations: classpath:/static/, file:/D:/upload_image/
+  redis:
+    host: localhost   # Redis服务器地址，如果是Docker或其他环境，替换为对应IP或服务名
+    port: 6379        # Redis服务器端口
+    password:         # 如果有密码，在此处填写。无密码则留空或删除此行
+    timeout: 5000ms   # 连接超时时间
+    database: 0       # Redis数据库索引 (默认0)
+    lettuce: # 使用Lettuce客户端，推荐
+      pool:
+        max-active: 8   # 连接池最大连接数
+        max-wait: -1ms  # 连接池最大阻塞等待时间，-1表示不限制
+        max-idle: 8     # 连接池最大空闲连接数
+        min-idle: 0     # 连接池最小空闲连接数
+    cache:
+      type: redis       # 告诉Spring Cache使用Redis作为缓存存储
 
 management:
   endpoints:
