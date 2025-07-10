@@ -45,6 +45,8 @@
           :key="group.name"
           class="level-card"
           :class="{ 'recommended': group.isRecommended }"
+          @mouseenter="handleCardHover(group.name, true)"
+          @mouseleave="handleCardHover(group.name, false)"
         >
           <div class="level-header">
             <h4>{{ group.name }}</h4>
@@ -214,6 +216,7 @@ const selectedDuration = ref('') // 选择的期间（月费/年费）
 const orderLoading = ref(false)
 const paymentLoading = ref(false)
 const cancelLoading = ref(false)
+const hoveredCard = ref('')
 
 // 获取用户ID (这里应该从用户状态或token中获取)
 const getCurrentUserId = () => {
@@ -403,6 +406,11 @@ const handlePayment = async () => {
   }
 }
 
+// 处理卡片悬停
+const handleCardHover = (cardName: string, isHovered: boolean) => {
+  hoveredCard.value = isHovered ? cardName : ''
+}
+
 // 取消订阅
 const handleCancelSubscription = async () => {
   if (!currentSubscription.value) return
@@ -510,113 +518,365 @@ onMounted(async () => {
 
 .levels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+  perspective: 1000px;
 }
 
 .level-card {
-  border: 2px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 20px;
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  padding: 32px 24px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  transform-style: preserve-3d;
+  animation: cardEntry 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px);
+  will-change: transform, box-shadow;
+}
+
+.level-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(103, 194, 58, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
 .level-card:hover {
-  border-color: #409eff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border-color: rgba(64, 158, 255, 0.3);
+}
+
+.level-card:hover::before {
+  opacity: 1;
 }
 
 .level-card.recommended {
-  border-color: #67c23a;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
   position: relative;
+  animation: pulse-glow 1.5s ease-in-out infinite;
 }
 
 .level-card.recommended::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+.level-card.recommended::after {
   content: '推荐';
   position: absolute;
-  top: -10px;
-  right: 20px;
-  background: #67c23a;
+  top: -8px;
+  right: 24px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
   color: white;
-  padding: 4px 12px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  animation: float 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.2);
+  }
+  50% {
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+
+.level-card:nth-child(1) { animation-delay: 0.05s; }
+.level-card:nth-child(2) { animation-delay: 0.1s; }
+.level-card:nth-child(3) { animation-delay: 0.15s; }
+.level-card:nth-child(4) { animation-delay: 0.2s; }
+.level-card:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes cardEntry {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.level-card.recommended {
+  animation: cardEntryRecommended 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes cardEntryRecommended {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  70% {
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .level-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  position: relative;
 }
 
 .level-header h4 {
-  margin: 0 0 10px 0;
+  margin: 0 0 16px 0;
   color: #333;
-  font-size: 20px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.level-card.recommended .level-header h4 {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .level-price {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  position: relative;
 }
 
 .price-symbol {
-  font-size: 16px;
+  font-size: 20px;
   color: #666;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .price-amount {
-  font-size: 32px;
-  font-weight: bold;
+  font-size: 42px;
+  font-weight: 800;
   color: #e6a23c;
+  margin: 0 4px;
+  position: relative;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.price-amount::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #e6a23c, #f39c12);
+  transform: scaleX(0);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.level-card:hover .price-amount::before {
+  transform: scaleX(1);
 }
 
 .price-period {
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
-  margin-left: 5px;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.level-card.recommended .price-symbol,
+.level-card.recommended .price-period {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.level-card.recommended .price-amount {
+  color: #ffd700;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
 }
 
 .price-from {
   display: flex;
   align-items: baseline;
   justify-content: center;
+  position: relative;
 }
 
 .free-label {
-  font-size: 18px;
+  font-size: 22px;
   color: #67c23a;
-  font-weight: bold;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(103, 194, 58, 0.2);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    text-shadow: 0 2px 4px rgba(103, 194, 58, 0.2);
+  }
+  50% {
+    text-shadow: 0 2px 8px rgba(103, 194, 58, 0.4);
+  }
 }
 
 .level-features {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   color: #666;
+  padding: 8px 0;
+  border-radius: 8px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.feature-item:hover {
+  background: rgba(64, 158, 255, 0.05);
+  transform: translateX(4px);
 }
 
 .feature-item i {
-  margin-right: 8px;
+  margin-right: 12px;
   color: #409eff;
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-item:hover i {
+  color: #1976d2;
+  transform: scale(1.1);
+}
+
+.level-card.recommended .feature-item {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.level-card.recommended .feature-item i {
+  color: #ffd700;
+}
+
+.level-card.recommended .feature-item:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .level-actions {
   text-align: center;
+  margin-top: 32px;
 }
 
 .level-actions .el-button {
   width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 24px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.level-actions .el-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.level-actions .el-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.level-actions .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(64, 158, 255, 0.25);
+}
+
+.level-card.recommended .level-actions .el-button {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  border: none;
+  color: #333;
+}
+
+.level-card.recommended .level-actions .el-button:hover {
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+}
+
+.level-card .level-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.level-card:hover .level-header::after {
+  left: 100%;
+}
+
+.level-card.recommended .level-header::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .payment-options {
   margin-bottom: 20px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.payment-options :deep(.el-radio) {
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.payment-options :deep(.el-radio__label) {
+  padding-left: 0 !important;
+}
+
+.payment-options :deep(.el-radio-group) {
+  line-height: normal;
+}
+
+.payment-options :deep(.el-radio__inner) {
+  width: 14px;
+  height: 14px;
 }
 
 .selected-level-info {
@@ -654,6 +914,41 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  line-height: normal;
+}
+
+.duration-options :deep(.el-radio-group) {
+  line-height: normal;
+}
+
+.duration-options :deep(.el-radio__inner) {
+  width: 14px;
+  height: 14px;
+}
+
+.duration-options :deep(.el-radio) {
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.duration-options :deep(.el-radio__input) {
+  position: absolute !important;
+  top: 50% !important;
+  left: 16px !important;
+  transform: translateY(-50%) !important;
+  z-index: 1 !important;
+  margin: 0 !important;
+}
+
+.duration-options :deep(.el-radio__label) {
+  padding-left: 0 !important;
+  width: 100% !important;
+  display: block !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
 
 .duration-card {
@@ -662,6 +957,11 @@ onMounted(async () => {
   padding: 0;
   margin: 0;
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: block;
+  position: relative;
 }
 
 .duration-card:hover {
@@ -683,8 +983,10 @@ onMounted(async () => {
 }
 
 .duration-content {
-  padding: 16px;
+  padding: 16px 16px 16px 45px;
   width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .duration-header {
@@ -731,6 +1033,25 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.payment-method-options :deep(.el-radio) {
+  margin-right: 0 !important;
+  flex: 1 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.payment-method-options :deep(.el-radio__label) {
+  padding-left: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
 .payment-method-item {
   flex: 1;
   border: 1px solid #e4e7ed;
@@ -739,6 +1060,10 @@ onMounted(async () => {
   margin: 0;
   text-align: center;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .payment-method-item:hover {
@@ -748,6 +1073,15 @@ onMounted(async () => {
 .payment-method-item.is-checked {
   border-color: #409eff;
   background: #f0f9ff;
+}
+
+.payment-method-options :deep(.el-radio__input) {
+  position: absolute !important;
+  top: 50% !important;
+  left: 8px !important;
+  transform: translateY(-50%) !important;
+  z-index: 1 !important;
+  margin: 0 !important;
 }
 
 .order-summary {
@@ -817,5 +1151,52 @@ onMounted(async () => {
 
 .dialog-footer {
   text-align: right;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .payment-method-options {
+    flex-direction: column;
+  }
+  
+  .payment-method-options :deep(.el-radio) {
+    flex: none;
+  }
+  
+  .payment-method-item {
+    flex: none;
+  }
+  
+  .duration-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .duration-price {
+    font-size: 16px;
+  }
+  
+  .save-tip {
+    margin-left: 0;
+    display: block;
+    margin-top: 4px;
+  }
+  
+  .duration-content {
+    padding: 16px 16px 16px 35px;
+  }
+  
+  .duration-options :deep(.el-radio__input) {
+    top: 50% !important;
+    left: 12px !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  .payment-method-options :deep(.el-radio__input) {
+    top: 50% !important;
+    left: 6px !important;
+    transform: translateY(-50%) !important;
+  }
 }
 </style>
