@@ -44,7 +44,11 @@
           v-for="group in groupedLevels" 
           :key="group.name"
           class="level-card"
-          :class="{ 'recommended': group.isRecommended, 'disabled': group.isDisabled }"
+          :class="{ 
+            'recommended': group.isRecommended, 
+            'disabled': group.isDisabled,
+            'current-level': group.name === currentUserLevel
+          }"
           @mouseenter="handleCardHover(group.name, true)"
           @mouseleave="handleCardHover(group.name, false)"
         >
@@ -80,11 +84,11 @@
           <div class="level-actions">
             <el-button 
               type="primary" 
-              :disabled="group.name === '免费版' || group.isDisabled"
+              :disabled="group.name === currentUserLevel || group.name === '免费版' || group.isDisabled"
               @click="handleSelectLevelGroup(group)"
               :loading="selectedLevelId === group.name && orderLoading"
             >
-              {{ group.name === '免费版' ? '当前版本' : group.isDisabled ? '已订阅' : '选择套餐' }}
+              {{ getButtonText(group) }}
             </el-button>
           </div>
         </div>
@@ -121,28 +125,6 @@
                   </span>
                 </div>
                 <div class="duration-desc">{{ selectedGroupLevel.monthlyOption.durationDays }}天有效期</div>
-              </div>
-            </el-radio>
-            
-            <el-radio 
-              v-if="selectedGroupLevel?.yearlyOption" 
-              :label="selectedGroupLevel.yearlyOption.id"
-              class="duration-card recommended-duration"
-            >
-              <div class="duration-content">
-                <div class="duration-header">
-                  <span class="duration-label">
-                    年付套餐
-                    <el-tag type="success" size="small">推荐</el-tag>
-                  </span>
-                  <span class="duration-price">
-                    ¥{{ selectedGroupLevel.yearlyOption.price }}/年
-                  </span>
-                </div>
-                <div class="duration-desc">
-                  {{ selectedGroupLevel.yearlyOption.durationDays }}天有效期
-                  <span class="save-tip">相当于每月¥{{ Math.round(selectedGroupLevel.yearlyOption.price / 12) }}</span>
-                </div>
               </div>
             </el-radio>
           </el-radio-group>
@@ -217,6 +199,7 @@ const orderLoading = ref(false)
 const paymentLoading = ref(false)
 const cancelLoading = ref(false)
 const hoveredCard = ref('')
+const currentUserLevel = ref('免费版') // 用户当前等级
 
 // 获取用户ID (这里应该从用户状态或token中获取)
 const getCurrentUserId = () => {
@@ -228,6 +211,30 @@ const getCurrentUserId = () => {
     return ''
   }
   return userId
+}
+
+// 获取当前用户等级的优先级
+const getCurrentLevelPriority = () => {
+  const levelPriorityMap = {
+    '免费版': 0,
+    '标准版': 10,
+    '高级版': 20,
+    '专业版': 30,
+    '企业版': 40
+  }
+  return levelPriorityMap[currentUserLevel.value] || 0
+}
+
+// 获取指定等级的优先级
+const getGroupPriority = (levelName: string) => {
+  const levelPriorityMap = {
+    '免费版': 0,
+    '标准版': 10,
+    '高级版': 20,
+    '专业版': 30,
+    '企业版': 40
+  }
+  return levelPriorityMap[levelName] || 0
 }
 
 // 格式化日期
@@ -254,38 +261,23 @@ const fetchMembershipLevels = async () => {
 const groupMembershipLevels = async () => {
   const levels = membershipLevels.value
   
-  // 按基础名称分组（去掉"年度"前缀）
+  // 直接使用月度会员等级，不再分组
   const grouped = new Map()
   
   levels.forEach(level => {
-    // 识别基础等级名称
-    let baseName = level.name
-    let isYearly = false
-    
-    if (level.name.includes('年度')) {
-      baseName = level.name.replace('年度', '')
-      isYearly = true
-    }
-    
-    if (!grouped.has(baseName)) {
-      grouped.set(baseName, {
-        name: baseName,
+    // 只处理月度会员等级，忽略年度会员
+    if (!level.name.includes('年度')) {
+      grouped.set(level.name, {
+        name: level.name,
         storageQuota: level.storageQuota,
         maxFileSize: level.maxFileSize,
         features: level.features,
         storageQuotaFormatted: level.storageQuotaFormatted,
         maxFileSizeFormatted: level.maxFileSizeFormatted,
-        monthlyOption: null,
+        monthlyOption: level,
         yearlyOption: null,
-        isRecommended: level.isRecommended || baseName === '高级版'
+        isRecommended: level.isRecommended || level.name === '高级版'
       })
-    }
-    
-    const group = grouped.get(baseName)
-    if (isYearly) {
-      group.yearlyOption = level
-    } else {
-      group.monthlyOption = level
     }
   })
   
@@ -295,7 +287,7 @@ const groupMembershipLevels = async () => {
     return order.indexOf(a.name) - order.indexOf(b.name)
   })
   
-  // 使用后端API检查每个等级组的订阅状态
+  // 使用后端API检查每个等级的订阅状态
   const userId = getCurrentUserId()
   if (userId) {
     for (const group of sortedGroups) {
@@ -309,18 +301,17 @@ const groupMembershipLevels = async () => {
         }
       }
       
-      // 检查年费选项的订阅状态
-      if (group.yearlyOption) {
-        try {
-          const response = await membershipApi.canSubscribeToLevel(userId, group.yearlyOption.id)
-          group.canSubscribeYearly = response.data.code === 200 ? response.data.data : true
-        } catch (error) {
-          group.canSubscribeYearly = true
+      // 只有月费选项，禁用状态基于月费选项
+      group.isDisabled = !group.canSubscribeMonthly
+      
+      // 如果用户当前等级高于或等于推荐等级，取消推荐状态
+      if (group.isRecommended && currentUserLevel.value) {
+        const currentLevelPriority = getCurrentLevelPriority()
+        const groupPriority = getGroupPriority(group.name)
+        if (currentLevelPriority >= groupPriority) {
+          group.isRecommended = false
         }
       }
-      
-      // 如果月费和年费都不能订阅，则禁用整个组
-      group.isDisabled = !group.canSubscribeMonthly && !group.canSubscribeYearly
     }
   }
   
@@ -342,21 +333,39 @@ const fetchCurrentSubscription = async () => {
     
     if (response.data.code === 200) {
       currentSubscription.value = response.data.data
+      // 更新用户当前等级
+      if (currentSubscription.value) {
+        currentUserLevel.value = currentSubscription.value.membershipLevelName
+      } else {
+        currentUserLevel.value = '免费版'
+      }
       console.log('当前订阅已更新:', currentSubscription.value)
-      // 重新分组会员等级以更新禁用状态
+      console.log('当前用户等级:', currentUserLevel.value)
+      // 重新分组会员等级以更新禁用状态和推荐状态
       await groupMembershipLevels()
     } else {
       console.log('获取订阅失败:', response.data.message)
       currentSubscription.value = null
+      currentUserLevel.value = '免费版'
+      // 即使获取失败也要重新分组以更新推荐状态
+      await groupMembershipLevels()
     }
   } catch (error) {
     console.log('暂无有效订阅或获取失败:', error)
     currentSubscription.value = null
+    currentUserLevel.value = '免费版'
+    // 即使出错也要重新分组以更新推荐状态
+    await groupMembershipLevels()
   }
 }
 
 // 选择会员等级组
 const handleSelectLevelGroup = (group: any) => {
+  if (group.name === currentUserLevel.value) {
+    ElMessage.info(`您当前已是${group.name}`)
+    return
+  }
+  
   if (group.name === '免费版') {
     ElMessage.info('免费版无需购买')
     return
@@ -442,6 +451,20 @@ const handlePayment = async () => {
     paymentLoading.value = false
     selectedLevelId.value = ''
   }
+}
+
+// 获取按钮文本
+const getButtonText = (group: any) => {
+  if (group.name === currentUserLevel.value) {
+    return '当前版本'
+  }
+  if (group.name === '免费版') {
+    return '免费版本'
+  }
+  if (group.isDisabled) {
+    return '已订阅'
+  }
+  return '选择套餐'
 }
 
 // 处理卡片悬停
@@ -926,6 +949,92 @@ onMounted(async () => {
   background-color: #f5f5f5;
   border-color: #ddd;
   color: #999;
+}
+
+/* 当前版本高亮样式 */
+.level-card.current-level {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  color: white;
+  border-color: #67c23a;
+  position: relative;
+  transform: scale(1.02);
+  box-shadow: 0 15px 40px rgba(103, 194, 58, 0.3);
+}
+
+.level-card.current-level::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  opacity: 1;
+}
+
+.level-card.current-level::after {
+  content: '当前版本';
+  position: absolute;
+  top: -8px;
+  right: 24px;
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  animation: float 2s ease-in-out infinite;
+}
+
+.level-card.current-level .level-header h4 {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.level-card.current-level .price-symbol,
+.level-card.current-level .price-period {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.level-card.current-level .price-amount {
+  color: #ffd700;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.level-card.current-level .feature-item {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.level-card.current-level .feature-item i {
+  color: #ffd700;
+}
+
+.level-card.current-level .feature-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.level-card.current-level .level-actions .el-button {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  border: none;
+  color: #333;
+  font-weight: 700;
+}
+
+.level-card.current-level .level-actions .el-button:hover {
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.level-card.current-level .level-actions .el-button:disabled {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+  color: #333;
+  opacity: 1;
+}
+
+.level-card.current-level:hover {
+  transform: scale(1.02) translateY(-2px);
+  box-shadow: 0 20px 50px rgba(103, 194, 58, 0.4);
+}
+
+/* 当前版本优先级高于推荐版本 */
+.level-card.current-level.recommended::after {
+  content: '当前版本';
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
 }
 
 .payment-options {

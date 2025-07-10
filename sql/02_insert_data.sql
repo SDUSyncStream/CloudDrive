@@ -11,13 +11,9 @@ USE cloud_drive;
 INSERT IGNORE INTO membership_levels (id, name, storage_quota, max_file_size, price, duration_days, features, priority) VALUES 
 ('level001', '免费版', 1073741824, 104857600, 0.00, 0, '1GB存储空间,单文件100MB', 0),
 ('level002', '标准版', 5368709120, 536870912, 19.99, 30, '5GB存储空间,单文件500MB', 10),
-('level009', '年度标准版', 5368709120, 536870912, 199.99, 365, '5GB存储空间,单文件500MB,年度优惠', 11),
 ('level003', '高级版', 53687091200, 5368709120, 39.99, 30, '50GB存储空间,单文件5GB', 20),
-('level006', '年度高级版', 53687091200, 5368709120, 199.99, 365, '50GB存储空间,单文件5GB,年度优惠', 21),
 ('level004', '专业版', 214748364800, 10737418240, 79.99, 30, '200GB存储空间,单文件10GB', 30),
-('level007', '年度专业版', 214748364800, 10737418240, 399.99, 365, '200GB存储空间,单文件10GB,年度优惠', 31),
-('level005', '企业版', 1099511627776, 21474836480, 199.99, 30, '1TB存储空间,单文件20GB', 40),
-('level008', '年度企业版', 1099511627776, 21474836480, 799.99, 365, '1TB存储空间,单文件20GB,年度优惠', 41);
+('level005', '企业版', 1099511627776, 21474836480, 199.99, 30, '1TB存储空间,单文件20GB', 40);
 
 -- 插入测试用户数据
 INSERT IGNORE INTO users (id, userlevel, username, email, password_hash, avatar, storage_quota, storage_used, created_at, updated_at) VALUES
@@ -54,13 +50,13 @@ INSERT IGNORE INTO file_share (share_id, file_id, user_id, valid_type, expire_ti
 
 -- 插入测试用户订阅数据
 INSERT IGNORE INTO user_subscriptions (id, user_id, membership_level_id, start_date, end_date, status, payment_method, payment_amount, created_at, updated_at) VALUES
-('1943129998659944450', '292ddee0-518c-4ff9-9eb8-3feabbcaff27', 'level008', NOW(), DATE_ADD(NOW(), INTERVAL 365 DAY), 'active', 'bank_card', 799.99, NOW(), NOW()),
+('1943129998659944450', '292ddee0-518c-4ff9-9eb8-3feabbcaff27', 'level005', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active', 'bank_card', 199.99, NOW(), NOW()),
 ('sub002', 'user002', 'level002', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active', 'credit_card', 19.99, NOW(), NOW()),
 ('sub003', 'user003', 'level004', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active', 'alipay', 79.99, NOW(), NOW()),
 ('sub004', 'user004', 'level003', DATE_SUB(NOW(), INTERVAL 35 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY), 'expired', 'wechat_pay', 39.99, DATE_SUB(NOW(), INTERVAL 35 DAY), NOW()),
-('sub005', 'user005', 'level006', NOW(), DATE_ADD(NOW(), INTERVAL 365 DAY), 'active', 'paypal', 199.99, NOW(), NOW()),
+('sub005', 'user005', 'level002', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active', 'paypal', 19.99, NOW(), NOW()),
 ('sub006', 'user006', 'level001', NOW(), DATE_ADD(NOW(), INTERVAL 365 DAY), 'active', 'free', 0.00, NOW(), NOW()),
-('sub007', 'user007', 'level008', NOW(), DATE_ADD(NOW(), INTERVAL 365 DAY), 'active', 'bank_transfer', 799.99, NOW(), NOW()),
+('sub007', 'user007', 'level005', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active', 'bank_transfer', 199.99, NOW(), NOW()),
 ('sub008', 'user002', 'level001', DATE_SUB(NOW(), INTERVAL 60 DAY), DATE_SUB(NOW(), INTERVAL 30 DAY), 'expired', 'free', 0.00, DATE_SUB(NOW(), INTERVAL 60 DAY), NOW());
 
 -- 插入测试支付订单数据
@@ -68,13 +64,13 @@ INSERT IGNORE INTO payment_orders (id, user_id, membership_level_id, order_numbe
 ('order001', 'user002', 'level002', 'ORD202501090001', 19.99, 'credit_card', 'paid', 'TXN_CC_001', NOW(), NOW(), NOW()),
 ('order002', 'user003', 'level004', 'ORD202501090002', 79.99, 'alipay', 'paid', 'TXN_ALIPAY_002', NOW(), NOW(), NOW()),
 ('order003', 'user004', 'level003', 'ORD202501090003', 39.99, 'wechat_pay', 'paid', 'TXN_WECHAT_003', DATE_SUB(NOW(), INTERVAL 35 DAY), DATE_SUB(NOW(), INTERVAL 35 DAY), NOW()),
-('order004', 'user005', 'level006', 'ORD202501090004', 199.99, 'paypal', 'paid', 'TXN_PAYPAL_004', NOW(), NOW(), NOW()),
-('order005', 'user007', 'level008', 'ORD202501090005', 799.99, 'bank_transfer', 'paid', 'TXN_BANK_005', NOW(), NOW(), NOW()),
+('order004', 'user005', 'level002', 'ORD202501090004', 19.99, 'paypal', 'paid', 'TXN_PAYPAL_004', NOW(), NOW(), NOW()),
+('order005', 'user007', 'level005', 'ORD202501090005', 199.99, 'bank_transfer', 'paid', 'TXN_BANK_005', NOW(), NOW(), NOW()),
 ('order006', '292ddee0-518c-4ff9-9eb8-3feabbcaff27', 'level002', 'ORD202501090006', 19.99, 'credit_card', 'pending', NULL, NULL, NOW(), NOW()),
 ('order007', 'user006', 'level003', 'ORD202501090007', 39.99, 'alipay', 'failed', 'TXN_ALIPAY_007', NULL, NOW(), NOW()),
 ('order008', 'user004', 'level002', 'ORD202501090008', 19.99, 'wechat_pay', 'cancelled', NULL, NULL, NOW(), NOW()),
 ('order009', 'user002', 'level003', 'ORD202501090009', 39.99, 'paypal', 'paid', 'TXN_PAYPAL_009', NOW(), NOW(), NOW()),
-('order010', '292ddee0-518c-4ff9-9eb8-3feabbcaff27', 'level008', 'ORD202507100001', 799.99, 'bank_card', 'paid', 'TXN_BANK_010', NOW(), NOW(), NOW());
+('order010', '292ddee0-518c-4ff9-9eb8-3feabbcaff27', 'level005', 'ORD202507100001', 199.99, 'bank_card', 'paid', 'TXN_BANK_010', NOW(), NOW(), NOW());
 
 -- 数据插入完成
 SELECT 'CloudDrive测试数据插入完成！' as message;
