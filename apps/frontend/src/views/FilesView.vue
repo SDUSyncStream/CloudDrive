@@ -176,7 +176,7 @@
         </el-table-column>
         <el-table-column prop="size" label="大小">
           <template #default="{ row }">
-            {{ row.fileSize || '--' }}
+            {{ formatFileSize(row.fileSize) || '--' }}
           </template>
         </el-table-column>
         <el-table-column prop="date" label="修改时间">
@@ -240,6 +240,9 @@
             <div class="file-card-actions">
               <div class="primary-actions">
                 <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(item)">
+                  <el-icon><View /></el-icon>
+                </el-button>
+                <el-button link type="primary" size="small" title="分享文件">
                   <el-icon><Share /></el-icon>
                 </el-button>
                 <el-button link type="primary" size="small" title="下载文件">
@@ -254,15 +257,15 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item>
+                    <el-dropdown-item @click="handleCopy(row)">
                       <el-icon><CopyDocument /></el-icon>
                       复制
                     </el-dropdown-item>
-                    <el-dropdown-item>
+                    <el-dropdown-item @click="handleRename(row)">
                       <el-icon><Edit /></el-icon>
                       重命名
                     </el-dropdown-item>
-                    <el-dropdown-item divided>
+                    <el-dropdown-item divided @click="handleRecycle(row)">
                       <el-icon><Delete /></el-icon>
                       删除
                     </el-dropdown-item>
