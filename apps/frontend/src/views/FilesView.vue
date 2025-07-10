@@ -193,7 +193,7 @@
               <el-button link type="primary" size="small" title="分享文件">
                 <el-icon><Share /></el-icon>
               </el-button>
-              <el-button link type="primary" size="small" title="下载文件">
+              <el-button link type="primary" size="small" title="下载文件" @click="handleDownload(row)">
                 <el-icon><Download /></el-icon>
               </el-button>
               <el-dropdown trigger="click">
@@ -307,7 +307,7 @@ const viewMode = ref<'grid' | 'list'>('list')
 const showUploader = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const currentPath = ref<string[]>(['文档', '项目文件', '2024年度'])
-
+const downloadingFiles = ref<Set<string>>(new Set());
 
 
 // 文件上传相关状态和变量
@@ -355,7 +355,7 @@ const fileList = ref<any[]>([]);
 const delList = ref<any[]>([]);
 
 let nowfilePid = 0;
-let nowUserId = 2;
+let nowUserId = 'user008';
 onMounted(() => {
 //  userId = localStorage.getItem("UserId");
   nowfilePid = 0;
@@ -644,22 +644,27 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
   const fileSize = currentFile.totalSize;
   const chunks = Math.ceil(fileSize / chunkSize);
 
+  // 初始化已上传大小为之前的分片大小
+  currentFile.uploadSize = chunkIndex * chunkSize;
+
   for (let i = chunkIndex; i < chunks; i++) {
     // 检查是否被删除
     if (delList.value.includes(uid)) {
       const index = delList.value.indexOf(uid);
       if (index !== -1) delList.value.splice(index, 1);
-      break;
+        break;
     }
+
 
     // 检查是否暂停
     if (currentFile.pause) break;
 
     const start = i * chunkSize;
     const end = Math.min(start + chunkSize, fileSize);
+    const chunkActualSize = end - start; // 当前分片实际大小
     const chunkFile = file.slice(start, end);
     let  userId=localStorage.getItem('UserId');
-    userId='1000000001';
+    userId='user008';                                       //测试专用
     const formData = new FormData();
     formData.append('file', chunkFile);
     formData.append('fileName', file.name);
@@ -668,9 +673,11 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     formData.append('chunks', chunks.toString());
     formData.append('filePid', currentFile.filePid);
     formData.append('userId',userId);
-
+     if(currentFile.fileId){
+        formData.append('fileId', currentFile.fileId); // 如果有文件 ID，添加到表单数据中
+      }
     try {
-      const response = await fetch('/file/uploadFile', {
+      const response = await fetch('/fileup/uploadFile', {
         method: 'POST',
         body: formData,
 
@@ -685,15 +692,16 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       currentFile.chunkIndex = i;
 
       if (result.data.fileId) {
+      console.log(result);
         currentFile.fileId = result.data.fileId;
       }
 
-      // 更新上传进度
-      currentFile.uploadSize = (i + 1) * chunkSize;
-      if (currentFile.uploadSize > fileSize) {
-        currentFile.uploadSize = fileSize;
-      }
-      currentFile.uploadProgress = Math.floor((currentFile.uploadSize / fileSize) * 100);
+      // 更新上传进度：使用实际字节数
+      currentFile.uploadSize += chunkActualSize;
+      currentFile.uploadProgress = Math.min(
+        100,
+        Math.floor((currentFile.uploadSize / fileSize) * 100)
+      );
 
       // 上传完成
       if (
@@ -702,6 +710,7 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       ) {
         currentFile.uploadProgress = 100;
         ElMessage.success(`文件 ${file.name} 上传成功`);
+        getFileList(currentFile.filePid, userId);
         break;
       }
     } catch (error: any) {
@@ -749,44 +758,65 @@ const handleViewClick = (item) => {
 
   }
 }
+const handleDownload=async (row:any)=>{
+ // 如果是文件夹，提示不能下载
+  if (row.folderType === 1) {
+    ElMessage.warning('文件夹不支持下载');
+    return;
+  }
 
-const handleRowClick = (row) => {
-  // 在这里可以添加你需要执行的逻辑，比如跳转到详情页等
-};
+  // 检查是否正在下载
+  if (downloadingFiles.value.has(row.fileId)) {
+    ElMessage.info('文件正在下载中，请稍候');
+    return;
+  }
 
+  try {
+    // 标记为下载中
+    downloadingFiles.value.add(row.fileId);
+    ElMessage.info(`开始下载: ${row.fileName}`);
 
-
-
-const upload=async () => {
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.onchange = async (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-      const file = target.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileName', file.name);
-      formData.append('filePid', '1'); // 示例父文件夹 ID
-      formData.append('fileMd5', '1234567890abcdef'); // 示例文件 MD5
-      formData.append('chunkIndex', '0'); // 示例分片索引
-      formData.append('chunks', '1'); // 示例总分片数
-
-      try {
-        const response = await axios.post('/file/uploadFile', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        ElMessage.success('文件上传成功');
-        console.log('Upload response:', response.data);
-      } catch (error) {
-        ElMessage.error('文件上传失败');
-        console.error('Upload error:', error);
-      }
+    // 1. 创建下载链接获取code
+    const userId = 'user008'; // 测试专用，实际应使用localStorage.getItem('userId')
+    const createUrlRes = await axios.get(`/fileup/createDownloadUrl/${row.fileId}`, {
+      params: { userId }
+    });
+    if (createUrlRes.data.code !== 200) {
+      throw new Error(createUrlRes.data.message || '获取下载链接失败');
     }
-  };
-  fileInput.click();
+    const  downloadcode  = createUrlRes.data.data; // 获取后端返回的下载code
+    if (downloadcode== null || downloadcode === undefined) {
+      throw new Error('获取下载链接失败');
+    }
+
+    // 2. 使用code下载文件
+    const downloadRes = await axios.get(`/fileup/download/${downloadcode}`, {
+      responseType: 'blob'
+    });
+
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([downloadRes.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', row.fileName);
+    document.body.appendChild(link);
+    link.click();
+
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    ElMessage.success(`下载完成: ${row.fileName}`);
+  } catch (error: any) {
+    console.error('下载失败:', error);
+    ElMessage.error(`下载失败: ${error.response?.data?.message || error.message || '未知错误'}`);
+  } finally {
+    // 移除下载状态
+    downloadingFiles.value.delete(row.fileId);
+  }
+}
+const handleRowClick =  (row: any) => {
+
 };
 </script>
 
