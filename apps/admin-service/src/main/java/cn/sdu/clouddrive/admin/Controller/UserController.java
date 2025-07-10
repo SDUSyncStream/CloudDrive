@@ -1,6 +1,7 @@
 package cn.sdu.clouddrive.admin.Controller;
 
 import cn.sdu.clouddrive.admin.Service.UserService;
+import cn.sdu.clouddrive.admin.Service.UserSubscriptionService;
 import cn.sdu.clouddrive.admin.pojo.LoginInfo;
 import cn.sdu.clouddrive.admin.pojo.User;
 import cn.sdu.clouddrive.admin.util.ServerResult; // 假设你有这样一个统一的返回结果封装类
@@ -20,6 +21,9 @@ public class UserController {
 
     @Autowired
     private UserService userService; // 注入 UserService
+
+    @Autowired
+    private UserSubscriptionService userSubscriptionService; // 注入 UserSubscriptionService
 
     @GetMapping("/hello") // 处理GET请求到 /admin/hello
     public String hello() {
@@ -130,7 +134,13 @@ public class UserController {
         user.setId(userId);
         int result = userService.insertUser(user);
         if (result > 0) {
-            return ServerResult.ok("插入用户成功");
+            // 用户创建成功后，为用户创建默认订阅
+            boolean subscriptionCreated = userSubscriptionService.createDefaultSubscription(userId);
+            if (subscriptionCreated) {
+                return ServerResult.ok("插入用户成功并创建默认订阅");
+            } else {
+                return ServerResult.ok("插入用户成功，但创建默认订阅失败");
+            }
         } else {
             return ServerResult.fail("插入用户失败");
         }

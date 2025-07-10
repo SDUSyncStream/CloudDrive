@@ -147,6 +147,7 @@ import {
   Plus,
   QuestionFilled,
 } from '@element-plus/icons-vue'
+import { encryptPassword } from '../utils/crypto' // 假设你有一个加密密码的工具函数
 
 // 假设你的 utils 文件中有这些格式化函数
 import { formatFileSize } from '../utils'
@@ -360,9 +361,10 @@ const submitUserForm = async () => {
       storageQuota: Math.round(userForm.storageQuotaGB * 1024 * 1024 * 1024), // GB转字节
     };
 
+    const encryptedPassword = await encryptPassword(userForm.password)
     // 密码字段处理
     if (userForm.password !== '') {
-      payload.passwordHash = userForm.password; // 假设后端会将此字段作为密码进行哈希
+      payload.passwordHash = encryptedPassword; // 假设后端会将此字段作为密码进行哈希
     }
 
     let url = '';

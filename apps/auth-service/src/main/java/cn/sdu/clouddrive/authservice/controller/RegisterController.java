@@ -47,7 +47,7 @@ public class RegisterController {
 
             log.info("为用户 {} 生成UUID: {}", registerInfo.getUsername(), userId);
 
-            registerInfo.setAvatar("/user.jpg");
+            registerInfo.setAvatar("https://img.picui.cn/free/2025/07/09/686e296d92aa8.jpg");
 
             // 执行注册
             boolean registerSuccess = false;

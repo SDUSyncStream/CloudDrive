@@ -2,11 +2,11 @@
   <div class="admin-membership-levels-view">
     <h2>套餐管理</h2>
 
-    <el-card shadow="hover" class="action-card">
+    <!-- <el-card shadow="hover" class="action-card">
       <el-button type="primary" @click="openAddLevelDialog">
         <el-icon><Plus /></el-icon> 新增套餐
       </el-button>
-    </el-card>
+    </el-card> -->
 
     <el-card shadow="hover" class="table-card">
       <el-table
@@ -50,7 +50,7 @@
         <el-table-column label="操作" fixed="right" width="150">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEditLevelDialog(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="deleteLevel(row)">删除</el-button>
+            <!-- <el-button link type="danger" size="small" @click="deleteLevel(row)">删除</el-button> -->
           </template>
         </el-table-column>
       </el-table>

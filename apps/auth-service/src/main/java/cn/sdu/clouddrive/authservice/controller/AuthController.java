@@ -6,6 +6,7 @@ import cn.sdu.clouddrive.authservice.pojo.ServerResult;
 import cn.sdu.clouddrive.authservice.pojo.UserBasicInfo;
 import cn.sdu.clouddrive.authservice.service.AuthService;
 import cn.sdu.clouddrive.authservice.service.RedisService;
+import cn.sdu.clouddrive.authservice.service.SubscriptionCheckService;
 import cn.sdu.clouddrive.authservice.util.JwtUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,9 @@ public class AuthController
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private SubscriptionCheckService subscriptionCheckService;
 
 //    @GetMapping("/api/auth/login")
 //    public ServerResult<Map<String, String>> login(@RequestParam String username,@RequestParam String password)
@@ -63,6 +67,9 @@ public class AuthController
         UserBasicInfo userBasicInfo = authService.isExist(loginInfo.getUsername(), loginInfo.getPasswordHash());
         if (userBasicInfo != null)
         {
+            // 检查并确保用户有有效订阅
+            subscriptionCheckService.ensureUserHasValidSubscription(userBasicInfo.getId());
+
             // 生成JWT token
             String token = jwtUtil.generateToken(userBasicInfo.getUsername(), userBasicInfo.getId());
 
