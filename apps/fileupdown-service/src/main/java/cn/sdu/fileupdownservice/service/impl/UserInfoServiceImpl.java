@@ -3,12 +3,11 @@ package cn.sdu.fileupdownservice.service.impl;
 import cn.sdu.fileupdownservice.component.RedisComponent;
 import cn.sdu.fileupdownservice.entity.constants.Constants;
 import cn.sdu.fileupdownservice.entity.enums.UserStatusEnum;
-import cn.sdu.fileupdownservice.entity.po.UserInfo;
+import cn.sdu.fileupdownservice.entity.po.Users;
 import cn.sdu.fileupdownservice.entity.query.UserInfoQuery;
 import cn.sdu.fileupdownservice.mappers.UserInfoMapper;
 import cn.sdu.fileupdownservice.service.FileInfoService;
 import cn.sdu.fileupdownservice.service.UserInfoService;
-import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,7 @@ import java.util.List;
 public class UserInfoServiceImpl implements UserInfoService {
 
     @Resource
-    private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
+    private UserInfoMapper<Users, UserInfoQuery> userInfoMapper;
 
 
     @Resource
@@ -36,20 +35,20 @@ public class UserInfoServiceImpl implements UserInfoService {
      * 根据条件查询列表
      */
     @Override
-    public List<UserInfo> findListByParam(UserInfoQuery param) {
+    public List<Users> findListByParam(UserInfoQuery param) {
         return this.userInfoMapper.selectList(param);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateUserStatus(String userId, Integer status) {
-        UserInfo userInfo = new UserInfo();
-        userInfo.setStatus(status);
+        Users users = new Users();
+        users.setStatus(status);
         if (UserStatusEnum.DISABLE.getStatus().equals(status)) {
-            userInfo.setUseSpace(0L);
+            users.setUseSpace(0L);
             fileInfoService.deleteFileByUserId(userId);
         }
-        userInfoMapper.updateByUserId(userInfo, userId);
+        userInfoMapper.updateByUserId(users, userId);
     }
 
 
@@ -61,11 +60,11 @@ public class UserInfoServiceImpl implements UserInfoService {
         redisComponent.resetUserSpaceUse(userId);
     }
     @Override
-    public UserInfo selectByUserId(String userId) {
+    public Users selectByUserId(String userId) {
         return this.userInfoMapper.selectByUserId(userId);
     }
     @Override
-    public UserInfo selectUser( String userId) {
+    public Users selectUser(String userId) {
         return this.userInfoMapper.selectUser(userId);
     }
 }

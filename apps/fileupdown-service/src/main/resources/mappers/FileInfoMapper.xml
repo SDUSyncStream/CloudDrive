@@ -8,7 +8,7 @@
         <!--文件ID-->
         <result column="file_id" property="fileId"/>
         <!--用户ID-->
-        <result column="user_id" property="userId"/>
+        <result column="userId" property="user_id"/>
         <!--md5值，第一次上传记录-->
         <result column="file_md5" property="fileMd5"/>
         <!--父级ID-->
@@ -169,7 +169,7 @@
         SELECT
         <include refid="base_column_list"/>
         <if test="query.queryNickName!=null and query.queryNickName">
-            ,(select nick_name from user_info u where u.user_id = f.user_id) nickName
+            ,(select username from users u where u.id = f.user_id) nickName
         </if>
         FROM file_info f
         <include refid="query_condition"/>

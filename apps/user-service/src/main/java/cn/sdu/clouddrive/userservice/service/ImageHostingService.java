@@ -37,7 +37,7 @@ public class ImageHostingService {
      */
     public String uploadImage(MultipartFile file) {
         try {
-            log.info("开始上传图片到托管平台，文件名: {}", file.getOriginalFilename());
+//            log.info("开始上传图片到托管平台，文件名: {}", file.getOriginalFilename());
 
             // 创建请求头
             HttpHeaders headers = new HttpHeaders();
@@ -83,22 +83,22 @@ public class ImageHostingService {
                         Map<String, Object> links = (Map<String, Object>) data.get("links");
                         if (links != null) {
                             String imageUrl = (String) links.get("url");
-                            log.info("图片上传成功，URL: {}", imageUrl);
+//                            log.info("图片上传成功，URL: {}", imageUrl);
                             return imageUrl;
                         }
                     }
                 }
 
                 String message = (String) responseBody.get("message");
-                log.error("图片上传失败，响应: {}", message);
+//                log.error("图片上传失败，响应: {}", message);
                 throw new RuntimeException("图片上传失败: " + message);
             } else {
-                log.error("图片上传失败，HTTP状态码: {}", response.getStatusCode());
+//                log.error("图片上传失败，HTTP状态码: {}", response.getStatusCode());
                 throw new RuntimeException("图片上传失败，HTTP状态码: " + response.getStatusCode());
             }
 
         } catch (Exception e) {
-            log.error("上传图片到托管平台失败", e);
+//            log.error("上传图片到托管平台失败", e);
             throw new RuntimeException("图片上传失败: " + e.getMessage());
         }
     }

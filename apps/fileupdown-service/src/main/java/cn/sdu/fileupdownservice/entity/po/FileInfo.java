@@ -13,6 +13,7 @@ import java.io.Serializable;
 
 /**
  * 文件信息
+ *
  */
 public class FileInfo implements Serializable {
 
