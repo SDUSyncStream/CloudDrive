@@ -88,9 +88,10 @@
     <!-- 支付方式对话框 -->
     <el-dialog 
       v-model="paymentDialogVisible" 
-      title="选择套餐" 
+      :title="pendingOrder ? '确认支付' : '选择套餐'" 
       width="600px"
       :close-on-click-modal="false"
+      @close="handleDialogClose"
     >
       <div class="payment-options">
         <div class="selected-level-info">
@@ -141,6 +142,10 @@
         
         <!-- 订单总价 -->
         <div class="order-summary" v-if="selectedLevel">
+          <div class="summary-item" v-if="pendingOrder">
+            <span>订单号：</span>
+            <span>{{ pendingOrder.orderNumber }}</span>
+          </div>
           <div class="summary-item">
             <span>套餐名称：</span>
             <span>{{ selectedLevel.name }}</span>
@@ -149,19 +154,23 @@
             <span>支付金额：</span>
             <span class="total-price">¥{{ selectedLevel.price }}</span>
           </div>
+          <div class="summary-item" v-if="pendingOrder">
+            <span>订单状态：</span>
+            <span class="order-status pending">待支付</span>
+          </div>
         </div>
       </div>
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="paymentDialogVisible = false">取消</el-button>
+          <el-button @click="handleDialogClose">{{ pendingOrder ? '稍后支付' : '取消' }}</el-button>
           <el-button 
             type="primary" 
             @click="handlePayment"
             :loading="paymentLoading"
-            :disabled="!selectedDuration || !selectedPaymentMethod"
+            :disabled="!pendingOrder || !selectedPaymentMethod"
           >
-            确认支付
+            {{ pendingOrder ? '立即支付' : '确认选择' }}
           </el-button>
         </span>
       </template>
@@ -187,6 +196,7 @@ const selectedPaymentMethod = ref('')
 const selectedDuration = ref('') // 选择的期间（月费/年费）
 const orderLoading = ref(false)
 const paymentLoading = ref(false)
+const pendingOrder = ref<any>(null) // 当前待支付订单
 const hoveredCard = ref('')
 const currentUserLevel = ref('免费版') // 用户当前等级
 
@@ -204,7 +214,7 @@ const getCurrentUserId = () => {
 
 // 获取当前用户等级的优先级
 const getCurrentLevelPriority = () => {
-  const levelPriorityMap = {
+  const levelPriorityMap: Record<string, number> = {
     '免费版': 0,
     '标准版': 10,
     '高级版': 20,
@@ -216,7 +226,7 @@ const getCurrentLevelPriority = () => {
 
 // 获取指定等级的优先级
 const getGroupPriority = (levelName: string) => {
-  const levelPriorityMap = {
+  const levelPriorityMap: Record<string, number> = {
     '免费版': 0,
     '标准版': 10,
     '高级版': 20,
@@ -370,13 +380,15 @@ const handleSelectLevelGroup = (group: any) => {
   selectedLevelId.value = group.name
   selectedPaymentMethod.value = ''
   selectedDuration.value = ''
+  pendingOrder.value = null // 重置待支付订单
   paymentDialogVisible.value = true
 }
 
 // 监听期间选择变化
-const updateSelectedLevel = () => {
+const updateSelectedLevel = async () => {
   if (!selectedDuration.value || !selectedGroupLevel.value) {
     selectedLevel.value = null
+    pendingOrder.value = null
     return
   }
   
@@ -384,6 +396,46 @@ const updateSelectedLevel = () => {
   const level = membershipLevels.value.find(l => l.id === selectedDuration.value)
   if (level) {
     selectedLevel.value = level
+    // 立即创建订单
+    await createPendingOrder(level)
+  }
+}
+
+// 创建待支付订单
+const createPendingOrder = async (level: MembershipLevel) => {
+  if (pendingOrder.value) {
+    // 如果已有待支付订单，先取消它
+    try {
+      await membershipApi.cancelPaymentOrder(pendingOrder.value.id)
+    } catch (error) {
+      console.warn('取消前一个订单失败:', error)
+    }
+  }
+  
+  orderLoading.value = true
+  
+  try {
+    const userId = getCurrentUserId()
+    
+    // 创建支付订单
+    const orderResponse = await membershipApi.createPaymentOrder({
+      userId,
+      membershipLevelId: level.id,
+      paymentMethod: 'alipay' // 默认支付方式，用户稍后可以更改
+    })
+    
+    if (orderResponse.data.code === 200) {
+      pendingOrder.value = orderResponse.data.data
+      ElMessage.success('订单创建成功，请选择支付方式')
+      console.log('订单已创建:', pendingOrder.value)
+    } else {
+      ElMessage.error('创建订单失败: ' + orderResponse.data.message)
+    }
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    ElMessage.error('创建订单失败')
+  } finally {
+    orderLoading.value = false
   }
 }
 
@@ -392,7 +444,7 @@ watch(selectedDuration, updateSelectedLevel)
 
 // 处理支付
 const handlePayment = async () => {
-  if (!selectedLevel.value || !selectedPaymentMethod.value) {
+  if (!pendingOrder.value || !selectedPaymentMethod.value) {
     ElMessage.error('请选择支付方式')
     return
   }
@@ -400,38 +452,50 @@ const handlePayment = async () => {
   paymentLoading.value = true
   
   try {
+    // 支付前检查：获取用户最新的订阅状态
     const userId = getCurrentUserId()
+    const subscriptionResponse = await membershipApi.getCurrentSubscription(userId)
     
-    // 创建支付订单
-    const orderResponse = await membershipApi.createPaymentOrder({
-      userId,
-      membershipLevelId: selectedLevel.value.id,
-      paymentMethod: selectedPaymentMethod.value
-    })
-    
-    if (orderResponse.data.code === 200) {
-      const order = orderResponse.data.data
+    if (subscriptionResponse.data.code === 200 && subscriptionResponse.data.data) {
+      const currentSubscription = subscriptionResponse.data.data
       
-      // 模拟支付成功
-      const transactionId = 'TXN' + Date.now()
-      const paymentResponse = await membershipApi.processPayment(order.id, transactionId)
+      // 比较当前订阅等级与要支付的订单等级
+      const currentLevelPriority = getGroupPriority(currentSubscription.membershipLevelName)
+      const orderLevelPriority = getGroupPriority(pendingOrder.value.membershipLevelName)
       
-      if (paymentResponse.data.code === 200) {
-        ElMessage.success('支付成功！')
+      // 如果当前订阅等级优先级 >= 要支付的订单等级优先级，说明订单无效
+      if (currentLevelPriority >= orderLevelPriority) {
+        // 自动取消这个无效订单
+        await membershipApi.cancelPaymentOrder(pendingOrder.value.id)
+        
+        ElMessage.warning(`您当前已是${currentSubscription.membershipLevelName}，无需支付${pendingOrder.value.membershipLevelName}订单。该订单已自动取消。`)
+        
+        // 关闭对话框并刷新状态
         paymentDialogVisible.value = false
-        
-        // 延迟刷新当前订阅状态，确保后端数据已更新
-        setTimeout(async () => {
-          await fetchCurrentSubscription()
-        }, 1000)
-        
-        // 立即刷新一次
+        pendingOrder.value = null
         await fetchCurrentSubscription()
-      } else {
-        ElMessage.error('支付失败: ' + paymentResponse.data.message)
+        return
       }
+    }
+    
+    // 通过检查，继续支付流程
+    const transactionId = 'TXN' + Date.now()
+    const paymentResponse = await membershipApi.processPayment(pendingOrder.value.id, transactionId)
+    
+    if (paymentResponse.data.code === 200) {
+      ElMessage.success('支付成功！')
+      paymentDialogVisible.value = false
+      pendingOrder.value = null // 清除待支付订单
+      
+      // 延迟刷新当前订阅状态，确保后端数据已更新
+      setTimeout(async () => {
+        await fetchCurrentSubscription()
+      }, 1000)
+      
+      // 立即刷新一次
+      await fetchCurrentSubscription()
     } else {
-      ElMessage.error('创建订单失败: ' + orderResponse.data.message)
+      ElMessage.error('支付失败: ' + paymentResponse.data.message)
     }
   } catch (error) {
     console.error('支付失败:', error)
@@ -440,6 +504,18 @@ const handlePayment = async () => {
     paymentLoading.value = false
     selectedLevelId.value = ''
   }
+}
+
+// 处理对话框关闭
+const handleDialogClose = () => {
+  // 用户关闭对话框，不取消订单，订单保持pending状态
+  // 用户可以稍后在订单中心继续操作
+  if (pendingOrder.value) {
+    console.log('订单已创建，保持pending状态:', pendingOrder.value.id)
+    ElMessage.info('订单已保存，您可以在订单中心继续支付')
+  }
+  paymentDialogVisible.value = false
+  pendingOrder.value = null // 只清空前端状态，不影响后端订单
 }
 
 // 获取按钮文本
