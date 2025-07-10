@@ -14,4 +14,6 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 管理员用户信息，如果不存在则返回 null
      */
     User selectAdminByUsernameAndPassword(@Param("username") String username, @Param("passwordHash") String passwordHash);
+
+
 }

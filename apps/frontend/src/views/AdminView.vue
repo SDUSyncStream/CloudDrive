@@ -42,8 +42,8 @@
                   </div>
                 </div>
                 <el-divider style="margin: 8px 0;" />
-                <el-dropdown-item command="admin-profile">个人设置</el-dropdown-item>
-                <el-dropdown-item command="system-logs">系统日志</el-dropdown-item>
+<!--                <el-dropdown-item command="admin-profile">个人设置</el-dropdown-item>-->
+<!--                <el-dropdown-item command="system-logs">系统日志</el-dropdown-item>-->
                 <el-dropdown-item divided command="admin-logout">退出管理</el-dropdown-item>
               </el-dropdown-menu>
             </template>

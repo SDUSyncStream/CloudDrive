@@ -19,14 +19,14 @@
           empty-text="暂无套餐模板"
       >
         <el-table-column prop="name" label="套餐名称" width="150" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="storage_quota" label="存储配额" width="120">
+        <el-table-column prop="storageQuota" label="存储配额" width="120">
           <template #default="{ row }">
-            {{ formatFileSize(row.storage_quota) }}
+            {{ formatFileSize(row.storageQuota) }}
           </template>
         </el-table-column>
-        <el-table-column prop="max_file_size" label="最大单文件" width="120">
+        <el-table-column prop="maxFileSize" label="最大单文件" width="120">
           <template #default="{ row }">
-            {{ formatFileSize(row.max_file_size) }}
+            {{ formatFileSize(row.maxFileSize) }}
           </template>
         </el-table-column>
         <el-table-column prop="price" label="价格(¥)" width="100">
@@ -34,16 +34,16 @@
             {{ row.price.toFixed(2) }}
           </template>
         </el-table-column>
-        <el-table-column prop="duration_days" label="时长(天)" width="100"></el-table-column>
+        <el-table-column prop="durationDays" label="时长(天)" width="100"></el-table-column>
         <el-table-column prop="features" label="特性描述" min-width="200" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column prop="createdAt" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDateTime(row.created_at) }}
+            {{ formatDateTime(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="updated_at" label="最后更新" width="180">
+        <el-table-column prop="updatedAt" label="最后更新" width="180">
           <template #default="{ row }">
-            {{ formatDateTime(row.updated_at) }}
+            {{ formatDateTime(row.updatedAt) }}
           </template>
         </el-table-column>
 
@@ -66,9 +66,9 @@
         <el-form-item label="套餐名称" prop="name">
           <el-input v-model="levelForm.name" :disabled="isEditMode && levelForm.id === 'level-free'"></el-input>
         </el-form-item>
-        <el-form-item label="存储配额" prop="storage_quota_gb">
+        <el-form-item label="存储配额" prop="storageQuotaGB">
           <el-input-number
-              v-model="levelForm.storage_quota_gb"
+              v-model="levelForm.storageQuotaGB"
               :min="levelForm.id === 'level-free' ? 1 : 1"
               :max="1024 * 10"
               :step="1"
@@ -78,9 +78,9 @@
             <el-icon><QuestionFilled /></el-icon>
           </el-tooltip>
         </el-form-item>
-        <el-form-item label="最大单文件" prop="max_file_size_gb">
+        <el-form-item label="最大单文件" prop="maxFileSizeGB">
           <el-input-number
-              v-model="levelForm.max_file_size_gb"
+              v-model="levelForm.maxFileSizeGB"
               :min="levelForm.id === 'level-free' ? 0.1 : 0.1"
               :max="100"
               :step="0.1"
@@ -101,10 +101,10 @@
               :disabled="levelForm.id === 'level-free'"
           ></el-input-number> ¥
         </el-form-item>
-        <el-form-item label="时长" prop="duration_days">
+        <el-form-item label="时长" prop="durationDays">
           <el-input-number
-              v-model="levelForm.duration_days"
-              :min="levelForm.id === 'level-free' ? 0 : 1"
+              v-model="levelForm.durationDays"
+              :min="0"
               :step="1"
               placeholder="单位: 天 (0为永久)"
               :disabled="levelForm.id === 'level-free'"
@@ -134,7 +134,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   Plus,
-  QuestionFilled, // 疑问图标
+  QuestionFilled,
 } from '@element-plus/icons-vue'
 
 // 假设你的 utils 文件中有这些格式化函数
@@ -143,29 +143,37 @@ import { formatFileSize } from '../utils'
 // 用于格式化日期时间
 const formatDateTime = (datetime: string | Date | null) => {
   if (!datetime) return '--'
-  const date = new Date(datetime)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+  try {
+    const date = new Date(datetime);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date string');
+    }
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    console.error("Error formatting date:", datetime, e);
+    return datetime; // 返回原始字符串或错误提示
+  }
 }
 
 // --- 数据接口定义 ---
-
+// 与后端 MembershipLevel 实体类保持一致 (驼峰命名)
 interface MembershipLevel {
   id: string;
   name: string;
-  storage_quota: number; // 字节
-  max_file_size: number; // 字节
-  price: number;
-  duration_days: number;
+  storageQuota: number; // 字节 (Long)
+  maxFileSize: number; // 字节 (Long)
+  price: number; // BigDecimal
+  durationDays: number; // Integer
   features: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string; // LocalDateTime
+  updatedAt: string; // LocalDateTime
 }
 
 // --- 数据定义 ---
@@ -179,14 +187,14 @@ const isEditMode = ref(false) // true: 编辑模式, false: 添加模式
 const levelFormRef = ref<FormInstance>() // 对话框表单引用
 const formSubmitting = ref(false) // 对话框表单提交状态
 
-// 对话框表单数据 (storage_quota_gb 和 max_file_size_gb 是为了方便用户输入，实际存储为字节)
+// 对话框表单数据 (storageQuotaGB 和 maxFileSizeGB 是为了方便用户输入，实际存储为字节)
 const levelForm = reactive({
   id: '',
   name: '',
-  storage_quota_gb: 0, // GB 为单位，用于输入框
-  max_file_size_gb: 0, // GB 为单位，用于输入框
+  storageQuotaGB: 1, // GB 为单位，用于输入框
+  maxFileSizeGB: 0.1, // GB 为单位，用于输入框
   price: 0,
-  duration_days: 0,
+  durationDays: 0,
   features: '',
 })
 
@@ -210,21 +218,21 @@ const rules: FormRules = reactive({
       trigger: 'blur'
     }
   ],
-  storage_quota_gb: [
+  storageQuotaGB: [
     { required: true, message: '请输入存储配额', trigger: 'blur' },
-    { type: 'number', min: 1, message: '存储配额必须大于0', trigger: 'blur' }
+    { type: 'number', min: 1, message: '存储配额必须大于0', trigger: 'blur', transform: (value) => Number(value) }
   ],
-  max_file_size_gb: [
+  maxFileSizeGB: [
     { required: true, message: '请输入最大单文件大小', trigger: 'blur' },
-    { type: 'number', min: 0.1, message: '最大单文件大小必须大于0', trigger: 'blur' }
+    { type: 'number', min: 0.01, message: '最大单文件大小必须大于0', trigger: 'blur', transform: (value) => Number(value) }
   ],
   price: [
     { required: true, message: '请输入价格', trigger: 'blur' },
-    { type: 'number', min: 0, message: '价格不能为负数', trigger: 'blur' }
+    { type: 'number', min: 0, message: '价格不能为负数', trigger: 'blur', transform: (value) => Number(value) }
   ],
-  duration_days: [
+  durationDays: [
     { required: true, message: '请输入时长', trigger: 'blur' },
-    { type: 'number', min: 0, message: '时长不能为负数', trigger: 'blur' },
+    { type: 'number', min: 0, message: '时长不能为负数', trigger: 'blur', transform: (value) => Number(value) },
     { validator: (rule, value, callback) => {
         if (value === 0 && levelForm.price !== 0) {
           callback(new Error('价格非0的套餐时长不能为0'));
@@ -259,10 +267,10 @@ const openEditLevelDialog = (level: MembershipLevel) => {
   Object.assign(levelForm, {
     id: level.id,
     name: level.name,
-    storage_quota_gb: level.storage_quota / (1024 * 1024 * 1024),
-    max_file_size_gb: level.max_file_size / (1024 * 1024 * 1024),
+    storageQuotaGB: level.storageQuota / (1024 * 1024 * 1024),
+    maxFileSizeGB: level.maxFileSize / (1024 * 1024 * 1024),
     price: level.price,
-    duration_days: level.duration_days,
+    durationDays: level.durationDays,
     features: level.features,
   })
   dialogVisible.value = true
@@ -276,59 +284,39 @@ const submitForm = async () => {
     formSubmitting.value = true
     await levelFormRef.value.validate()
 
-    // 转换 GB 为字节
-    const payload = {
-      ...levelForm,
-      storage_quota: Math.round(levelForm.storage_quota_gb * 1024 * 1024 * 1024),
-      max_file_size: Math.round(levelForm.max_file_size_gb * 1024 * 1024 * 1024),
-    } as Omit<MembershipLevel, 'created_at' | 'updated_at'>; // 临时类型断言，确保删除不需要的GB字段
+    // 转换 GB 为字节，构建发送给后端的数据对象
+    const payload: Partial<MembershipLevel> = {
+      name: levelForm.name,
+      storageQuota: Math.round(levelForm.storageQuotaGB * 1024 * 1024 * 1024),
+      maxFileSize: Math.round(levelForm.maxFileSizeGB * 1024 * 1024 * 1024),
+      price: levelForm.price,
+      durationDays: levelForm.durationDays,
+      features: levelForm.features,
+    };
 
-    // 移除不应发送给后端的临时GB字段
-    delete (payload as any).storage_quota_gb;
-    delete (payload as any).max_file_size_gb;
-
-
-    let url = '/api/admin/membership-levels'
+    let url = `/admin-api/membership-levels/add` // 新增
     let method = 'POST'
-    let message = '新增套餐成功！'
+    let successMessage = '新增套餐成功！'
 
     if (isEditMode.value) {
-      url = `/api/admin/membership-levels/${levelForm.id}`
+      payload.id = levelForm.id; // 编辑时需要ID
+      url = `/admin-api/membership-levels/update` // 更新
       method = 'PUT'
-      message = '编辑套餐成功！'
-    } else {
-      // 生成一个简单的UUID作为ID，实际应由后端生成
-      payload.id = `level-${Date.now().toString(36)}`;
+      successMessage = '编辑套餐成功！'
     }
 
-    // 模拟 API 请求
-    console.log(`Sending ${method} request to ${url} with payload:`, payload);
-    const response = await new Promise(resolve => setTimeout(() => {
-      // 模拟后端返回，如果名称重复则失败
-      const isNameConflict = membershipLevels.value.some(
-          level => level.name === payload.name && level.id !== payload.id
-      );
-      if (!isEditMode.value && isNameConflict) {
-        resolve({ json: () => ({ code: 500, message: '套餐名称已存在' }) });
-      } else {
-        resolve({ json: () => ({ code: 200, message: message, data: { ...payload, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } }) });
-      }
-    }, 800));
-    const result = await (response as any).json();
-
-
-    // const response = await fetch(url, {
-    //   method: method,
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}` // 假设需要管理员Token
-    //   },
-    //   body: JSON.stringify(payload)
-    // })
-    // const result = await response.json()
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}` // 假设需要管理员Token
+      },
+      body: JSON.stringify(payload)
+    })
+    const result = await response.json()
 
     if (result.code === 200) {
-      ElMessage.success(message)
+      ElMessage.success(successMessage)
       dialogVisible.value = false
       fetchMembershipLevels() // 刷新列表
     } else {
@@ -336,11 +324,7 @@ const submitForm = async () => {
     }
   } catch (error: any) {
     console.error('提交套餐表单错误:', error)
-    if (error.isFormValidationError) {
-      ElMessage.error('表单验证失败，请检查输入项。')
-    } else {
-      ElMessage.error('操作失败，请检查网络或表单内容。')
-    }
+    ElMessage.error('操作失败，请检查网络或表单内容。')
   } finally {
     formSubmitting.value = false
   }
@@ -363,20 +347,14 @@ const deleteLevel = async (level: MembershipLevel) => {
   )
       .then(async () => {
         try {
-          // 模拟 API 请求
-          console.log(`Sending DELETE request to /api/admin/membership-levels/${level.id}`);
-          const response = await new Promise(resolve => setTimeout(() => {
-            resolve({ json: () => ({ code: 200, message: '删除成功' }) });
-          }, 500));
-          const result = await (response as any).json();
-
-          // const response = await fetch(`/api/admin/membership-levels/${level.id}`, {
-          //   method: 'DELETE',
-          //   headers: {
-          //     'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
-          //   }
-          // })
-          // const result = await response.json()
+          const url = `/admin-api/membership-levels/delete/${level.id}`; // 对应后端的 DELETE 接口
+          const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+              // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+            }
+          })
+          const result = await response.json()
 
           if (result.code === 200) {
             ElMessage.success('套餐删除成功！')
@@ -402,34 +380,46 @@ const resetDialogForm = () => {
   Object.assign(levelForm, { // 确保清除所有数据并设置默认值
     id: '',
     name: '',
-    storage_quota_gb: 1, // 默认 1GB
-    max_file_size_gb: 0.1, // 默认 0.1GB (100MB)
+    storageQuotaGB: 1, // 默认 1GB
+    maxFileSizeGB: 0.1, // 默认 0.1GB (100MB)
     price: 0,
-    duration_days: 0,
+    durationDays: 0,
     features: '',
   })
 }
 
-// 获取会员等级列表数据（模拟）
+// 获取会员等级列表数据
 const fetchMembershipLevels = async () => {
   loading.value = true
   try {
-    // 模拟从后端获取数据
-    // const response = await fetch('/api/admin/membership-levels');
-    // const data = await response.json();
+    const response = await fetch('/admin-api/membership-levels/getAll', { // 对应后端的 GET ALL 接口
+      headers: {
+        // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+      }
+    });
 
-    // 模拟你的 INSERT 语句数据
-    const mockLevels: MembershipLevel[] = [
-      { id: 'level-free', name: '免费版', storage_quota: 1073741824, max_file_size: 104857600, price: 0.00, duration_days: 0, features: '1GB存储空间,单文件100MB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-      { id: 'level-basic', name: '基础版', storage_quota: 10737418240, max_file_size: 1073741824, price: 9.99, duration_days: 30, features: '10GB存储空间,单文件1GB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-      { id: 'level-premium', name: '高级版', storage_quota: 107374182400, max_file_size: 5368709120, price: 19.99, duration_days: 30, features: '100GB存储空间,单文件5GB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-      { id: 'level-enterprise', name: '企业版', storage_quota: 1099511627776, max_file_size: 21474836480, price: 99.99, duration_days: 30, features: '1TB存储空间,单文件20GB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-      { id: 'level-pro', name: '专业版', storage_quota: 536870912000, max_file_size: 10737418240, price: 49.99, duration_days: 30, features: '500GB存储空间,单文件10GB,CDN加速', created_at: '2024-05-01 00:00:00', updated_at: '2024-05-01 00:00:00' },
-    ]
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    await new Promise(resolve => setTimeout(resolve, 500)) // 模拟网络延迟
-    membershipLevels.value = mockLevels
+    const result = await response.json();
 
+    if (result.code === 200) {
+      // 确保后端返回的字段名与前端 interface MembershipLevel 的驼峰命名一致
+      membershipLevels.value = result.data.map((level: any) => ({
+        id: level.id,
+        name: level.name,
+        storageQuota: Number(level.storageQuota), // 确保是数字类型
+        maxFileSize: Number(level.maxFileSize),   // 确保是数字类型
+        price: Number(level.price),             // 确保是数字类型
+        durationDays: Number(level.durationDays), // 确保是数字类型
+        features: level.features,
+        createdAt: level.createdAt,
+        updatedAt: level.updatedAt,
+      }));
+    } else {
+      ElMessage.error(result.message || '获取套餐列表失败！');
+    }
   } catch (error) {
     console.error('获取会员等级列表失败:', error)
     ElMessage.error('获取套餐数据失败，请检查网络连接。')

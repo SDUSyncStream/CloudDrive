@@ -2,14 +2,13 @@
   <div class="admin-subscriptions-view">
     <h2>订阅管理</h2>
 
-    <!-- 搜索和筛选区域 -->
     <el-card shadow="hover" class="search-card">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="用户ID/用户名">
           <el-input v-model="searchForm.userIdOrName" placeholder="输入用户ID或用户名" clearable></el-input>
         </el-form-item>
         <el-form-item label="会员等级">
-          <el-select v-model="searchForm.membershipLevelId" placeholder="选择会员等级" clearable>
+          <el-select v-model="searchForm.membershipLevelId" placeholder="选择会员等级" clearable style="width: 150px;">
             <el-option label="所有" value=""></el-option>
             <el-option
                 v-for="level in membershipLevels"
@@ -20,7 +19,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="订阅状态">
-          <el-select v-model="searchForm.status" placeholder="选择订阅状态" clearable>
+          <el-select v-model="searchForm.status" placeholder="选择订阅状态" clearable style="width: 150px;">
             <el-option label="所有" value=""></el-option>
             <el-option label="活跃" value="active"></el-option>
             <el-option label="已过期" value="expired"></el-option>
@@ -38,7 +37,6 @@
       </el-form>
     </el-card>
 
-    <!-- 订阅列表表格 -->
     <el-card shadow="hover" class="table-card">
       <el-table
           :data="paginatedSubscriptions"
@@ -50,24 +48,24 @@
           empty-text="暂无订阅数据"
       >
         <el-table-column prop="id" label="订阅ID" width="100" show-overflow-tooltip></el-table-column>
-        <el-table-column prop="user_id" label="用户" width="150" show-overflow-tooltip>
+        <el-table-column prop="userId" label="用户" width="150" show-overflow-tooltip>
           <template #default="{ row }">
-            {{ getUserNameById(row.user_id) || row.user_id }}
+            {{ getUserNameById(row.userId) || row.userId }}
           </template>
         </el-table-column>
-        <el-table-column prop="membership_level_id" label="会员等级" width="120">
+        <el-table-column prop="membershipLevelId" label="会员等级" width="120">
           <template #default="{ row }">
-            {{ getMembershipLevelName(row.membership_level_id) }}
+            {{ getMembershipLevelName(row.membershipLevelId) }}
           </template>
         </el-table-column>
-        <el-table-column prop="start_date" label="开始日期" width="180">
+        <el-table-column prop="startDate" label="开始日期" width="180">
           <template #default="{ row }">
-            {{ formatDateTime(row.start_date) }}
+            {{ formatDateTime(row.startDate) }}
           </template>
         </el-table-column>
-        <el-table-column prop="end_date" label="结束日期" width="180">
+        <el-table-column prop="endDate" label="结束日期" width="180">
           <template #default="{ row }">
-            {{ formatDateTime(row.end_date) }}
+            {{ formatDateTime(row.endDate) }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
@@ -77,15 +75,15 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="payment_amount" label="支付金额" width="100">
+        <el-table-column prop="paymentAmount" label="支付金额" width="100">
           <template #default="{ row }">
-            {{ row.payment_amount ? `¥${row.payment_amount.toFixed(2)}` : '--' }}
+            {{ row.paymentAmount !== null ? `¥${row.paymentAmount.toFixed(2)}` : '--' }}
           </template>
         </el-table-column>
-        <el-table-column prop="payment_method" label="支付方式" width="100"></el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column prop="paymentMethod" label="支付方式" width="100"></el-table-column>
+        <el-table-column prop="createdAt" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDateTime(row.created_at) }}
+            {{ formatDateTime(row.createdAt) }}
           </template>
         </el-table-column>
 
@@ -111,7 +109,6 @@
       ></el-pagination>
     </el-card>
 
-    <!-- 订阅详情对话框 -->
     <el-dialog
         v-model="detailsDialogVisible"
         title="订阅详情"
@@ -120,28 +117,28 @@
       <div v-if="currentSubscriptionDetails">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="订阅ID">{{ currentSubscriptionDetails.id }}</el-descriptions-item>
-          <el-descriptions-item label="用户ID">{{ currentSubscriptionDetails.user_id }}</el-descriptions-item>
-          <el-descriptions-item label="用户名">{{ getUserNameById(currentSubscriptionDetails.user_id) || currentSubscriptionDetails.user_id }}</el-descriptions-item>
-          <el-descriptions-item label="会员等级">{{ getMembershipLevelName(currentSubscriptionDetails.membership_level_id) }}</el-descriptions-item>
-          <el-descriptions-item label="开始日期">{{ formatDateTime(currentSubscriptionDetails.start_date) }}</el-descriptions-item>
-          <el-descriptions-item label="结束日期">{{ formatDateTime(currentSubscriptionDetails.end_date) }}</el-descriptions-item>
+          <el-descriptions-item label="用户ID">{{ currentSubscriptionDetails.userId }}</el-descriptions-item>
+          <el-descriptions-item label="用户名">{{ getUserNameById(currentSubscriptionDetails.userId) || currentSubscriptionDetails.userId }}</el-descriptions-item>
+          <el-descriptions-item label="会员等级">{{ getMembershipLevelName(currentSubscriptionDetails.membershipLevelId) }}</el-descriptions-item>
+          <el-descriptions-item label="开始日期">{{ formatDateTime(currentSubscriptionDetails.startDate) }}</el-descriptions-item>
+          <el-descriptions-item label="结束日期">{{ formatDateTime(currentSubscriptionDetails.endDate) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="getSubscriptionStatusTagType(currentSubscriptionDetails.status)">
               {{ formatSubscriptionStatus(currentSubscriptionDetails.status) }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="支付金额">{{ currentSubscriptionDetails.payment_amount ? `¥${currentSubscriptionDetails.payment_amount.toFixed(2)}` : '--' }}</el-descriptions-item>
-          <el-descriptions-item label="支付方式">{{ currentSubscriptionDetails.payment_method || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ formatDateTime(currentSubscriptionDetails.created_at) }}</el-descriptions-item>
-          <el-descriptions-item label="更新时间">{{ formatDateTime(currentSubscriptionDetails.updated_at) }}</el-descriptions-item>
+          <el-descriptions-item label="支付金额">{{ currentSubscriptionDetails.paymentAmount !== null ? `¥${currentSubscriptionDetails.paymentAmount.toFixed(2)}` : '--' }}</el-descriptions-item>
+          <el-descriptions-item label="支付方式">{{ currentSubscriptionDetails.paymentMethod || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ formatDateTime(currentSubscriptionDetails.createdAt) }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ formatDateTime(currentSubscriptionDetails.updatedAt) }}</el-descriptions-item>
         </el-descriptions>
         <el-divider />
         <h3>会员等级详情</h3>
         <el-descriptions :column="1" border v-if="currentMembershipLevelDetails">
           <el-descriptions-item label="等级名称">{{ currentMembershipLevelDetails.name }}</el-descriptions-item>
-          <el-descriptions-item label="存储配额">{{ formatFileSize(currentMembershipLevelDetails.storage_quota) }}</el-descriptions-item>
-          <el-descriptions-item label="最大单文件">{{ formatFileSize(currentMembershipLevelDetails.max_file_size) }}</el-descriptions-item>
-          <el-descriptions-item label="价格">{{ `¥${currentMembershipLevelDetails.price.toFixed(2)} / ${currentMembershipLevelDetails.duration_days}天` }}</el-descriptions-item>
+          <el-descriptions-item label="存储配额">{{ formatFileSize(currentMembershipLevelDetails.storageQuota) }}</el-descriptions-item>
+          <el-descriptions-item label="最大单文件">{{ formatFileSize(currentMembershipLevelDetails.maxFileSize) }}</el-descriptions-item>
+          <el-descriptions-item label="价格">{{ `¥${currentMembershipLevelDetails.price.toFixed(2)} / ${currentMembershipLevelDetails.durationDays}天` }}</el-descriptions-item>
           <el-descriptions-item label="特性">{{ currentMembershipLevelDetails.features }}</el-descriptions-item>
         </el-descriptions>
         <p v-else>无法加载会员等级详情。</p>
@@ -164,49 +161,69 @@ import {
 } from '@element-plus/icons-vue'
 
 // 假设你的 utils 文件中有这些格式化函数
-import { formatFileSize } from '../utils'
+import { formatFileSize } from '../utils' // 注意路径是否正确
 
-// 用于格式化日期时间
-const formatDateTime = (datetime: string | Date | null) => {
+// 用于格式化日期时间 (适配 LocalDateTime)
+const formatDateTime = (datetime: string | null) => {
   if (!datetime) return '--'
-  const date = new Date(datetime)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+  try {
+    const date = new Date(datetime);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date string');
+    }
+    // 注意：Java 的 LocalDateTime 可能会被 JSON 序列化为 "YYYY-MM-DDTHH:MM:SS" 格式，
+    // Date 构造函数可以处理，但如果包含毫秒，有时需要额外处理。
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    console.error("Error formatting date:", datetime, e);
+    return datetime; // 返回原始字符串或错误提示
+  }
 }
 
 // --- 数据接口定义 ---
-
+// 与后端 MembershipLevel 实体类保持一致 (驼峰命名)
 interface MembershipLevel {
   id: string;
   name: string;
-  storage_quota: number; // 字节
-  max_file_size: number; // 字节
+  storageQuota: number; // 字节
+  maxFileSize: number; // 字节
   price: number;
-  duration_days: number;
+  durationDays: number;
   features: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
+// 注意：这里使用后端枚举的字符串值 'active', 'expired', 'cancelled'
 type SubscriptionStatus = 'active' | 'expired' | 'cancelled';
 
+// 与后端 UserSubscription 实体类保持一致 (驼峰命名)
 interface UserSubscription {
   id: string;
-  user_id: string;
-  membership_level_id: string;
-  start_date: string;
-  end_date: string;
+  userId: string;
+  membershipLevelId: string;
+  startDate: string;
+  endDate: string;
   status: SubscriptionStatus;
-  payment_method: string | null;
-  payment_amount: number | null;
-  created_at: string;
-  updated_at: string;
+  paymentMethod: string | null;
+  paymentAmount: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 与后端 User 实体类保持一致 (驼峰命名)
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  // ... 其他字段如果你需要
 }
 
 // --- 数据定义 ---
@@ -215,7 +232,7 @@ interface UserSubscription {
 const searchForm = reactive({
   userIdOrName: '',
   membershipLevelId: '',
-  status: '',
+  status: '', // 后端枚举字符串
 })
 
 const subscriptions = ref<UserSubscription[]>([]) // 所有订阅数据
@@ -230,23 +247,17 @@ const detailsDialogVisible = ref(false)
 const currentSubscriptionDetails = ref<UserSubscription | null>(null)
 const currentMembershipLevelDetails = ref<MembershipLevel | null>(null)
 
-// 模拟的会员等级数据 (来自你的 INSERT 语句)
-const membershipLevels = ref<MembershipLevel[]>([
-  { id: 'level-free', name: '免费版', storage_quota: 1073741824, max_file_size: 104857600, price: 0.00, duration_days: 0, features: '1GB存储空间,单文件100MB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-  { id: 'level-basic', name: '基础版', storage_quota: 10737418240, max_file_size: 1073741824, price: 9.99, duration_days: 30, features: '10GB存储空间,单文件1GB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-  { id: 'level-premium', name: '高级版', storage_quota: 107374182400, max_file_size: 5368709120, price: 19.99, duration_days: 30, features: '100GB存储空间,单文件5GB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-  { id: 'level-enterprise', name: '企业版', storage_quota: 1099511627776, max_file_size: 21474836480, price: 99.99, duration_days: 30, features: '1TB存储空间,单文件20GB', created_at: '2023-01-01 00:00:00', updated_at: '2023-01-01 00:00:00' },
-])
+// 实际从后端获取的会员等级数据
+const membershipLevels = ref<MembershipLevel[]>([])
 
-// 模拟的用户ID到用户名的映射 (可复用自用户管理页面)
-const userMap = ref<{ [key: string]: string }>({
-  'user001': 'Ono Kasumi',
-  'user002': 'Eleanor Henders',
-  'user003': 'Saito Ikki',
-  'admin-user-id': 'admin',
-  '1000000001': 'Wang Li',
-  '1000000002': 'Zhang San',
-  '1000000003': 'super_admin',
+// 实际从后端获取的用户数据，用于构建映射
+const users = ref<User[]>([]);
+const userMap = computed(() => {
+  const map: { [key: string]: string } = {};
+  users.value.forEach(user => {
+    map[user.id] = user.username;
+  });
+  return map;
 });
 
 
@@ -256,10 +267,10 @@ const userMap = ref<{ [key: string]: string }>({
 const filteredSubscriptions = computed(() => {
   return subscriptions.value.filter(sub => {
     const matchesUserIdOrName = !searchForm.userIdOrName ||
-        sub.user_id?.includes(searchForm.userIdOrName) ||
-        (userMap.value[sub.user_id]?.includes(searchForm.userIdOrName));
+        sub.userId?.includes(searchForm.userIdOrName) ||
+        (userMap.value[sub.userId]?.includes(searchForm.userIdOrName));
 
-    const matchesMembershipLevel = searchForm.membershipLevelId === '' || sub.membership_level_id === searchForm.membershipLevelId;
+    const matchesMembershipLevel = searchForm.membershipLevelId === '' || sub.membershipLevelId === searchForm.membershipLevelId;
 
     const matchesStatus = searchForm.status === '' || sub.status === searchForm.status;
 
@@ -309,31 +320,32 @@ const getSubscriptionStatusTagType = (status: SubscriptionStatus) => {
 
 // 搜索订阅
 const searchSubscriptions = () => {
-  currentPage.value = 1 // 搜索时重置回第一页
-  fetchSubscriptions() // 实际项目中会调用 API 重新获取数据
+  currentPage.value = 1; // 搜索时重置回第一页
+  // 由于后端 getAll 不支持筛选，这里只触发前端过滤
 }
 
 // 重置搜索条件
 const resetSearch = () => {
-  searchForm.userIdOrName = ''
-  searchForm.membershipLevelId = ''
-  searchForm.status = ''
-  searchSubscriptions() // 重置后重新搜索
+  searchForm.userIdOrName = '';
+  searchForm.membershipLevelId = '';
+  searchForm.status = '';
+  currentPage.value = 1; // 重置时也回到第一页
+  // 不需要再次 fetch，因为 computed 会自动更新
 }
 
 // 查看订阅详情
 const viewSubscriptionDetails = (subscription: UserSubscription) => {
   currentSubscriptionDetails.value = subscription;
   currentMembershipLevelDetails.value = membershipLevels.value.find(
-      level => level.id === subscription.membership_level_id
+      level => level.id === subscription.membershipLevelId
   ) || null;
   detailsDialogVisible.value = true;
 }
 
-// 延长订阅 (模拟操作)
+// 延长订阅
 const extendSubscription = async (subscription: UserSubscription) => {
   ElMessageBox.confirm(
-      `确定要延长用户 "${getUserNameById(subscription.user_id)}" 的 "${getMembershipLevelName(subscription.membership_level_id)}" 订阅吗？`,
+      `确定要延长用户 "${getUserNameById(subscription.userId)}" 的 "${getMembershipLevelName(subscription.membershipLevelId)}" 订阅吗？`,
       '延长订阅',
       {
         confirmButtonText: '确定延长',
@@ -343,26 +355,51 @@ const extendSubscription = async (subscription: UserSubscription) => {
   )
       .then(async () => {
         try {
-          // 模拟 API 请求：延长订阅
-          console.log(`Sending extend request for subscription: ${subscription.id}`);
-          // 实际 API: await fetch(`/api/admin/subscriptions/extend/${subscription.id}`, { method: 'PUT', headers: { Authorization: 'Bearer ...' } });
+          // 创建一个新的订阅对象，用于发送给后端更新
+          const updatedSubscription: UserSubscription = { ...subscription };
 
-          await new Promise(resolve => setTimeout(resolve, 500)); // 模拟延迟
+          // 延长逻辑：如果已过期或已取消，则将结束日期延长 N 天（例如30天）并设置为活跃
+          // 如果已经是活跃状态，则从当前结束日期延长 N 天
+          let newEndDate = new Date(updatedSubscription.endDate);
+          if (updatedSubscription.status !== 'active') {
+            // 如果不是活跃状态，从当前日期算起
+            newEndDate = new Date();
+          }
+          newEndDate.setDate(newEndDate.getDate() + 30); // 延长30天
 
-          ElMessage.success('订阅已成功延长！')
-          fetchSubscriptions() // 刷新列表
+          updatedSubscription.endDate = newEndDate.toISOString(); // 转换为ISO字符串
+          updatedSubscription.status = 'active'; // 状态改为活跃
+
+          const response = await fetch('/admin-api/subscriptions/update', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+            },
+            body: JSON.stringify(updatedSubscription)
+          });
+
+          const result = await response.json();
+
+          if (result.code === 200) {
+            ElMessage.success('订阅已成功延长！');
+            await fetchSubscriptions(); // 刷新列表
+          } else {
+            ElMessage.error(result.message || '延长订阅失败！');
+          }
         } catch (error) {
-          console.error('延长订阅错误:', error)
-          ElMessage.error('延长订阅失败。')
+          console.error('延长订阅错误:', error);
+          ElMessage.error('延长订阅失败，请检查网络。');
         }
       })
-      .catch(() => {})
-}
+      .catch(() => {});
+};
 
-// 取消订阅 (模拟操作)
+
+// 取消订阅
 const cancelSubscription = async (subscription: UserSubscription) => {
   ElMessageBox.confirm(
-      `确定要取消用户 "${getUserNameById(subscription.user_id)}" 的 "${getMembershipLevelName(subscription.membership_level_id)}" 订阅吗？此操作不可逆！`,
+      `确定要取消用户 "${getUserNameById(subscription.userId)}" 的 "${getMembershipLevelName(subscription.membershipLevelId)}" 订阅吗？此操作不可逆！`,
       '取消订阅',
       {
         confirmButtonText: '确定取消',
@@ -372,68 +409,163 @@ const cancelSubscription = async (subscription: UserSubscription) => {
   )
       .then(async () => {
         try {
-          // 模拟 API 请求：取消订阅
-          console.log(`Sending cancel request for subscription: ${subscription.id}`);
-          // 实际 API: await fetch(`/api/admin/subscriptions/cancel/${subscription.id}`, { method: 'PUT', headers: { Authorization: 'Bearer ...' } });
+          const updatedSubscription: UserSubscription = { ...subscription };
+          updatedSubscription.status = 'cancelled'; // 将状态设置为已取消
+          // 取消时通常也会把结束日期设置为当前时间或不修改，这里根据业务需求决定。
+          // updatedSubscription.endDate = new Date().toISOString(); // 可选：立即结束订阅
 
-          await new Promise(resolve => setTimeout(resolve, 500)); // 模拟延迟
+          const response = await fetch('/admin-api/subscriptions/update', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+            },
+            body: JSON.stringify(updatedSubscription)
+          });
 
-          ElMessage.success('订阅已成功取消！')
-          fetchSubscriptions() // 刷新列表
+          const result = await response.json();
+
+          if (result.code === 200) {
+            ElMessage.success('订阅已成功取消！');
+            await fetchSubscriptions(); // 刷新列表
+          } else {
+            ElMessage.error(result.message || '取消订阅失败！');
+          }
         } catch (error) {
-          console.error('取消订阅错误:', error)
-          ElMessage.error('取消订阅失败。')
+          console.error('取消订阅错误:', error);
+          ElMessage.error('取消订阅失败，请检查网络。');
         }
       })
-      .catch(() => {})
-}
+      .catch(() => {});
+};
 
 // 处理每页显示数量变化
 const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  currentPage.value = 1 // 切换每页大小后回到第一页
+  pageSize.value = val;
+  currentPage.value = 1; // 切换每页大小后回到第一页
 }
 
 // 处理当前页码变化
 const handleCurrentChange = (val: number) => {
-  currentPage.value = val
+  currentPage.value = val;
 }
 
-// 获取订阅列表数据（模拟）
-const fetchSubscriptions = async () => {
-  loading.value = true
+// 获取用户列表数据 (用于用户名映射)
+const fetchUsers = async () => {
   try {
-    // 模拟从后端获取数据
-    // 实际的API请求可能是：
-    // const response = await fetch(`/api/admin/subscriptions?userId=${searchForm.userIdOrName}&levelId=${searchForm.membershipLevelId}&status=${searchForm.status}`);
-    // const data = await response.json();
-
-    // 模拟的用户订阅数据
-    const mockSubscriptions: UserSubscription[] = [
-      { id: 'sub001', user_id: 'user001', membership_level_id: 'level-basic', start_date: '2025-06-01 10:00:00', end_date: '2025-07-01 10:00:00', status: 'active', payment_method: 'Alipay', payment_amount: 9.99, created_at: '2025-06-01 09:50:00', updated_at: '2025-06-01 09:50:00' },
-      { id: 'sub002', user_id: 'user002', membership_level_id: 'level-premium', start_date: '2025-05-15 14:30:00', end_date: '2025-06-15 14:30:00', status: 'expired', payment_method: 'WeChat Pay', payment_amount: 19.99, created_at: '2025-05-15 14:20:00', updated_at: '2025-06-15 14:30:00' },
-      { id: 'sub003', user_id: 'user003', membership_level_id: 'level-free', start_date: '2024-01-01 00:00:00', end_date: '2099-12-31 23:59:59', status: 'active', payment_method: null, payment_amount: 0.00, created_at: '2024-01-01 00:00:00', updated_at: '2024-01-01 00:00:00' },
-      { id: 'sub004', user_id: '1000000001', membership_level_id: 'level-enterprise', start_date: '2025-07-01 09:00:00', end_date: '2025-07-31 09:00:00', status: 'active', payment_method: 'Bank Transfer', payment_amount: 99.99, created_at: '2025-07-01 08:50:00', updated_at: '2025-07-01 08:50:00' },
-      { id: 'sub005', user_id: 'user001', membership_level_id: 'level-basic', start_date: '2025-04-01 10:00:00', end_date: '2025-05-01 10:00:00', status: 'cancelled', payment_method: 'Alipay', payment_amount: 9.99, created_at: '2025-04-01 09:50:00', updated_at: '2025-04-10 11:00:00' },
-      { id: 'sub006', user_id: '1000000002', membership_level_id: 'level-premium', start_date: '2025-06-20 11:00:00', end_date: '2025-07-20 11:00:00', status: 'active', payment_method: 'WeChat Pay', payment_amount: 19.99, created_at: '2025-06-20 10:50:00', updated_at: '2025-06-20 10:50:00' },
-      { id: 'sub007', user_id: 'user002', membership_level_id: 'level-basic', start_date: '2025-03-01 12:00:00', end_date: '2025-03-31 12:00:00', status: 'expired', payment_method: 'Alipay', payment_amount: 9.99, created_at: '2025-03-01 11:50:00', updated_at: '2025-03-31 12:00:00' },
-    ]
-
-    await new Promise(resolve => setTimeout(resolve, 500)) // 模拟网络延迟
-    subscriptions.value = mockSubscriptions
-
+    const response = await fetch('/admin-api/getAllUsers', { // 假设这是获取所有用户的API
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+    if (result.code === 200) {
+      users.value = result.data;
+    } else {
+      console.error('获取用户列表失败:', result.message);
+      ElMessage.error('无法获取用户列表，部分用户名可能无法显示。');
+    }
   } catch (error) {
-    console.error('获取订阅列表失败:', error)
-    ElMessage.error('获取订阅数据失败，请检查网络连接。')
-  } finally {
-    loading.value = false
+    console.error('获取用户列表错误:', error);
+    ElMessage.error('获取用户数据失败，请检查网络连接。');
   }
-}
+};
 
-// 组件挂载时获取订阅列表
-onMounted(() => {
-  fetchSubscriptions()
-})
+
+// 获取会员等级列表数据
+const fetchMembershipLevels = async () => {
+  try {
+    const response = await fetch('/admin-api/membership-levels/getAll', {
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+    if (result.code === 200) {
+      // 确保字段名与前端 MembershipLevel 接口的驼峰命名一致
+      membershipLevels.value = result.data.map((level: any) => ({
+        id: level.id,
+        name: level.name,
+        storageQuota: Number(level.storageQuota),
+        maxFileSize: Number(level.maxFileSize),
+        price: Number(level.price),
+        durationDays: Number(level.durationDays),
+        features: level.features,
+        createdAt: level.createdAt,
+        updatedAt: level.updatedAt,
+      }));
+    } else {
+      console.error('获取会员等级列表失败:', result.message);
+      ElMessage.error('无法获取会员等级列表。');
+    }
+  } catch (error) {
+    console.error('获取会员等级列表错误:', error);
+    ElMessage.error('获取会员等级数据失败，请检查网络连接。');
+  }
+};
+
+
+// 获取订阅列表数据
+const fetchSubscriptions = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch('/admin-api/subscriptions/getAll', {
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${localStorage.getItem('adminAccessToken')}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.code === 200) {
+      // 确保字段名与前端 UserSubscription 接口的驼峰命名一致
+      subscriptions.value = result.data.map((sub: any) => ({
+        id: sub.id,
+        userId: sub.userId,
+        membershipLevelId: sub.membershipLevelId,
+        startDate: sub.startDate,
+        endDate: sub.endDate,
+        status: sub.status, // 后端返回已经是字符串枚举值
+        paymentMethod: sub.paymentMethod,
+        paymentAmount: Number(sub.paymentAmount), // 确保是数字类型
+        createdAt: sub.createdAt,
+        updatedAt: sub.updatedAt,
+      }));
+
+      // 如果后端 getAll 接口不支持筛选，这里在前端进行一次初始过滤
+      // 否则，你应该将 searchForm 的参数发送给后端
+    } else {
+      ElMessage.error(result.message || '获取订阅列表失败！');
+    }
+  } catch (error) {
+    console.error('获取订阅列表失败:', error);
+    ElMessage.error('获取订阅数据失败，请检查网络连接。');
+  } finally {
+    loading.value = false;
+  }
+};
+
+
+// 组件挂载时执行
+onMounted(async () => {
+  // 先获取基础数据 (用户和会员等级)，再获取订阅数据
+  await fetchUsers();
+  await fetchMembershipLevels();
+  await fetchSubscriptions();
+});
 </script>
 
 <style scoped>
