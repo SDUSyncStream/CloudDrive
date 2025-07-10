@@ -1,6 +1,7 @@
 package cn.sdu.clouddrive.membership.service;
 
 import cn.sdu.clouddrive.membership.dto.CreatePaymentOrderRequest;
+import cn.sdu.clouddrive.membership.dto.OrderMessage;
 import cn.sdu.clouddrive.membership.dto.PaymentOrderDTO;
 import cn.sdu.clouddrive.membership.entity.MembershipLevel;
 import cn.sdu.clouddrive.membership.entity.PaymentOrder;
@@ -28,6 +29,9 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private OrderMessageProducer orderMessageProducer;
 
     public PaymentOrderDTO createPaymentOrder(CreatePaymentOrderRequest request) {
         MembershipLevel level = membershipLevelService.getById(request.getMembershipLevelId());
@@ -51,6 +55,65 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
         order.setUpdatedAt(LocalDateTime.now());
 
         save(order);
+        
+        // 发送订单消息到RabbitMQ待处理队列
+        try {
+            OrderMessage orderMessage = new OrderMessage(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getUserId(),
+                order.getMembershipLevelId(),
+                order.getAmount(),
+                order.getPaymentMethod(),
+                order.getCreatedAt(),
+                order.getCreatedAt().plusDays(1) // 24小时后过期
+            );
+            orderMessageProducer.sendOrderMessage(orderMessage);
+        } catch (Exception e) {
+            // 消息发送失败不影响订单创建，记录日志
+            System.err.println("Warning: Failed to send order message for order: " + order.getId() + ", error: " + e.getMessage());
+        }
+        
+        return convertToDTO(order);
+    }
+
+    public PaymentOrderDTO createTestPaymentOrder(CreatePaymentOrderRequest request) {
+        MembershipLevel level = membershipLevelService.getById(request.getMembershipLevelId());
+        if (level == null) {
+            throw new RuntimeException("会员等级不存在");
+        }
+
+        // 测试模式：跳过权限检查
+        PaymentOrder order = new PaymentOrder();
+        order.setUserId(request.getUserId());
+        order.setMembershipLevelId(request.getMembershipLevelId());
+        order.setOrderNumber(generateOrderNumber());
+        order.setAmount(level.getPrice());
+        order.setPaymentMethod(request.getPaymentMethod());
+        order.setStatus("pending");
+        order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+
+        save(order);
+        
+        // 发送订单消息到RabbitMQ待处理队列
+        try {
+            OrderMessage orderMessage = new OrderMessage(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getUserId(),
+                order.getMembershipLevelId(),
+                order.getAmount(),
+                order.getPaymentMethod(),
+                order.getCreatedAt(),
+                order.getCreatedAt().plusDays(1) // 24小时后过期
+            );
+            orderMessageProducer.sendOrderMessage(orderMessage);
+        } catch (Exception e) {
+            // 消息发送失败不影响订单创建，记录日志
+            System.err.println("Warning: Failed to send order message for order: " + order.getId() + ", error: " + e.getMessage());
+        }
+        
         return convertToDTO(order);
     }
 
@@ -87,6 +150,13 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
                 // 记录警告日志，但不影响支付流程
                 System.err.println("Warning: Failed to update user storage quota for user: " + order.getUserId());
             }
+        }
+
+        // 确认订单支付，标记订单已处理（避免被自动取消）
+        try {
+            orderMessageProducer.confirmOrderPayment(orderId);
+        } catch (Exception e) {
+            System.err.println("Warning: Failed to confirm order payment for order: " + orderId + ", error: " + e.getMessage());
         }
 
         return convertToDTO(order);
