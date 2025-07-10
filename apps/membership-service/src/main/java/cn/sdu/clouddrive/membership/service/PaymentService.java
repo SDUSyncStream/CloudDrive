@@ -94,6 +94,24 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
         return order != null ? convertToDTO(order) : null;
     }
 
+    public PaymentOrderDTO cancelPaymentOrder(String orderId) {
+        PaymentOrder order = getById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+
+        if (!"pending".equals(order.getStatus())) {
+            throw new RuntimeException("只能取消待支付的订单");
+        }
+
+        // 更新订单状态为已取消
+        order.setStatus("cancelled");
+        order.setUpdatedAt(LocalDateTime.now());
+        updateById(order);
+
+        return convertToDTO(order);
+    }
+
     private String generateOrderNumber() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String random = String.format("%04d", new Random().nextInt(10000));

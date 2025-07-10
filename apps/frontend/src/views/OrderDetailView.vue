@@ -45,11 +45,11 @@
               <el-step title="创建订单" :description="formatDate(order.createdAt)"></el-step>
               <el-step 
                 title="支付完成" 
-                :description="order.status === 'completed' ? formatDate(order.updatedAt) : ''"
+                :description="order.status === 'paid' ? formatDate(order.updatedAt) : ''"
               ></el-step>
               <el-step 
                 title="订单完成" 
-                :description="order.status === 'completed' ? '服务已激活' : ''"
+                :description="order.status === 'paid' ? '服务已激活' : ''"
               ></el-step>
             </el-steps>
           </div>
@@ -140,7 +140,7 @@
             取消订单
           </el-button>
           <el-button 
-            v-if="order.status === 'completed'"
+            v-if="order.status === 'paid'"
             type="success"
             size="large"
             @click="goToMembership"
@@ -188,7 +188,7 @@ const getStatusType = (status: string) => {
   switch (status) {
     case 'pending':
       return 'warning'
-    case 'completed':
+    case 'paid':
       return 'success'
     case 'cancelled':
       return 'info'
@@ -204,7 +204,7 @@ const getStatusText = (status: string) => {
   switch (status) {
     case 'pending':
       return '待支付'
-    case 'completed':
+    case 'paid':
       return '已完成'
     case 'cancelled':
       return '已取消'
@@ -234,7 +234,7 @@ const getOrderStep = (status: string) => {
   switch (status) {
     case 'pending':
       return 0
-    case 'completed':
+    case 'paid':
       return 2
     case 'cancelled':
     case 'failed':
@@ -324,11 +324,16 @@ const handleCancelOrder = async () => {
     )
     
     cancelLoading.value = true
-    // TODO: 实现取消订单的API
-    ElMessage.success('订单已取消')
-    await fetchOrderDetail()
+    const response = await membershipApi.cancelPaymentOrder(order.value.id)
+    if (response.data.code === 200) {
+      ElMessage.success('订单已取消')
+      await fetchOrderDetail()
+    } else {
+      ElMessage.error('取消订单失败: ' + response.data.message)
+    }
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('取消订单失败:', error)
       ElMessage.error('取消订单失败')
     }
   } finally {

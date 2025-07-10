@@ -23,16 +23,6 @@
             剩余 {{ currentSubscription.daysRemaining }} 天
           </p>
         </div>
-        <div class="subscription-actions">
-          <el-button 
-            v-if="currentSubscription.status === 'active'"
-            type="danger" 
-            @click="handleCancelSubscription"
-            :loading="cancelLoading"
-          >
-            取消订阅
-          </el-button>
-        </div>
       </el-card>
     </div>
 
@@ -181,7 +171,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { membershipApi } from '../api/membership'
 import type { MembershipLevel, UserSubscription } from '../types'
 
@@ -197,7 +187,6 @@ const selectedPaymentMethod = ref('')
 const selectedDuration = ref('') // 选择的期间（月费/年费）
 const orderLoading = ref(false)
 const paymentLoading = ref(false)
-const cancelLoading = ref(false)
 const hoveredCard = ref('')
 const currentUserLevel = ref('免费版') // 用户当前等级
 
@@ -472,39 +461,6 @@ const handleCardHover = (cardName: string, isHovered: boolean) => {
   hoveredCard.value = isHovered ? cardName : ''
 }
 
-// 取消订阅
-const handleCancelSubscription = async () => {
-  if (!currentSubscription.value) return
-  
-  try {
-    await ElMessageBox.confirm(
-      '确定要取消当前订阅吗？取消后将无法享受会员特权。',
-      '取消订阅',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    cancelLoading.value = true
-    
-    const response = await membershipApi.cancelSubscription(currentSubscription.value.id)
-    if (response.data.code === 200) {
-      ElMessage.success('订阅已取消')
-      await fetchCurrentSubscription()
-    } else {
-      ElMessage.error('取消订阅失败: ' + response.data.message)
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('取消订阅失败:', error)
-      ElMessage.error('取消订阅失败')
-    }
-  } finally {
-    cancelLoading.value = false
-  }
-}
 
 // 初始化
 onMounted(async () => {
@@ -549,7 +505,7 @@ onMounted(async () => {
 
 .subscription-card :deep(.el-card__body) {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
