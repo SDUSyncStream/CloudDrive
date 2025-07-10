@@ -21,8 +21,8 @@ public class FileInfoServiceImpl implements FileInfoService {
         return fileInfos;
     }
     @Override
-    public void CopyFile(String fileId, String userId, String TargetId, String newFileId){
-        fileInfoMapper.CopyFile(fileId, userId, TargetId, newFileId);
+    public void CopyFile(String fileId, String userId, String TargetId, String newFileId, String fileName){
+        fileInfoMapper.CopyFile(fileId, userId, TargetId, newFileId, fileName);
         // 2. 查询当前文件下的所有子文件/目录（假设delFlag=2表示正常文件）
         List<FileInfo> children = selectByPidAndUserId(fileId, userId, 2);
 
@@ -32,7 +32,7 @@ public class FileInfoServiceImpl implements FileInfoService {
             String newChildFileId = UUID.randomUUID().toString();
 
             // 递归复制子文件/目录（目标父ID为当前新文件的ID）
-            CopyFile(child.getFileId(), userId, newFileId, newChildFileId);
+            CopyFile(child.getFileId(), userId, newFileId, newChildFileId, child.getFileName());
         }
     }
     @Override
@@ -77,5 +77,9 @@ public class FileInfoServiceImpl implements FileInfoService {
     @Override
     public void deleteFile(String fileId, String userId){
         fileInfoMapper.RecycleFile(fileId, userId, 0, "0");
+    }
+    @Override
+    public FileInfo getFile(String fileId, String userId){
+        return fileInfoMapper.getFile(fileId, userId).get(0);
     }
 }

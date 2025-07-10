@@ -1,7 +1,7 @@
 // src/main/java/cn/sdu/clouddrive/admin/MQListener/SubscriptionUpdateEmailListener.java
 package cn.sdu.clouddrive.admin.MQListener;
 
-import cn.sdu.clouddrive.admin.Service.EmailService;
+import cn.sdu.clouddrive.admin.Service.Impl.EmailService;
 import cn.sdu.clouddrive.admin.pojo.SubscriptionUpdateEmailMessage;
 import org.springframework.amqp.rabbit.annotation.RabbitListener; // 导入 RabbitListener 注解
 import org.springframework.beans.factory.annotation.Autowired;

@@ -47,7 +47,7 @@ spring:
         smtp:
           socketFactory:
             class: javax.net.ssl.SSLSocketFactory
-        debug: true
+        debug: false
   rabbitmq:
     host: localhost # 你的 RabbitMQ 服务器地址，如果是 Docker 或远程服务器，请修改
     port: 5672      # RabbitMQ 默认端口
