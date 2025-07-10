@@ -15,7 +15,9 @@ import java.util.stream.Collectors;
 public class MembershipLevelService extends ServiceImpl<MembershipLevelMapper, MembershipLevel> {
 
     public List<MembershipLevelDTO> getAllLevels() {
-        List<MembershipLevel> levels = list();
+        QueryWrapper<MembershipLevel> wrapper = new QueryWrapper<>();
+        wrapper.orderByAsc("priority");
+        List<MembershipLevel> levels = list(wrapper);
         return levels.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -31,6 +33,37 @@ public class MembershipLevelService extends ServiceImpl<MembershipLevelMapper, M
         wrapper.eq("name", name);
         MembershipLevel level = getOne(wrapper);
         return level != null ? convertToDTO(level) : null;
+    }
+
+    public boolean canUpgradeFrom(String fromLevelId, String toLevelId) {
+        if (fromLevelId == null || toLevelId == null) {
+            return false;
+        }
+        
+        MembershipLevel fromLevel = getById(fromLevelId);
+        MembershipLevel toLevel = getById(toLevelId);
+        
+        if (fromLevel == null || toLevel == null) {
+            return false;
+        }
+        
+        // 只能升级到更高优先级的等级
+        return toLevel.getPriority() > fromLevel.getPriority();
+    }
+
+    public boolean isHigherPriority(String levelId1, String levelId2) {
+        if (levelId1 == null || levelId2 == null) {
+            return false;
+        }
+        
+        MembershipLevel level1 = getById(levelId1);
+        MembershipLevel level2 = getById(levelId2);
+        
+        if (level1 == null || level2 == null) {
+            return false;
+        }
+        
+        return level1.getPriority() > level2.getPriority();
     }
 
     private MembershipLevelDTO convertToDTO(MembershipLevel level) {

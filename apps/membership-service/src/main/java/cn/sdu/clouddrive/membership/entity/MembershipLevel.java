@@ -27,6 +27,8 @@ public class MembershipLevel {
     
     private String features;
     
+    private Integer priority;
+    
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;

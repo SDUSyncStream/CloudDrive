@@ -32,6 +32,11 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
             throw new RuntimeException("会员等级不存在");
         }
 
+        // 检查用户是否可以订阅该等级
+        if (!userSubscriptionService.canSubscribeToLevel(request.getUserId(), request.getMembershipLevelId())) {
+            throw new RuntimeException("您当前的会员等级已包含此权限，无需重复购买");
+        }
+
         PaymentOrder order = new PaymentOrder();
         order.setUserId(request.getUserId());
         order.setMembershipLevelId(request.getMembershipLevelId());

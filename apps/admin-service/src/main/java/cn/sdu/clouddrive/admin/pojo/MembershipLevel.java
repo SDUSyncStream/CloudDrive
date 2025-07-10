@@ -37,6 +37,9 @@ public class MembershipLevel {
     @TableField("features") // 映射数据库 features 字段
     private String features; // 数据库是 text
 
+    @TableField("priority") // 映射数据库 priority 字段
+    private Integer priority; // 数据库是 int，对应Java的 Integer，用于表示会员等级优先级
+
     @TableField("created_at") // 映射数据库 created_at 字段
     private LocalDateTime createdAt; // 数据库是 timestamp，对应Java 8的 LocalDateTime
 

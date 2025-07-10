@@ -45,6 +45,19 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
             throw new RuntimeException("会员等级不存在");
         }
 
+        // 检查用户当前订阅状态
+        UserSubscriptionDTO currentSubscription = getCurrentSubscription(userId);
+        if (currentSubscription != null && currentSubscription.getIsActive()) {
+            // 获取当前订阅的会员等级
+            MembershipLevel currentLevel = membershipLevelService.getById(currentSubscription.getMembershipLevelId());
+            if (currentLevel != null) {
+                // 检查优先级：不能订阅同等级或更低等级的会员
+                if (level.getPriority() <= currentLevel.getPriority()) {
+                    throw new RuntimeException("您当前的会员等级已包含此权限，无需重复购买");
+                }
+            }
+        }
+
         UserSubscription subscription = new UserSubscription();
         subscription.setUserId(userId);
         subscription.setMembershipLevelId(membershipLevelId);
@@ -77,6 +90,27 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
         } catch (Exception e) {
             throw new RuntimeException("创建默认订阅失败: " + e.getMessage(), e);
         }
+    }
+
+    public boolean canSubscribeToLevel(String userId, String membershipLevelId) {
+        MembershipLevel targetLevel = membershipLevelService.getById(membershipLevelId);
+        if (targetLevel == null) {
+            return false;
+        }
+
+        // 检查用户当前订阅状态
+        UserSubscriptionDTO currentSubscription = getCurrentSubscription(userId);
+        if (currentSubscription != null && currentSubscription.getIsActive()) {
+            // 获取当前订阅的会员等级
+            MembershipLevel currentLevel = membershipLevelService.getById(currentSubscription.getMembershipLevelId());
+            if (currentLevel != null) {
+                // 只能订阅更高优先级的等级
+                return targetLevel.getPriority() > currentLevel.getPriority();
+            }
+        }
+
+        // 如果没有活跃订阅，可以订阅任何等级
+        return true;
     }
 
     private UserSubscriptionDTO convertToDTO(UserSubscription subscription) {

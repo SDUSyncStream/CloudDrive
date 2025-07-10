@@ -12,6 +12,7 @@ public class MembershipLevelDTO {
     private BigDecimal price;
     private Integer durationDays;
     private String features;
+    private Integer priority;
     private String storageQuotaFormatted;
     private String maxFileSizeFormatted;
     private Boolean isRecommended;

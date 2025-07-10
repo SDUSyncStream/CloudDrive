@@ -55,4 +55,14 @@ public class SubscriptionController {
             return Result.error("创建默认订阅失败: " + e.getMessage());
         }
     }
+
+    @GetMapping("/user/{userId}/can-subscribe/{membershipLevelId}")
+    public Result<Boolean> canSubscribeToLevel(@PathVariable String userId, @PathVariable String membershipLevelId) {
+        try {
+            boolean canSubscribe = userSubscriptionService.canSubscribeToLevel(userId, membershipLevelId);
+            return Result.success(canSubscribe);
+        } catch (Exception e) {
+            return Result.error("检查订阅权限失败: " + e.getMessage());
+        }
+    }
 }

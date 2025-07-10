@@ -44,7 +44,7 @@
           v-for="group in groupedLevels" 
           :key="group.name"
           class="level-card"
-          :class="{ 'recommended': group.isRecommended }"
+          :class="{ 'recommended': group.isRecommended, 'disabled': group.isDisabled }"
           @mouseenter="handleCardHover(group.name, true)"
           @mouseleave="handleCardHover(group.name, false)"
         >
@@ -80,11 +80,11 @@
           <div class="level-actions">
             <el-button 
               type="primary" 
-              :disabled="group.name === '免费版'"
+              :disabled="group.name === '免费版' || group.isDisabled"
               @click="handleSelectLevelGroup(group)"
               :loading="selectedLevelId === group.name && orderLoading"
             >
-              {{ group.name === '免费版' ? '当前版本' : '选择套餐' }}
+              {{ group.name === '免费版' ? '当前版本' : group.isDisabled ? '已订阅' : '选择套餐' }}
             </el-button>
           </div>
         </div>
@@ -242,7 +242,7 @@ const fetchMembershipLevels = async () => {
     const response = await membershipApi.getAllLevels()
     if (response.data.code === 200) {
       membershipLevels.value = response.data.data
-      groupMembershipLevels()
+      await groupMembershipLevels()
     }
   } catch (error) {
     console.error('获取会员等级失败:', error)
@@ -250,8 +250,8 @@ const fetchMembershipLevels = async () => {
   }
 }
 
-// 将会员等级分组
-const groupMembershipLevels = () => {
+// 将会员等级分组并检查订阅状态
+const groupMembershipLevels = async () => {
   const levels = membershipLevels.value
   
   // 按基础名称分组（去掉"年度"前缀）
@@ -290,10 +290,41 @@ const groupMembershipLevels = () => {
   })
   
   // 转换为数组并排序
-  groupedLevels.value = Array.from(grouped.values()).sort((a, b) => {
+  const sortedGroups = Array.from(grouped.values()).sort((a, b) => {
     const order = ['免费版', '标准版', '高级版', '专业版', '企业版']
     return order.indexOf(a.name) - order.indexOf(b.name)
   })
+  
+  // 使用后端API检查每个等级组的订阅状态
+  const userId = getCurrentUserId()
+  if (userId) {
+    for (const group of sortedGroups) {
+      // 检查月费选项的订阅状态
+      if (group.monthlyOption) {
+        try {
+          const response = await membershipApi.canSubscribeToLevel(userId, group.monthlyOption.id)
+          group.canSubscribeMonthly = response.data.code === 200 ? response.data.data : true
+        } catch (error) {
+          group.canSubscribeMonthly = true
+        }
+      }
+      
+      // 检查年费选项的订阅状态
+      if (group.yearlyOption) {
+        try {
+          const response = await membershipApi.canSubscribeToLevel(userId, group.yearlyOption.id)
+          group.canSubscribeYearly = response.data.code === 200 ? response.data.data : true
+        } catch (error) {
+          group.canSubscribeYearly = true
+        }
+      }
+      
+      // 如果月费和年费都不能订阅，则禁用整个组
+      group.isDisabled = !group.canSubscribeMonthly && !group.canSubscribeYearly
+    }
+  }
+  
+  groupedLevels.value = sortedGroups
 }
 
 // 获取当前订阅
@@ -312,6 +343,8 @@ const fetchCurrentSubscription = async () => {
     if (response.data.code === 200) {
       currentSubscription.value = response.data.data
       console.log('当前订阅已更新:', currentSubscription.value)
+      // 重新分组会员等级以更新禁用状态
+      await groupMembershipLevels()
     } else {
       console.log('获取订阅失败:', response.data.message)
       currentSubscription.value = null
@@ -326,6 +359,11 @@ const fetchCurrentSubscription = async () => {
 const handleSelectLevelGroup = (group: any) => {
   if (group.name === '免费版') {
     ElMessage.info('免费版无需购买')
+    return
+  }
+  
+  if (group.isDisabled) {
+    ElMessage.info('该会员等级已被您当前的订阅等级包含，无需重复购买')
     return
   }
   
@@ -853,6 +891,41 @@ onMounted(async () => {
 
 .level-card.recommended .level-header::after {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.level-card.disabled {
+  opacity: 0.6;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border-color: #ddd;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.level-card.disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+.level-card.disabled .level-header h4 {
+  color: #999;
+}
+
+.level-card.disabled .price-amount {
+  color: #999;
+}
+
+.level-card.disabled .feature-item {
+  color: #999;
+}
+
+.level-card.disabled .feature-item i {
+  color: #ccc;
+}
+
+.level-card.disabled .level-actions .el-button {
+  background-color: #f5f5f5;
+  border-color: #ddd;
+  color: #999;
 }
 
 .payment-options {

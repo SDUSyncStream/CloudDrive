@@ -59,6 +59,11 @@ export const membershipApi = {
   // 获取用户所有支付订单
   getUserPaymentOrders: (userId: string): Promise<AxiosResponse<ApiResponse<PaymentOrder[]>>> => {
     return apiClient.get(`/payment/orders/user/${userId}`)
+  },
+
+  // 检查用户是否可以订阅特定等级
+  canSubscribeToLevel: (userId: string, membershipLevelId: string): Promise<AxiosResponse<ApiResponse<boolean>>> => {
+    return apiClient.get(`/subscription/user/${userId}/can-subscribe/${membershipLevelId}`)
   }
 }
 
