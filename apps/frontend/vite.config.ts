@@ -25,12 +25,14 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/fileup': {
+        target: 'http://localhost:8090',
+        changeOrigin: true,
+      },
       '/file': {
         target: 'http://localhost:8099',
         changeOrigin: true,
       },
-      
-      
       // 优化 /api/showShare 代理，匹配所有 /api/showShare 及其子路径
       '/share/shareFile': {
         target: 'http://localhost:8093/api',

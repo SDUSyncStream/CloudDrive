@@ -97,6 +97,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { FolderOpened, User, Download, Folder, Document, ArrowLeft } from '@element-plus/icons-vue'
 
+const downloadingFiles = ref<Set<string>>(new Set());
+
 const router = useRouter()
 const route = useRoute()
 const shareId = route.params.shareId as string
@@ -170,14 +172,62 @@ const previewFile = (row: any) => {
   // 可扩展为弹窗预览
 }
 
-const downloadFile = (row: any) => {
-  ElMessage.success(`下载：${row.fileName}`)
-  // 实际下载逻辑可补充
+const downloadFile = async (row: any) => {
+  // 如果是文件夹，提示不能下载
+  if (row.folderType === 1) {
+    ElMessage.warning('文件夹不支持下载');
+    return;
+  }
+
+  // 检查是否正在下载
+  if (downloadingFiles?.value?.has && downloadingFiles.value.has(row.fileId)) {
+    ElMessage.info('文件正在下载中，请稍候');
+    return;
+  }
+
+  try {
+    // 标记为下载中
+    if (downloadingFiles?.value?.add) downloadingFiles.value.add(row.fileId);
+    ElMessage.info(`开始下载: ${row.fileName}`);
+
+    // 1. 创建下载链接获取code
+    const userId = shareInfo.value.userId; // 用分享者 userId
+    const createUrlRes = await fetch(`/fileup/createDownloadUrl/${row.fileId}?userId=${userId}`)
+      .then(r => r.json());
+    if (createUrlRes.code !== 200) {
+      throw new Error(createUrlRes.message || '获取下载链接失败');
+    }
+    const downloadcode = createUrlRes.data;
+    if (downloadcode == null || downloadcode === undefined) {
+      throw new Error('获取下载链接失败');
+    }
+
+    // 2. 使用code下载文件
+    const downloadRes = await fetch(`/fileup/download/${downloadcode}`);
+    const blob = await downloadRes.blob();
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', row.fileName);
+    document.body.appendChild(link);
+    link.click();
+    // 清理
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    ElMessage.success(`下载完成: ${row.fileName}`);
+  } catch (error: any) {
+    console.error('下载失败:', error);
+    ElMessage.error(`下载失败: ${error.message || '未知错误'}`);
+  } finally {
+    if (downloadingFiles?.value?.delete) downloadingFiles.value.delete(row.fileId);
+  }
 }
 
 // 目录选择弹窗相关逻辑
 const saveToDriveBatch = async () => {
-  if (!localStorage.getItem('token')) {
+  const token = localStorage.getItem('token')
+  if (!token) {
     router.push('/login?redirectUrl=' + route.fullPath)
     return
   }
@@ -188,8 +238,8 @@ const saveToDriveBatch = async () => {
 }
 
 const loadFolderTree = async () => {
-  // 假设接口为 /api/folder/list，返回 [{id, name, children:[]}]，token按需传递
-  const res = await fetch('/api/folder/list', {
+  const userId = localStorage.getItem('UserId') || localStorage.getItem('userId')
+  const res = await fetch(`/api/folder/list?userId=${userId}`, {
     headers: { Authorization: localStorage.getItem('token') || '' }
   }).then(r => r.json())
   folderTree.value = res.data || []
@@ -203,19 +253,23 @@ const onFolderNodeClick = (data: any) => {
 const onFolderSelect = async () => {
   showFolderSelect.value = false
   if (!selectedFolderId.value) return
-  const res = await fetch('/api/showShare/saveShare', {
+  const userId = localStorage.getItem('UserId') || localStorage.getItem('userId')
+  const params = new URLSearchParams({
+    shareId,
+    shareFileIds: saveFileIds.value.join(','),
+    myFolderId: selectedFolderId.value,
+    userId
+  })
+  const res = await fetch(`/api/showShare/saveShare?${params.toString()}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('token') || '' },
-    body: JSON.stringify({
-      shareId,
-      shareFileIds: saveFileIds.value.join(','),
-      myFolderId: selectedFolderId.value
-    })
+    headers: { 'Content-Type': 'application/json', Authorization: localStorage.getItem('token') || '' }
   }).then(r => r.json())
-  if (res && res.code === 0) {
+  if (res && (res.code === 0 || res.code === 200)) {
     ElMessage.success('保存成功')
+  } else if (res && res.code === 401) {
+    router.push('/login?redirectUrl=' + route.fullPath)
   } else {
-    ElMessage.error(res?.info || '保存失败')
+    ElMessage.error(res?.info || res?.message || '保存失败')
   }
 }
 const onFolderDialogClose = () => {
