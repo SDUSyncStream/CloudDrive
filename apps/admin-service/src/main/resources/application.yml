@@ -36,6 +36,24 @@ spring:
     cache:
       type: redis       # 告诉Spring Cache使用Redis作为缓存存储
 
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 1661391201@qq.com
+    password: twvsbfzmblelcjcf
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+        debug: false
+  rabbitmq:
+    host: localhost # 你的 RabbitMQ 服务器地址，如果是 Docker 或远程服务器，请修改
+    port: 5672      # RabbitMQ 默认端口
+    username: guest # 你的 RabbitMQ 用户名
+    password: guest # 你的 RabbitMQ 密码
+
 management:
   endpoints:
     web:
