@@ -23,6 +23,25 @@ spring:
       discovery:
         server-addr: 127.0.0.1:8848
         enabled: true
+  
+  # Redis配置
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 4
+    timeout: 30000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1ms
+        max-idle: 8
+        min-idle: 0
+  
+  # 缓存配置
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000ms  # 默认1小时
 
 # MyBatis Plus配置
 mybatis-plus:

@@ -6,6 +6,7 @@ import cn.sdu.clouddrive.membership.mapper.MembershipLevelMapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 @Service
 public class MembershipLevelService extends ServiceImpl<MembershipLevelMapper, MembershipLevel> {
 
+    @Cacheable(value = "membershipLevels", key = "'all'")
     public List<MembershipLevelDTO> getAllLevels() {
         QueryWrapper<MembershipLevel> wrapper = new QueryWrapper<>();
         wrapper.orderByAsc("priority");
@@ -23,11 +25,13 @@ public class MembershipLevelService extends ServiceImpl<MembershipLevelMapper, M
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "membershipLevels", key = "#id")
     public MembershipLevelDTO getLevelById(String id) {
         MembershipLevel level = getById(id);
         return level != null ? convertToDTO(level) : null;
     }
 
+    @Cacheable(value = "membershipLevels", key = "'name:' + #name")
     public MembershipLevelDTO getLevelByName(String name) {
         QueryWrapper<MembershipLevel> wrapper = new QueryWrapper<>();
         wrapper.eq("name", name);

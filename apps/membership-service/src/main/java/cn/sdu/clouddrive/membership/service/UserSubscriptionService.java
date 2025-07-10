@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -32,12 +34,14 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "userSubscriptions", key = "'current:' + #userId")
     public UserSubscriptionDTO getCurrentSubscription(String userId) {
         // 使用自定义SQL查询，按会员等级价格(优先级)降序排序，然后按结束时间降序排序
         UserSubscription subscription = getBaseMapper().selectCurrentSubscription(userId);
         return subscription != null ? convertToDTO(subscription) : null;
     }
 
+    @CacheEvict(value = "userSubscriptions", key = "'current:' + #userId")
     public UserSubscriptionDTO createSubscription(String userId, String membershipLevelId, 
                                                  String paymentMethod, java.math.BigDecimal amount) {
         MembershipLevel level = membershipLevelService.getById(membershipLevelId);
@@ -79,7 +83,14 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
             subscription.setStatus("cancelled");
             subscription.setUpdatedAt(LocalDateTime.now());
             updateById(subscription);
+            // 清除用户订阅缓存
+            evictUserSubscriptionCache(subscription.getUserId());
         }
+    }
+    
+    @CacheEvict(value = "userSubscriptions", key = "'current:' + #userId")
+    public void evictUserSubscriptionCache(String userId) {
+        // 专门用于清除缓存的方法
     }
 
     public boolean createDefaultSubscription(String userId) {
