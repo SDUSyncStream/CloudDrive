@@ -2,7 +2,7 @@
   <div class="shared-files-view">
     <div class="header">
       <div class="header-left">
-        <el-button type="danger" @click="cleanInvalidLinks">
+        <el-button type="danger" @click="cleanInvalidLinksHandler">
           <el-icon><Delete /></el-icon>
           清理失效链接
         </el-button>
@@ -42,15 +42,15 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="shareCode" label="提取码" >
+        <el-table-column prop="code" label="提取码" >
           <template #default="{ row }">
             <div class="share-code">
-              <span>{{ row.shareCode }}</span>
+              <span>{{ row.code }}</span>
               <el-button 
                 link 
                 type="primary" 
                 size="small" 
-                @click="copyShareCode(row.shareCode)"
+                @click="copyShareCode(row.code)"
                 title="复制提取码"
               >
                 <el-icon><CopyDocument /></el-icon>
@@ -65,13 +65,19 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="status" label="状态">
+        <el-table-column prop="expireTime" label="过期时间">
+          <template #default="{ row }">
+            {{ formatDate(row.expireTime) || '永久有效' }}
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="validType" label="状态">
           <template #default="{ row }">
             <el-tag 
-              :type="getStatusType(row.status)" 
+              :type="getStatusType(calcStatus(row))" 
               size="small"
             >
-              {{ getStatusText(row.status) }}
+              {{ getStatusText(calcStatus(row)) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -85,7 +91,7 @@
               <el-button link type="primary" size="small" title="查看详情" @click="viewDetails(row)">
                 <el-icon><View /></el-icon>
               </el-button>
-              <el-button link type="danger" size="small" title="取消分享" @click="cancelShare(row)">
+              <el-button link type="danger" size="small" title="取消分享" @click="cancelShareHandler(row)">
                 <el-icon><Close /></el-icon>
               </el-button>
             </div>
@@ -96,7 +102,7 @@
       <!-- Grid模式 -->
       <div v-else class="grid-container">
         <div class="file-grid">
-          <div v-for="item in sharedFilesData" :key="item.id" class="file-card" @click="viewDetails(item)">
+          <div v-for="item in sharedFilesData" :key="item.shareId" class="file-card" @click="viewDetails(item)">
             <div class="file-card-header">
               <el-icon class="file-icon-large">
                 <Document />
@@ -105,22 +111,26 @@
             <div class="file-card-content">
               <div class="file-name" :title="item.fileName">{{ item.fileName }}</div>
               <div class="status-row">
-                <el-tag :type="getStatusType(item.status)" size="small">
-                  {{ getStatusText(item.status) }}
+                <el-tag :type="getStatusType(calcStatus(item))" size="small">
+                  {{ getStatusText(calcStatus(item)) }}
                 </el-tag>
               </div>
               <div class="file-info">
                 <div class="info-row">
                   <span class="info-label">提取码:</span>
-                  <span class="share-code-text">{{ item.shareCode }}</span>
+                  <span class="share-code-text">{{ item.code }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">分享时间:</span>
                   <span class="share-time">{{ formatDate(item.shareTime) }}</span>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">下载次数:</span>
-                  <span class="download-count">{{ item.downloadCount }}</span>
+                  <span class="info-label">过期时间:</span>
+                  <span class="expire-time">{{ formatDate(item.expireTime) || '永久有效' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">浏览次数:</span>
+                  <span class="download-count">{{ item.showCount }}</span>
                 </div>
               </div>
             </div>
@@ -128,13 +138,13 @@
               <el-button link type="primary" size="small" title="复制链接" @click.stop="copyShareLink(item)">
                 <el-icon><Link /></el-icon>
               </el-button>
-              <el-button link type="primary" size="small" title="复制提取码" @click.stop="copyShareCode(item.shareCode)">
+              <el-button link type="primary" size="small" title="复制提取码" @click.stop="copyShareCode(item.code)">
                 <el-icon><CopyDocument /></el-icon>
               </el-button>
               <el-button link type="primary" size="small" title="查看详情" @click.stop="viewDetails(item)">
                 <el-icon><View /></el-icon>
               </el-button>
-              <el-button link type="danger" size="small" title="取消分享" @click.stop="cancelShare(item)">
+              <el-button link type="danger" size="small" title="取消分享" @click.stop="cancelShareHandler(item)">
                 <el-icon><Close /></el-icon>
               </el-button>
             </div>
@@ -163,7 +173,7 @@
         </div>
         <div class="detail-item">
           <label>提取码：</label>
-          <span>{{ selectedFile.shareCode }}</span>
+          <span>{{ selectedFile.code }}</span>
         </div>
         <div class="detail-item">
           <label>分享时间：</label>
@@ -174,13 +184,13 @@
           <span>{{ formatDate(selectedFile.expireTime) }}</span>
         </div>
         <div class="detail-item">
-          <label>下载次数：</label>
-          <span>{{ selectedFile.downloadCount }}</span>
+          <label>浏览次数：</label>
+          <span>{{ selectedFile.showCount }}</span>
         </div>
         <div class="detail-item">
           <label>状态：</label>
-          <el-tag :type="getStatusType(selectedFile.status)" size="small">
-            {{ getStatusText(selectedFile.status) }}
+          <el-tag :type="getStatusType(calcStatus(selectedFile))" size="small">
+            {{ getStatusText(calcStatus(selectedFile)) }}
           </el-tag>
         </div>
       </div>
@@ -194,91 +204,99 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '../utils'
+import { getShareList, cancelShare, cleanInvalidLinks as apiCleanInvalidLinks } from '../api/share'
 
-// 响应式数据
 const detailDialogVisible = ref(false)
 const selectedFile = ref<any>(null)
 const viewMode = ref<'grid' | 'list'>('list')
+const sharedFilesData = ref<any[]>([])
 
-// 共享文件数据
-const sharedFilesData = ref([
-  {
-    id: 1,
-    fileName: 'project-report.pdf',
-    shareCode: 'abc123',
-    shareTime: '2024-01-15 14:30:00',
-    expireTime: '2024-02-15 14:30:00',
-    status: 'active',
-    downloadCount: 5,
-    shareLink: 'https://clouddrive.com/share/abc123'
-  },
-  {
-    id: 2,
-    fileName: 'meeting-notes.docx',
-    shareCode: 'def456',
-    shareTime: '2024-01-10 09:15:00',
-    expireTime: '2024-01-20 09:15:00',
-    status: 'expired',
-    downloadCount: 2,
-    shareLink: 'https://clouddrive.com/share/def456'
-  },
-  {
-    id: 3,
-    fileName: 'design-mockup.sketch',
-    shareCode: 'ghi789',
-    shareTime: '2024-01-20 16:45:00',
-    expireTime: '2024-02-20 16:45:00',
-    status: 'active',
-    downloadCount: 8,
-    shareLink: 'https://clouddrive.com/share/ghi789'
-  },
-  {
-    id: 4,
-    fileName: 'database-backup.sql',
-    shareCode: 'jkl012',
-    shareTime: '2024-01-05 11:20:00',
-    expireTime: '2024-01-15 11:20:00',
-    status: 'cancelled',
-    downloadCount: 0,
-    shareLink: 'https://clouddrive.com/share/jkl012'
+// 获取分享列表
+const fetchShareList = async () => {
+  try {
+    const res = await getShareList()
+    // 只取 list 字段，保证为数组
+    sharedFilesData.value = Array.isArray(res.data.data?.list) ? res.data.data.list : []
+  } catch (e) {
+    ElMessage.error('获取分享列表失败')
   }
-])
+}
+
+onMounted(fetchShareList)
+
+// 取消分享
+const cancelShareHandler = async (file: any) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要取消分享文件 "${file.fileName}" 吗？`,
+      '确认取消',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    await cancelShare(file.shareId)
+    ElMessage.success('已取消分享')
+    fetchShareList()
+  } catch {
+    ElMessage.info('已取消操作')
+  }
+}
+
+// 清理失效链接
+const cleanInvalidLinksHandler = async () => {
+  // 找出所有已过期的分享
+  const expiredIds = sharedFilesData.value
+    .filter(item => calcStatus(item) === 'expired')
+    .map(item => item.shareId);
+
+  if (expiredIds.length === 0) {
+    ElMessage.info('没有失效的分享链接');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要清理 ${expiredIds.length} 条失效的分享链接吗？`,
+      '确认清理',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    );
+    await cancelShare(expiredIds.join(','));
+    ElMessage.success('已清理失效链接');
+    fetchShareList();
+  } catch {
+    ElMessage.info('已取消操作');
+  }
+}
+
+// 计算状态（有效/已过期）
+function calcStatus(item) {
+  if (!item.expireTime) return 'active'; // 永久有效
+  return new Date(item.expireTime) > new Date() ? 'active' : 'expired';
+}
 
 // 获取状态类型
-const getStatusType = (status: string) => {
+const getStatusType = (status) => {
   switch (status) {
-    case 'active':
-      return 'success'
-    case 'expired':
-      return 'warning'
-    case 'cancelled':
-      return 'info'
-    default:
-      return 'info'
+    case 'active': return 'success';
+    case 'expired': return 'danger';
+    default: return 'info';
   }
 }
 
 // 获取状态文本
-const getStatusText = (status: string) => {
+const getStatusText = (status) => {
   switch (status) {
-    case 'active':
-      return '有效'
-    case 'expired':
-      return '已过期'
-    case 'cancelled':
-      return '已取消'
-    default:
-      return '未知'
+    case 'active': return '有效';
+    case 'expired': return '已过期';
+    default: return '未知';
   }
 }
 
 // 复制提取码
-const copyShareCode = async (shareCode: string) => {
+const copyShareCode = async (code: string) => {
   try {
-    await navigator.clipboard.writeText(shareCode)
+    await navigator.clipboard.writeText(code)
     ElMessage.success('提取码已复制到剪贴板')
   } catch (err) {
     ElMessage.error('复制失败')
@@ -287,7 +305,7 @@ const copyShareCode = async (shareCode: string) => {
 
 // 生成分享链接
 const generateShareLink = (file: any) => {
-  return `https://clouddrive.com/share/${file.shareCode}`
+  return file.shareLink || `${window.location.origin}/shareCheck/${file.shareId}`
 }
 
 // 复制分享链接
@@ -305,57 +323,6 @@ const copyShareLink = async (file: any) => {
 const viewDetails = (file: any) => {
   selectedFile.value = file
   detailDialogVisible.value = true
-}
-
-// 取消分享
-const cancelShare = async (file: any) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要取消分享文件 "${file.fileName}" 吗？`,
-      '确认取消',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-    
-    // 更新文件状态
-    const fileIndex = sharedFilesData.value.findIndex(f => f.id === file.id)
-    if (fileIndex !== -1) {
-      sharedFilesData.value[fileIndex].status = 'cancelled'
-    }
-    
-    ElMessage.success('已取消分享')
-  } catch {
-    ElMessage.info('已取消操作')
-  }
-}
-
-// 清理失效链接
-const cleanInvalidLinks = async () => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要清理所有失效的分享链接吗？此操作不可撤销。',
-      '确认清理',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-    
-    const beforeCount = sharedFilesData.value.length
-    sharedFilesData.value = sharedFilesData.value.filter(file => 
-      file.status !== 'expired' && file.status !== 'cancelled'
-    )
-    const afterCount = sharedFilesData.value.length
-    const removedCount = beforeCount - afterCount
-    
-    ElMessage.success(`已清理 ${removedCount} 个失效链接`)
-  } catch {
-    ElMessage.info('已取消操作')
-  }
 }
 </script>
 
