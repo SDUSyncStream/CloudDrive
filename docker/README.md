@@ -47,12 +47,12 @@ docker/
 - **Frontend (Vue.js)**: 用户界面 - 端口 3000
 - **Gateway**: API 网关 - 端口 8080
 - **Auth Service**: 认证服务 - 端口 8081
-- **User Service**: 用户服务 - 端口 8087
+- **User Service**: 用户服务 - 端口 8082
 - **Admin Service**: 管理员服务 - 端口 8083
 - **Membership Service**: 会员服务 - 端口 8084
 - **Mail Service**: 邮件服务 - 端口 8085
 - **File Manage Service**: 文件管理服务 - 端口 8099
-- **File Share**: 文件分享服务 - 端口 8082
+- **File Share**: 文件分享服务 - 端口 8093
 - **FileUpDown Service**: 文件上传下载服务 - 端口 8090
 
 ## 🚀 快速开始
@@ -126,11 +126,11 @@ docker-compose -f docker-compose.gateway.yml \
 | Frontend            | 3000     | 3000     | 前端应用     |
 | Gateway             | 8080     | 8080     | API 网关     |
 | Auth Service        | 8081     | 8081     | 认证服务     |
-| File Share          | 8082     | 8082     | 文件分享     |
+| File Share          | 8093     | 8093     | 文件分享     |
 | Admin Service       | 8083     | 8083     | 管理员服务   |
 | Mail Service        | 8085     | 8085     | 邮件服务     |
-| Membership Service  | 8086     | 8086     | 会员服务     |
-| User Service        | 8087     | 8087     | 用户服务     |
+| Membership Service  | 8084     | 8084     | 会员服务     |
+| User Service        | 8082     | 8082     | 用户服务     |
 | FileUpDown Service  | 8090     | 8090     | 文件上传下载 |
 | File Manage Service | 8099     | 8099     | 文件管理     |
 
