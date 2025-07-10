@@ -37,4 +37,11 @@ public interface UserSubscriptionService {
      * @return 影响的行数，通常为 1 表示成功
      */
     int deleteUserSubscription(String id);
+
+    /**
+     * 为用户创建默认订阅（level001）
+     * @param userId 用户ID
+     * @return 是否创建成功
+     */
+    boolean createDefaultSubscription(String userId);
 }

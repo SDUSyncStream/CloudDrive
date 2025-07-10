@@ -1,0 +1,33 @@
+services:
+  file-manage-service:
+    build:
+      context: ../apps/file-manage-service
+      dockerfile: ../../docker/Dockerfile.file-manage-service
+    container_name: file-manage-service
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cloud_drive
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    networks:
+      - services-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8099/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  services-network:
+    external: true
