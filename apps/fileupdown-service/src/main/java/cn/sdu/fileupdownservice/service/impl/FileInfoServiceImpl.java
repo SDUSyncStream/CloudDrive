@@ -317,18 +317,27 @@ public class FileInfoServiceImpl implements FileInfoService {
             throw new BusinessException("目录不存在");
         }
         File fileList[] = dir.listFiles();
+        if (fileList == null || fileList.length == 0) {
+            throw new BusinessException("没有找到分片文件");
+        }
+
         File targetFile = new File(toFilePath);
+        logger.info("目标文件路径: {}", targetFile.getAbsolutePath());
+
         RandomAccessFile writeFile = null;
         try {
             writeFile = new RandomAccessFile(targetFile, "rw");
             byte[] b = new byte[1024 * 10];
             for (int i = 0; i < fileList.length; i++) {
-                int len = -1;
-                //创建读块文件的对象
                 File chunkFile = new File(dirPath + File.separator + i);
+                logger.info("分片文件路径: {}", chunkFile.getAbsolutePath());
+                if (!chunkFile.exists()) {
+                    throw new BusinessException("分片文件缺失: " + i);
+                }
                 RandomAccessFile readFile = null;
                 try {
                     readFile = new RandomAccessFile(chunkFile, "r");
+                    int len;
                     while ((len = readFile.read(b)) != -1) {
                         writeFile.write(b, 0, len);
                     }
@@ -336,7 +345,9 @@ public class FileInfoServiceImpl implements FileInfoService {
                     logger.error("合并分片失败", e);
                     throw new BusinessException("合并文件失败");
                 } finally {
-                    readFile.close();
+                    if (readFile != null) {
+                        readFile.close();
+                    }
                 }
             }
         } catch (Exception e) {
@@ -344,7 +355,7 @@ public class FileInfoServiceImpl implements FileInfoService {
             throw new BusinessException("合并文件" + fileName + "出错了");
         } finally {
             try {
-                if (null != writeFile) {
+                if (writeFile != null) {
                     writeFile.close();
                 }
             } catch (IOException e) {
@@ -355,7 +366,7 @@ public class FileInfoServiceImpl implements FileInfoService {
                     try {
                         FileUtils.deleteDirectory(dir);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.error("删除临时目录失败", e);
                     }
                 }
             }

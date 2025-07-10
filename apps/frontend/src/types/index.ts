@@ -9,7 +9,7 @@ export interface User {
   // 扩展字段
   storageUsed?: number;  // 已使用存储空间（字节）
   storageQuota?: number; // 总存储配额（字节）
-  membershipLevel?: string; // 会员等级
+  membershipLevelId?: string; // 会员等级
 }
 
 export interface CloudFile {

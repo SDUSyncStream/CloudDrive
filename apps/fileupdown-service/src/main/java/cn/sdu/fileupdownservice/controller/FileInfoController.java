@@ -45,13 +45,9 @@ public class FileInfoController extends CommonFileController {
                                  @VerifyParam(required = true) Integer chunks) {
 
         SessionWebUserDto webUserDto = new SessionWebUserDto();
-        UserInfoQuery query = new UserInfoQuery();
-        query.setUserId(userId);
-        List<UserInfo> userInfo = userInfoService.findListByParam(query);
+        UserInfo userInfo = userInfoService.selectUser(userId);
         webUserDto.setUserId(userId);
-        webUserDto.setNickName(userInfo.get(0).getNickName());
-        webUserDto.setAdmin(false);
-        webUserDto.setAvatar(userInfo.get(0).getQqAvatar());
+        webUserDto.setNickName(userInfo.getNickName());
         UploadResultDto resultDto = fileInfoService.uploadFile(webUserDto, fileId, file, fileName, filePid, fileMd5, chunkIndex, chunks);
         return getSuccessResponseVO(resultDto);
     }

@@ -19,10 +19,9 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.delFlag" placeholder="选择文件状态" clearable>
-            <el-option label="所有" value=""></el-option>
+            <el-option label="所有（不含已删除）" value=""></el-option>
             <el-option label="正常" :value="2"></el-option>
             <el-option label="回收站" :value="1"></el-option>
-            <el-option label="已删除" :value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -34,17 +33,6 @@
           </el-button>
         </el-form-item>
       </el-form>
-      <div class="action-buttons">
-        <el-button type="danger" :disabled="!selectedFiles.length" @click="batchDeleteFiles(0)">
-          <el-icon><Delete /></el-icon> 批量永久删除
-        </el-button>
-        <el-button type="warning" :disabled="!selectedFiles.length" @click="batchDeleteFiles(1)">
-          <el-icon><DeleteFilled /></el-icon> 批量移入回收站
-        </el-button>
-        <el-button type="success" :disabled="!selectedFiles.length" @click="batchRecoverFiles">
-          <el-icon><RefreshRight /></el-icon> 批量恢复
-        </el-button>
-      </div>
     </el-card>
 
     <el-card shadow="hover" class="table-card">
@@ -54,11 +42,8 @@
           style="width: 100%"
           stripe
           border
-          height="calc(100vh - 350px)"
-          empty-text="暂无文件数据"
-          @selection-change="handleSelectionChange"
+          height="calc(100vh - 300px)" empty-text="暂无文件数据"
       >
-        <el-table-column type="selection" width="55"></el-table-column>
         <el-table-column prop="file_name" label="文件名" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <div class="file-info-cell">
@@ -109,21 +94,19 @@
                 link
                 type="primary"
                 size="small"
-                v-if="row.del_flag !== 2"
-                @click="recoverFile(row)"
+                v-if="row.del_flag === 1" @click="recoverFile(row)"
             >恢复</el-button>
             <el-button
                 link
                 type="warning"
                 size="small"
-                v-if="row.del_flag === 2"
-                @click="deleteFile(row, 1)"
+                v-if="row.del_flag === 2" @click="deleteFile(row, 1)"
             >删除到回收站</el-button>
             <el-button
                 link
                 type="danger"
                 size="small"
-                @click="deleteFile(row, 0)"
+                v-if="row.del_flag === 1" @click="deleteFile(row, 0)"
             >永久删除</el-button>
           </template>
         </el-table-column>
@@ -146,16 +129,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus' // 移除 FormInstance 等不再需要的类型
 import {
   Search,
   Refresh,
-  Delete,
-  DeleteFilled, // 填充删除图标
-  RefreshRight, // 恢复图标
   Folder,       // 文件夹图标
   Document,     // 文档图标
-} from '@element-plus/icons-vue'
+} from '@element-plus/icons-vue' // 移除 Delete, DeleteFilled, RefreshRight 等不再需要的图标
 
 // 假设你的 utils 文件中有这些格式化函数
 import { formatFileSize } from '../utils'
@@ -201,12 +181,12 @@ const searchForm = reactive({
   fileName: '',
   userIdOrName: '',
   folderType: '', // 0: 文件, 1: 目录, '': 所有
-  delFlag: '',    // 0: 删除, 1: 回收站, 2: 正常, '': 所有
+  delFlag: '',    // 1: 回收站, 2: 正常, '': 所有 (不含已删除)
 })
 
 const fileList = ref<FileInfo[]>([]) // 所有文件数据
 const loading = ref(false) // 表格加载状态
-const selectedFiles = ref<FileInfo[]>([]) // 选中的文件
+// const selectedFiles = ref<FileInfo[]>([]) // 批量操作移除，故此变量不再需要
 
 // 分页
 const currentPage = ref(1)
@@ -218,16 +198,19 @@ const userMap = ref<{ [key: string]: string }>({
   'user002': 'Eleanor Henders',
   'user003': 'Saito Ikki',
   'admin-user-id': 'admin',
-  '1000000001': 'Wang Li', // 假设这个ID对应Wang Li
+  '1000000001': 'Wang Li',
   '1000000002': 'Zhang San',
   '1000000003': 'super_admin',
 });
 
 // --- 计算属性 ---
 
-// 根据搜索条件过滤文件
+// 根据搜索条件过滤文件 (不再包含 del_flag=0 的文件)
 const filteredFiles = computed(() => {
   return fileList.value.filter(file => {
+    // 排除 del_flag = 0 (已删除) 的文件
+    if (file.del_flag === 0) return false;
+
     const matchesFileName = file.file_name?.includes(searchForm.fileName)
 
     const matchesUserIdOrName = !searchForm.userIdOrName ||
@@ -235,6 +218,8 @@ const filteredFiles = computed(() => {
         (userMap.value[file.user_id]?.includes(searchForm.userIdOrName));
 
     const matchesFolderType = searchForm.folderType === '' || file.folder_type === searchForm.folderType
+
+    // 如果 searchForm.delFlag 为空，则显示所有（正常和回收站）。否则按指定状态筛选。
     const matchesDelFlag = searchForm.delFlag === '' || file.del_flag === searchForm.delFlag
 
     return matchesFileName && matchesUserIdOrName && matchesFolderType && matchesDelFlag
@@ -268,20 +253,18 @@ const formatFileCategory = (row: FileInfo) => {
   return categories[row.file_category || 5] || '其他'
 }
 
-// 格式化删除标志
+// 格式化删除标志 (这里只显示 1 和 2 的状态)
 const formatDelFlag = (delFlag: number) => {
   switch (delFlag) {
-    case 0: return '已删除'
     case 1: return '回收站'
     case 2: return '正常'
-    default: return '未知'
+    default: return '未知' // del_flag=0 的数据不再显示
   }
 }
 
 // 获取文件状态标签类型
 const getFileStatusTagType = (delFlag: number) => {
   switch (delFlag) {
-    case 0: return 'danger' // 已删除
     case 1: return 'warning' // 回收站
     case 2: return 'success' // 正常
     default: return 'info'
@@ -306,11 +289,6 @@ const resetSearch = () => {
   searchForm.folderType = ''
   searchForm.delFlag = ''
   searchFiles() // 重置后重新搜索
-}
-
-// 处理表格多选
-const handleSelectionChange = (val: FileInfo[]) => {
-  selectedFiles.value = val
 }
 
 // 恢复文件 (从回收站恢复到正常)
@@ -361,6 +339,10 @@ const deleteFile = async (file: FileInfo, delFlag: 0 | 1) => {
     successMsg = '文件已移入回收站。';
     apiPath = `/api/admin/files/toRecycleBin/${file.file_id}`; // 假设 API 路径
   } else { // 永久删除
+    if (file.del_flag !== 1) { // 只有回收站的文件才能永久删除
+      ElMessage.error('只有回收站中的文件才能永久删除！');
+      return;
+    }
     confirmMsg = `确定要永久删除文件 "${file.file_name}" 吗？此操作不可逆！`;
     successMsg = '文件已永久删除。';
     apiPath = `/api/admin/files/deletePermanently/${file.file_id}`; // 假设 API 路径
@@ -384,98 +366,6 @@ const deleteFile = async (file: FileInfo, delFlag: 0 | 1) => {
         } catch (error) {
           console.error('删除文件错误:', error)
           ElMessage.error('文件操作失败。')
-        }
-      })
-      .catch(() => {})
-}
-
-// 批量永久删除文件
-const batchDeleteFiles = async (delFlag: 0 | 1) => {
-  if (selectedFiles.value.length === 0) {
-    ElMessage.warning('请选择要操作的文件。')
-    return;
-  }
-
-  const fileNames = selectedFiles.value.map(f => f.file_name).join(', ');
-  let confirmMsg = '';
-  let successMsg = '';
-  let apiPath = '';
-
-  if (delFlag === 1) { // 批量移入回收站
-    const filesToMove = selectedFiles.value.filter(f => f.del_flag !== 1);
-    if (filesToMove.length === 0) {
-      ElMessage.info('所选文件均已在回收站中。');
-      return;
-    }
-    confirmMsg = `确定要将选中的 ${filesToMove.length} 个文件移入回收站吗？`;
-    successMsg = '选中的文件已移入回收站。';
-    apiPath = '/api/admin/files/batchToRecycleBin'; // 假设批量移入回收站 API
-  } else { // 批量永久删除
-    confirmMsg = `确定要永久删除选中的 ${selectedFiles.value.length} 个文件吗？此操作不可逆！`;
-    successMsg = '选中的文件已永久删除。';
-    apiPath = '/api/admin/files/batchDeletePermanently'; // 假设批量永久删除 API
-  }
-
-  ElMessageBox.confirm(confirmMsg, '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
-      .then(async () => {
-        try {
-          const fileIds = selectedFiles.value.map(f => f.file_id);
-          console.log(`Sending batch delete request (${delFlag === 0 ? 'permanently' : 'to recycle bin'}) for IDs:`, fileIds);
-          // 实际 API: await fetch(apiPath, { method: 'POST', headers: { Authorization: 'Bearer ...', 'Content-Type': 'application/json' }, body: JSON.stringify(fileIds) });
-
-          await new Promise(resolve => setTimeout(resolve, 800)); // 模拟延迟
-
-          ElMessage.success(successMsg)
-          fetchFiles() // 刷新列表
-          selectedFiles.value = [] // 清空选择
-        } catch (error) {
-          console.error('批量删除文件错误:', error)
-          ElMessage.error('批量删除操作失败。')
-        }
-      })
-      .catch(() => {})
-}
-
-// 批量恢复文件
-const batchRecoverFiles = async () => {
-  if (selectedFiles.value.length === 0) {
-    ElMessage.warning('请选择要恢复的文件。')
-    return;
-  }
-
-  const filesToRecover = selectedFiles.value.filter(f => f.del_flag !== 2);
-  if (filesToRecover.length === 0) {
-    ElMessage.info('所选文件均已是正常状态，无需恢复。');
-    return;
-  }
-
-  ElMessageBox.confirm(
-      `确定要恢复选中的 ${filesToRecover.length} 个文件吗？`,
-      '提示',
-      {
-        confirmButtonText: '确定恢复',
-        cancelButtonText: '取消',
-        type: 'info',
-      }
-  )
-      .then(async () => {
-        try {
-          const fileIds = filesToRecover.map(f => f.file_id);
-          console.log('Sending batch recovery request for IDs:', fileIds);
-          // 实际 API: await fetch('/api/admin/files/batchRecover', { method: 'POST', headers: { Authorization: 'Bearer ...', 'Content-Type': 'application/json' }, body: JSON.stringify(fileIds) });
-
-          await new Promise(resolve => setTimeout(resolve, 800)); // 模拟延迟
-
-          ElMessage.success('选中的文件已恢复。')
-          fetchFiles() // 刷新列表
-          selectedFiles.value = [] // 清空选择
-        } catch (error) {
-          console.error('批量恢复文件错误:', error)
-          ElMessage.error('批量恢复操作失败。')
         }
       })
       .catch(() => {})
@@ -508,7 +398,7 @@ const fetchFiles = async () => {
       { file_id: 'f003', user_id: 'user001', file_md5: 'md5_ghi3', file_pid: null, file_size: 0, file_name: 'Project_Folder', file_cover: null, file_path: '/path/proj/', create_time: '2023-03-10 14:00:00', last_update_time: '2023-03-10 14:00:00', folder_type: 1, file_category: null, file_type: null, status: null, recovery_time: null, del_flag: 2 },
       { file_id: 'f004', user_id: 'user003', file_md5: 'md5_jkl4', file_pid: null, file_size: 345678901, file_name: 'video.mp4', file_cover: null, file_path: '/path/video.mp4', create_time: '2023-04-15 16:30:00', last_update_time: '2023-04-15 16:30:00', folder_type: 0, file_category: 1, file_type: 1, status: 0, recovery_time: null, del_flag: 2 }, // 转码中
       { file_id: 'f005', user_id: 'user001', file_md5: 'md5_mno5', file_pid: null, file_size: 56789012, file_name: 'old_report.doc', file_cover: null, file_path: '/path/old_report.doc', create_time: '2022-01-20 09:00:00', last_update_time: '2022-01-20 09:00:00', folder_type: 0, file_category: 4, file_type: 5, status: 2, recovery_time: '2025-07-01 10:00:00', del_flag: 1 }, // 回收站
-      { file_id: 'f006', user_id: 'user002', file_md5: 'md5_pqr6', file_pid: null, file_size: 67890123, file_name: 'deleted_image.png', file_cover: null, file_path: '/path/deleted_image.png', create_time: '2021-11-11 11:11:11', last_update_time: '2021-11-11 11:11:11', folder_type: 0, file_category: 3, file_type: 3, status: 2, recovery_time: null, del_flag: 0 }, // 已删除
+      { file_id: 'f006', user_id: 'user002', file_md5: 'md5_pqr6', file_pid: null, file_size: 67890123, file_name: 'deleted_image.png', file_cover: null, file_path: '/path/deleted_image.png', create_time: '2021-11-11 11:11:11', last_update_time: '2021-11-11 11:11:11', folder_type: 0, file_category: 3, file_type: 3, status: 2, recovery_time: null, del_flag: 0 }, // 已删除 (此文件将不会被显示)
       { file_id: 'f007', user_id: 'user001', file_md5: 'md5_stu7', file_pid: null, file_size: 0, file_name: 'Empty Folder', file_cover: null, file_path: '/path/empty/', create_time: '2024-05-01 08:00:00', last_update_time: '2024-05-01 08:00:00', folder_type: 1, file_category: null, file_type: null, status: null, recovery_time: '2025-07-05 12:00:00', del_flag: 1 }, // 回收站目录
       { file_id: 'f008', user_id: '1000000001', file_md5: 'md5_vwx8', file_pid: null, file_size: 5000000, file_name: 'Spreadsheet.xls', file_cover: null, file_path: '/path/sheet.xls', create_time: '2024-06-20 09:30:00', last_update_time: '2024-06-20 09:30:00', folder_type: 0, file_category: 4, file_type: 6, status: 2, recovery_time: null, del_flag: 2 },
       { file_id: 'f009', user_id: '1000000002', file_md5: 'md5_yza9', file_pid: null, file_size: 15000000, file_name: 'Presentation.ppt', file_cover: null, file_path: '/path/ppt.ppt', create_time: '2024-07-01 10:00:00', last_update_time: '2024-07-01 10:00:00', folder_type: 0, file_category: 4, file_type: 5, status: 2, recovery_time: null, del_flag: 2 },
@@ -562,11 +452,7 @@ h2 {
   margin-right: 20px; /* 控制表单项右边距 */
 }
 
-.action-buttons {
-  display: flex;
-  justify-content: flex-start; /* 左对齐 */
-  gap: 10px; /* 按钮间距 */
-}
+/* .action-buttons 区域已移除 */
 
 .table-card {
   flex: 1; /* 使表格卡片填充剩余空间 */

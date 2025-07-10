@@ -29,7 +29,9 @@
         <result column="total_space" property="totalSpace"/>
     </resultMap>
 
-
+    <select id="selectUser" parameterType="string" resultMap="base_result_map">
+        SELECT user_id,nick_name FROM user_info WHERE user_id = #{userId}
+    </select>
     <!-- 通用查询结果列-->
     <sql id="base_column_list">
         user_id

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,6 +72,16 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
             subscription.setStatus("cancelled");
             subscription.setUpdatedAt(LocalDateTime.now());
             updateById(subscription);
+        }
+    }
+
+    public boolean createDefaultSubscription(String userId) {
+        try {
+            String subscriptionId = UUID.randomUUID().toString();
+            int result = getBaseMapper().insertDefaultSubscription(subscriptionId, userId);
+            return result > 0;
+        } catch (Exception e) {
+            throw new RuntimeException("创建默认订阅失败: " + e.getMessage(), e);
         }
     }
 

@@ -124,5 +124,12 @@ CREATE TABLE IF NOT EXISTS payment_orders (
     INDEX idx_user_id (user_id),
     INDEX idx_order_number (order_number),
     INDEX idx_status (status)
-    );
+);
+
+-- 插入默认会员等级
+INSERT IGNORE INTO membership_levels (id, name, storage_quota, max_file_size, price, duration_days, features) VALUES 
+('level-free', '免费版', 1073741824, 104857600, 0.00, 0, '1GB存储空间,单文件100MB'),
+('level-basic', '基础版', 10737418240, 1073741824, 9.99, 30, '10GB存储空间,单文件1GB'),
+('level-premium', '高级版', 107374182400, 5368709120, 19.99, 30, '100GB存储空间,单文件5GB'),
+('level-enterprise', '企业版', 1099511627776, 21474836480, 99.99, 30, '1TB存储空间,单文件20GB');
 
