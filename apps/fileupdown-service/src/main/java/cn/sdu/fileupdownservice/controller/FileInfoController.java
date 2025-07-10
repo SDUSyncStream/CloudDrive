@@ -8,10 +8,7 @@ import cn.sdu.fileupdownservice.entity.dto.UserSpaceDto;
 import cn.sdu.fileupdownservice.entity.po.Users;
 import cn.sdu.fileupdownservice.entity.vo.ResponseVO;
 import cn.sdu.fileupdownservice.service.impl.UserInfoServiceImpl;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,11 +29,8 @@ public class FileInfoController extends CommonFileController {
         super();
         this.userInfoService = userInfoService;
     }
-    @GetMapping("/user/space/{userId}")
-    public UserSpaceDto getUserSpace1(@PathVariable String userId) {
-        return fileInfoService.getUserSpace(userId);
-    }
-    @RequestMapping("/uploadFile")
+
+    @PostMapping("/uploadFile")
     @GlobalInterceptor(checkParams = true)
     public ResponseVO uploadFile(String userId,
                                  String fileId,

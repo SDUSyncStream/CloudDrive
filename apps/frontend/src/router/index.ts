@@ -118,6 +118,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/OrderDetailView.vue')
   },
   {
+    path: '/shareCheck/:shareId',
+    name: 'ShareCheck',
+    component: () => import('../views/ShareCheckView.vue')
+  },
+  {
+    path: '/share/:shareId',
+    name: 'ShareView',
+    component: () => import('../views/ShareView.vue')
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFoundView.vue')
