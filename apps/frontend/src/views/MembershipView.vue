@@ -41,18 +41,21 @@
       <h3>选择会员等级</h3>
       <div class="levels-grid">
         <div 
-          v-for="level in membershipLevels" 
-          :key="level.id"
+          v-for="group in groupedLevels" 
+          :key="group.name"
           class="level-card"
-          :class="{ 'recommended': level.isRecommended }"
+          :class="{ 'recommended': group.isRecommended }"
         >
           <div class="level-header">
-            <h4>{{ level.name }}</h4>
+            <h4>{{ group.name }}</h4>
             <div class="level-price">
-              <span class="price-symbol">¥</span>
-              <span class="price-amount">{{ level.price }}</span>
-              <span class="price-period" v-if="level.durationDays > 0">
-                /{{ level.durationDays }}天
+              <span class="price-from" v-if="group.monthlyOption && group.monthlyOption.price > 0">
+                <span class="price-symbol">¥</span>
+                <span class="price-amount">{{ group.monthlyOption.price }}</span>
+                <span class="price-period">/月起</span>
+              </span>
+              <span v-else-if="group.name === '免费版'" class="free-label">
+                免费使用
               </span>
             </div>
           </div>
@@ -60,26 +63,26 @@
           <div class="level-features">
             <div class="feature-item">
               <i class="el-icon-folder-opened"></i>
-              <span>{{ level.storageQuotaFormatted }} 存储空间</span>
+              <span>{{ group.storageQuotaFormatted }} 存储空间</span>
             </div>
             <div class="feature-item">
               <i class="el-icon-upload"></i>
-              <span>单文件最大 {{ level.maxFileSizeFormatted }}</span>
+              <span>单文件最大 {{ group.maxFileSizeFormatted }}</span>
             </div>
-            <div class="feature-item" v-if="level.features">
+            <div class="feature-item" v-if="group.features">
               <i class="el-icon-star-on"></i>
-              <span>{{ level.features }}</span>
+              <span>{{ group.features }}</span>
             </div>
           </div>
 
           <div class="level-actions">
             <el-button 
               type="primary" 
-              :disabled="level.price === 0"
-              @click="handleSelectLevel(level)"
-              :loading="selectedLevelId === level.id && orderLoading"
+              :disabled="group.name === '免费版'"
+              @click="handleSelectLevelGroup(group)"
+              :loading="selectedLevelId === group.name && orderLoading"
             >
-              {{ level.price === 0 ? '免费版' : '立即购买' }}
+              {{ group.name === '免费版' ? '当前版本' : '选择套餐' }}
             </el-button>
           </div>
         </div>
@@ -89,31 +92,89 @@
     <!-- 支付方式对话框 -->
     <el-dialog 
       v-model="paymentDialogVisible" 
-      title="选择支付方式" 
-      width="500px"
+      title="选择套餐" 
+      width="600px"
       :close-on-click-modal="false"
     >
       <div class="payment-options">
         <div class="selected-level-info">
-          <h4>{{ selectedLevel?.name }}</h4>
-          <p class="payment-amount">支付金额：¥{{ selectedLevel?.price }}</p>
+          <h4>{{ selectedGroupLevel?.name }}</h4>
+          <p class="level-description">{{ selectedGroupLevel?.features }}</p>
         </div>
         
-        <div class="payment-methods">
-          <el-radio-group v-model="selectedPaymentMethod">
-            <el-radio label="alipay">
+        <!-- 套餐期间选择 -->
+        <div class="duration-selection">
+          <h5>选择套餐期间</h5>
+          <el-radio-group v-model="selectedDuration" class="duration-options">
+            <el-radio 
+              v-if="selectedGroupLevel?.monthlyOption" 
+              :label="selectedGroupLevel.monthlyOption.id"
+              class="duration-card"
+            >
+              <div class="duration-content">
+                <div class="duration-header">
+                  <span class="duration-label">月付套餐</span>
+                  <span class="duration-price">
+                    ¥{{ selectedGroupLevel.monthlyOption.price }}/月
+                  </span>
+                </div>
+                <div class="duration-desc">{{ selectedGroupLevel.monthlyOption.durationDays }}天有效期</div>
+              </div>
+            </el-radio>
+            
+            <el-radio 
+              v-if="selectedGroupLevel?.yearlyOption" 
+              :label="selectedGroupLevel.yearlyOption.id"
+              class="duration-card recommended-duration"
+            >
+              <div class="duration-content">
+                <div class="duration-header">
+                  <span class="duration-label">
+                    年付套餐
+                    <el-tag type="success" size="small">推荐</el-tag>
+                  </span>
+                  <span class="duration-price">
+                    ¥{{ selectedGroupLevel.yearlyOption.price }}/年
+                  </span>
+                </div>
+                <div class="duration-desc">
+                  {{ selectedGroupLevel.yearlyOption.durationDays }}天有效期
+                  <span class="save-tip">相当于每月¥{{ Math.round(selectedGroupLevel.yearlyOption.price / 12) }}</span>
+                </div>
+              </div>
+            </el-radio>
+          </el-radio-group>
+        </div>
+        
+        <!-- 支付方式选择 -->
+        <div class="payment-methods" v-if="selectedDuration">
+          <h5>选择支付方式</h5>
+          <el-radio-group v-model="selectedPaymentMethod" class="payment-method-options">
+            <el-radio label="alipay" class="payment-method-item">
               <i class="payment-icon alipay"></i>
               支付宝
             </el-radio>
-            <el-radio label="wechat">
+            <el-radio label="wechat" class="payment-method-item">
               <i class="payment-icon wechat"></i>
               微信支付
             </el-radio>
-            <el-radio label="bank_card">
+            <el-radio label="bank_card" class="payment-method-item">
               <i class="payment-icon bank-card"></i>
               银行卡
             </el-radio>
           </el-radio-group>
+        </div>
+        
+        <!-- 订单总价 -->
+        <div class="order-summary" v-if="selectedLevel">
+          <div class="summary-item">
+            <span>套餐名称：</span>
+            <span>{{ selectedLevel.name }}</span>
+          </div>
+          <div class="summary-item total">
+            <span>支付金额：</span>
+            <span class="total-price">¥{{ selectedLevel.price }}</span>
+          </div>
         </div>
       </div>
 
@@ -124,7 +185,7 @@
             type="primary" 
             @click="handlePayment"
             :loading="paymentLoading"
-            :disabled="!selectedPaymentMethod"
+            :disabled="!selectedDuration || !selectedPaymentMethod"
           >
             确认支付
           </el-button>
@@ -135,18 +196,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { membershipApi } from '../api/membership'
 import type { MembershipLevel, UserSubscription } from '../types'
 
 // 响应式数据
 const membershipLevels = ref<MembershipLevel[]>([])
+const groupedLevels = ref<any[]>([]) // 分组后的等级数据
 const currentSubscription = ref<UserSubscription | null>(null)
 const paymentDialogVisible = ref(false)
 const selectedLevel = ref<MembershipLevel | null>(null)
+const selectedGroupLevel = ref<any>(null) // 选择的分组等级
 const selectedLevelId = ref('')
 const selectedPaymentMethod = ref('')
+const selectedDuration = ref('') // 选择的期间（月费/年费）
 const orderLoading = ref(false)
 const paymentLoading = ref(false)
 const cancelLoading = ref(false)
@@ -175,11 +239,58 @@ const fetchMembershipLevels = async () => {
     const response = await membershipApi.getAllLevels()
     if (response.data.code === 200) {
       membershipLevels.value = response.data.data
+      groupMembershipLevels()
     }
   } catch (error) {
     console.error('获取会员等级失败:', error)
     ElMessage.error('获取会员等级失败')
   }
+}
+
+// 将会员等级分组
+const groupMembershipLevels = () => {
+  const levels = membershipLevels.value
+  
+  // 按基础名称分组（去掉"年度"前缀）
+  const grouped = new Map()
+  
+  levels.forEach(level => {
+    // 识别基础等级名称
+    let baseName = level.name
+    let isYearly = false
+    
+    if (level.name.includes('年度')) {
+      baseName = level.name.replace('年度', '')
+      isYearly = true
+    }
+    
+    if (!grouped.has(baseName)) {
+      grouped.set(baseName, {
+        name: baseName,
+        storageQuota: level.storageQuota,
+        maxFileSize: level.maxFileSize,
+        features: level.features,
+        storageQuotaFormatted: level.storageQuotaFormatted,
+        maxFileSizeFormatted: level.maxFileSizeFormatted,
+        monthlyOption: null,
+        yearlyOption: null,
+        isRecommended: level.isRecommended || baseName === '高级版'
+      })
+    }
+    
+    const group = grouped.get(baseName)
+    if (isYearly) {
+      group.yearlyOption = level
+    } else {
+      group.monthlyOption = level
+    }
+  })
+  
+  // 转换为数组并排序
+  groupedLevels.value = Array.from(grouped.values()).sort((a, b) => {
+    const order = ['免费版', '标准版', '高级版', '专业版', '企业版']
+    return order.indexOf(a.name) - order.indexOf(b.name)
+  })
 }
 
 // 获取当前订阅
@@ -208,18 +319,37 @@ const fetchCurrentSubscription = async () => {
   }
 }
 
-// 选择会员等级
-const handleSelectLevel = (level: MembershipLevel) => {
-  if (level.price === 0) {
+// 选择会员等级组
+const handleSelectLevelGroup = (group: any) => {
+  if (group.name === '免费版') {
     ElMessage.info('免费版无需购买')
     return
   }
   
-  selectedLevel.value = level
-  selectedLevelId.value = level.id
+  selectedGroupLevel.value = group
+  selectedLevel.value = null
+  selectedLevelId.value = group.name
   selectedPaymentMethod.value = ''
+  selectedDuration.value = ''
   paymentDialogVisible.value = true
 }
+
+// 监听期间选择变化
+const updateSelectedLevel = () => {
+  if (!selectedDuration.value || !selectedGroupLevel.value) {
+    selectedLevel.value = null
+    return
+  }
+  
+  // 根据选择的期间ID找到对应的会员等级
+  const level = membershipLevels.value.find(l => l.id === selectedDuration.value)
+  if (level) {
+    selectedLevel.value = level
+  }
+}
+
+// 添加监听器
+watch(selectedDuration, updateSelectedLevel)
 
 // 处理支付
 const handlePayment = async () => {
@@ -449,6 +579,18 @@ onMounted(async () => {
   margin-left: 5px;
 }
 
+.price-from {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.free-label {
+  font-size: 18px;
+  color: #67c23a;
+  font-weight: bold;
+}
+
 .level-features {
   margin-bottom: 20px;
 }
@@ -479,15 +621,165 @@ onMounted(async () => {
 
 .selected-level-info {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   padding: 20px;
   background: #f5f7fa;
   border-radius: 8px;
 }
 
 .selected-level-info h4 {
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   color: #333;
+  font-size: 20px;
+}
+
+.level-description {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+.duration-selection {
+  margin-bottom: 24px;
+}
+
+.duration-selection h5 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.duration-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.duration-card {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 0;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+.duration-card:hover {
+  border-color: #409eff;
+}
+
+.duration-card.is-checked {
+  border-color: #409eff;
+  background: #f0f9ff;
+}
+
+.recommended-duration {
+  border-color: #67c23a;
+}
+
+.recommended-duration.is-checked {
+  border-color: #67c23a;
+  background: #f0f9ff;
+}
+
+.duration-content {
+  padding: 16px;
+  width: 100%;
+}
+
+.duration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.duration-label {
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duration-price {
+  font-size: 18px;
+  font-weight: bold;
+  color: #e6a23c;
+}
+
+.duration-desc {
+  color: #666;
+  font-size: 14px;
+}
+
+.save-tip {
+  color: #67c23a;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.payment-methods h5 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.payment-method-options {
+  display: flex;
+  gap: 12px;
+}
+
+.payment-method-item {
+  flex: 1;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.payment-method-item:hover {
+  border-color: #409eff;
+}
+
+.payment-method-item.is-checked {
+  border-color: #409eff;
+  background: #f0f9ff;
+}
+
+.order-summary {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.summary-item:last-child {
+  margin-bottom: 0;
+}
+
+.summary-item.total {
+  border-top: 1px solid #e4e7ed;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.total-price {
+  font-size: 20px;
+  color: #e6a23c;
+  font-weight: bold;
 }
 
 .payment-amount {
@@ -497,24 +789,6 @@ onMounted(async () => {
   margin: 0;
 }
 
-.payment-methods .el-radio {
-  display: block;
-  margin: 15px 0;
-  padding: 15px;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.payment-methods .el-radio:hover {
-  border-color: #409eff;
-  background: #f0f9ff;
-}
-
-.payment-methods .el-radio.is-checked {
-  border-color: #409eff;
-  background: #f0f9ff;
-}
 
 .payment-icon {
   width: 20px;

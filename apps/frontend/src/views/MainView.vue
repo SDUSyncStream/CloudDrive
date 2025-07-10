@@ -39,6 +39,7 @@
                                 <el-divider style="margin: 8px 0;" />
                                 <el-dropdown-item command="profile">个人资料</el-dropdown-item>
                                 <el-dropdown-item command="vip">会员中心</el-dropdown-item>
+                                <el-dropdown-item command="orders">订单中心</el-dropdown-item>
                                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
@@ -168,6 +169,9 @@ const handleUserAction = (command: string) => {
             break
         case 'vip':
             router.push('/vip')
+            break
+        case 'orders':
+            router.push('/orders')
             break
         case 'logout':
             logout().then(() => {
