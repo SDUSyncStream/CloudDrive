@@ -245,7 +245,7 @@
                 <el-button link type="primary" size="small" title="分享文件">
                   <el-icon><Share /></el-icon>
                 </el-button>
-                <el-button link type="primary" size="small" title="下载文件">
+                <el-button link type="primary" size="small" title="下载文件" @click="handleDownload(item)">
                   <el-icon><Download /></el-icon>
                 </el-button>
               </div>
@@ -257,15 +257,15 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="handleCopy(row)">
+                    <el-dropdown-item @click="handleCopy(item)">
                       <el-icon><CopyDocument /></el-icon>
                       复制
                     </el-dropdown-item>
-                    <el-dropdown-item @click="handleRename(row)">
+                    <el-dropdown-item @click="handleRename(item)">
                       <el-icon><Edit /></el-icon>
                       重命名
                     </el-dropdown-item>
-                    <el-dropdown-item divided @click="handleRecycle(row)">
+                    <el-dropdown-item divided @click="handleRecycle(item)">
                       <el-icon><Delete /></el-icon>
                       删除
                     </el-dropdown-item>
@@ -355,7 +355,7 @@ const fileList = ref<any[]>([]);
 const delList = ref<any[]>([]);
 
 let nowfilePid = 0;
-let nowUserId = 'user008';
+let nowUserId = localStorage.getItem("UserId") || '2'; // 默认用户ID为2
 onMounted(() => {
 //  userId = localStorage.getItem("UserId");
   nowfilePid = 0;
@@ -397,7 +397,7 @@ const handlePaste = async () => {
       console.log("复制文件", copied_fileId);
       const response = await axios.get(`/files/copy/${copied_fileId.value}`, {
         params: {
-          userId: 2,
+          userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
           targetId: nowfilePid,
         }
       });
@@ -434,7 +434,7 @@ const handleRecycle = async (row) =>{
   try {
     const response = await axios.get(`/files/recycle/${row.fileId}`, {
       params: {
-        userId: 2,
+        userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
         newDelFlag: 1,
       }
     });
@@ -456,7 +456,7 @@ const handleRename = async (row) => {
     if (newFileName) {
       const response = await axios.get(`/files/rename/${row.fileId}`, {
         params: {
-          userId: 2,
+          userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
           newName: newFileName,
         }
       });
@@ -663,8 +663,7 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     const end = Math.min(start + chunkSize, fileSize);
     const chunkActualSize = end - start; // 当前分片实际大小
     const chunkFile = file.slice(start, end);
-    let  userId=localStorage.getItem('UserId');
-    userId='user008';                                       //测试专用
+    let  userId=localStorage.getItem('UserId');                             //测试专用
     const formData = new FormData();
     formData.append('file', chunkFile);
     formData.append('fileName', file.name);
@@ -777,7 +776,7 @@ const handleDownload=async (row:any)=>{
     ElMessage.info(`开始下载: ${row.fileName}`);
 
     // 1. 创建下载链接获取code
-    const userId = 'user008'; // 测试专用，实际应使用localStorage.getItem('userId')
+    const userId = localStorage.getItem('UserId'); // 测试专用，实际应使用localStorage.getItem('userId')
     const createUrlRes = await axios.get(`/fileup/createDownloadUrl/${row.fileId}`, {
       params: { userId }
     });

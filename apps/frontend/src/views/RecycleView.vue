@@ -117,7 +117,7 @@ const getFileListinRecycle = async(pid, userId) =>{
   try {
     const response = await axios.get(`/files/get/${pid}`, {
       params: {
-        userId: userId,
+        userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
         delFlag: 1,
       }
     });
@@ -147,7 +147,7 @@ const handleUnrecycle = async (row) =>{
   try {
     const response = await axios.get(`/files/recycle/${row.fileId}`, {
       params: {
-        userId: 2,
+        userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
         newDelFlag: 2,
       }
     });
@@ -165,7 +165,7 @@ const handleDelete = async (row) => {
   try {
     const response = await axios.get(`/files/recycle/delete/${row.fileId}`, {
       params: {
-        userId: 2,
+        userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
       }
     });
     console.log('请求成功:', response.data);
@@ -341,7 +341,7 @@ const clearRecycleBin = async () => {
     )
     const response = await axios.get(`/files/recycle/delete/all`, {
       params: {
-        userId: 2,
+        userId: localStorage.getItem("UserId") || '2', // 默认用户ID为2
       }
     });
     console.log('请求成功:', response.data);
