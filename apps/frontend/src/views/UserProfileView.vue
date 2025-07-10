@@ -365,20 +365,22 @@ const formatDate = (date: Date | string): string => {
 
 const getMembershipTagType = (level?: string) => {
   switch (level) {
-    case 'level-free': return ''
-    case 'level-basic': return 'success'
-    case 'level-premium': return 'warning'
-    case 'level-enterprise': return 'danger'
+    case 'level001': return 'info'
+    case 'level002': return 'success'
+    case 'level003': return 'warning'
+    case 'level004': return ''
+    case 'level005': return 'danger'
     default: return ''
   }
 }
 
 const getMembershipLevelText = (level?: string) => {
   switch (level) {
-    case 'level-free': return '免费版'
-    case 'level-basic': return '基础版'
-    case 'level-premium': return '高级版'
-    case 'level-enterprise': return '企业版'
+    case 'level001': return '免费版'
+    case 'level002': return '标准版'
+    case 'level003': return '高级版'
+    case 'level004': return '专业版'
+    case 'level005': return '企业版'
     default: return '普通用户'
   }
 }
