@@ -391,7 +391,8 @@ const handlePaste = async () => {
   }
   else{
     try {
-      const response = await axios.get(`/files/copy/${copied_fileId}`, {
+      console.log("复制文件", copied_fileId);
+      const response = await axios.get(`/files/copy/${copied_fileId.value}`, {
         params: {
           userId: 2,
           targetId: nowfilePid,

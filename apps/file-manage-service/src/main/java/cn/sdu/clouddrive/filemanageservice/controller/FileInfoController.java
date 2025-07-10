@@ -25,7 +25,15 @@ public class FileInfoController {
     @GetMapping("/copy/{fileId}")
     public Result<String> CopyFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String targetId) {
         String newFileId = UUID.randomUUID().toString();
-        fileInfoService.CopyFile(fileId, userId, targetId, newFileId);
+        FileInfo fileInfo = fileInfoService.getFile(fileId, userId);
+        List<FileInfo> fileInfos = fileInfoService.selectByPidAndUserId(targetId, userId, 2);
+        String fileName = fileInfo.getFileName();
+        boolean hasConflict = fileInfos.stream()
+                .anyMatch(f -> f.getFileName().equals(fileInfo.getFileName()));
+        if(hasConflict){
+            fileName = "(1)" + fileName;
+        }
+        fileInfoService.CopyFile(fileId, userId, targetId, newFileId, fileName);
         fileInfoService.CreateTime(fileId, userId);
         fileInfoService.UpdateTime(newFileId, userId);
         return Result.success("粘贴成功");
@@ -78,4 +86,5 @@ public class FileInfoController {
         String message = "删除成功";
         return Result.success(message);
     }
+
 }
