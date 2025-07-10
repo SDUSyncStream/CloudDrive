@@ -32,13 +32,4 @@ public class MembershipController {
         }
     }
 
-    @GetMapping("/levels/name/{name}")
-    public Result<MembershipLevelDTO> getLevelByName(@PathVariable String name) {
-        MembershipLevelDTO level = membershipLevelService.getLevelByName(name);
-        if (level != null) {
-            return Result.success(level);
-        } else {
-            return Result.error("会员等级不存在");
-        }
-    }
 }

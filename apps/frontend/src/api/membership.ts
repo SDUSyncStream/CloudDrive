@@ -19,10 +19,6 @@ export const membershipApi = {
     return apiClient.get(`/membership/levels/${id}`)
   },
 
-  // 根据名称获取会员等级
-  getLevelByName: (name: string): Promise<AxiosResponse<ApiResponse<MembershipLevel>>> => {
-    return apiClient.get(`/membership/levels/name/${name}`)
-  },
 
   // 获取用户所有订阅
   getUserSubscriptions: (userId: string): Promise<AxiosResponse<ApiResponse<UserSubscription[]>>> => {

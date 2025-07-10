@@ -129,9 +129,25 @@ public class UserSubscriptionService extends ServiceImpl<UserSubscriptionMapper,
         BeanUtils.copyProperties(subscription, dto);
         
         // 获取会员等级名称
-        MembershipLevel level = membershipLevelService.getById(subscription.getMembershipLevelId());
+        String membershipLevelId = subscription.getMembershipLevelId();
+        MembershipLevel level = null;
+        
+        // 先尝试通过ID获取
+        if (membershipLevelId != null) {
+            level = membershipLevelService.getById(membershipLevelId);
+            
+            // 如果通过ID找不到，可能传入的是名称，尝试通过名称获取
+            if (level == null) {
+                level = membershipLevelService.getOne(
+                    new QueryWrapper<MembershipLevel>().eq("name", membershipLevelId)
+                );
+            }
+        }
+        
         if (level != null) {
             dto.setMembershipLevelName(level.getName());
+        } else {
+            dto.setMembershipLevelName("未知等级");
         }
         
         // 计算是否活跃和剩余天数

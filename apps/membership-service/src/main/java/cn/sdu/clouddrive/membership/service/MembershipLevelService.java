@@ -31,13 +31,6 @@ public class MembershipLevelService extends ServiceImpl<MembershipLevelMapper, M
         return level != null ? convertToDTO(level) : null;
     }
 
-    @Cacheable(value = "membershipLevels", key = "'name:' + #name")
-    public MembershipLevelDTO getLevelByName(String name) {
-        QueryWrapper<MembershipLevel> wrapper = new QueryWrapper<>();
-        wrapper.eq("name", name);
-        MembershipLevel level = getOne(wrapper);
-        return level != null ? convertToDTO(level) : null;
-    }
 
     public boolean canUpgradeFrom(String fromLevelId, String toLevelId) {
         if (fromLevelId == null || toLevelId == null) {
@@ -79,7 +72,7 @@ public class MembershipLevelService extends ServiceImpl<MembershipLevelMapper, M
         dto.setMaxFileSizeFormatted(formatBytes(level.getMaxFileSize()));
         
         // 标记推荐等级
-        dto.setIsRecommended("基础版".equals(level.getName()));
+        dto.setIsRecommended("免费版".equals(level.getName()));
         
         return dto;
     }
