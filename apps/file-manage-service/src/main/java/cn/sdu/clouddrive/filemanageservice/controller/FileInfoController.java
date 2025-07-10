@@ -23,22 +23,23 @@ public class FileInfoController {
     }
 
     @GetMapping("/copy/{fileId}")
-    public Result<String> CopyFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String targetId){
+    public Result<String> CopyFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String targetId) {
         String newFileId = UUID.randomUUID().toString();
         fileInfoService.CopyFile(fileId, userId, targetId, newFileId);
+        fileInfoService.CreateTime(fileId, userId);
+        fileInfoService.UpdateTime(newFileId, userId);
         return Result.success("粘贴成功");
     }
 
     @GetMapping("/recycle/{fileId}")
-    public Result<String> RecycleFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String newDelFlag){
+    public Result<String> RecycleFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String newDelFlag) {
         int file_newDelFlag = Integer.parseInt(newDelFlag);
         String file_pid = "1";
         String message = "";
-        if (file_newDelFlag == 1){
+        if (file_newDelFlag == 1) {
             file_pid = "1";
             message = "回收成功";
-        }
-        else {
+        } else {
             file_pid = "0";
             message = "还原成功";
         }
@@ -47,10 +48,11 @@ public class FileInfoController {
     }
 
     @GetMapping("/rename/{fileId}")
-    public Result<String> RenameFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String newName){
+    public Result<String> RenameFile(@PathVariable String fileId, @RequestParam String userId, @RequestParam String newName) {
 
         String message = "重命名成功";
         fileInfoService.RenameFile(fileId, userId, newName);
+        fileInfoService.UpdateTime(fileId, userId);
         return Result.success(message);
     }
 
@@ -59,9 +61,21 @@ public class FileInfoController {
         String newFileId = UUID.randomUUID().toString();
         String message = "新建文件夹成功";
         fileInfoService.NewFolder(newFileId, userId, pid, newName);
+        fileInfoService.CreateTime(newFileId, userId);
+        fileInfoService.UpdateTime(newFileId, userId);
         return Result.success(message);
-
     }
 
-
+    @GetMapping("/recycle/delete/all")
+    public Result<String> clearRecycle(@RequestParam String userId) {
+        fileInfoService.clearRecycle(userId);
+        String message = "清空成功";
+        return Result.success(message);
+    }
+    @GetMapping("/recycle/delete/{fileId}")
+    public Result<String> deleteFile(@PathVariable String fileId, @RequestParam String userId) {
+        fileInfoService.deleteFile(fileId, userId);
+        String message = "删除成功";
+        return Result.success(message);
+    }
 }

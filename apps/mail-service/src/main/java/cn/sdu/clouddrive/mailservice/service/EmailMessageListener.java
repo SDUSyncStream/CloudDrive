@@ -7,6 +7,11 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
+/**
+ * 邮件消息监听器
+ * 监听RabbitMQ队列中的邮件验证码发送请求，并处理这些请求
+ */
 @Slf4j
 @Service
 public class EmailMessageListener {

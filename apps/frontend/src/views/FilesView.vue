@@ -145,11 +145,18 @@
     <!-- 路径导航 -->
     <div class="breadcrumb-container">
       <el-breadcrumb separator="/">
-        <el-breadcrumb-item :to="{ path: '/main/files' }">我的文件</el-breadcrumb-item>
-        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index"
-          :to="index < currentPath.length - 1 ? { path: generatePath(index) } : undefined">
-          {{ path }}
-        </el-breadcrumb-item>
+<!--        <el-breadcrumb-item :to="{ path: '/main/files' }">我的文件</el-breadcrumb-item>-->
+<!--        <el-breadcrumb-item v-for="(path, index) in currentPath" :key="index"-->
+<!--          :to="index < currentPath.length - 1 ? { path: generatePath(index) } : undefined">-->
+<!--          {{ path }}-->
+<!--        </el-breadcrumb-item>-->
+          <el-breadcrumb-item
+              v-for="item in breadcrumbList"
+              :key="index"
+              @click="handleBreadcrumbClick(item)"
+          >
+            {{ item.fileName }}
+          </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
 
@@ -280,6 +287,8 @@
 </template>
 
 <script setup lang="ts">
+import SparkMD5 from 'spark-md5'
+
 import {onMounted, ref} from 'vue'
 import { useRouter } from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
@@ -292,8 +301,11 @@ const router = useRouter()
 
 const viewMode = ref<'grid' | 'list'>('list')
 
-// 当前路径导航
-const currentPath = []
+const showUploader = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+const currentPath = ref<string[]>(['文档', '项目文件', '2024年度'])
+
+
 
 // 文件上传相关状态和变量
 const STATUS = {
@@ -346,6 +358,8 @@ onMounted(() => {
   nowfilePid = 0;
   getFileList(nowfilePid, nowUserId);
 })
+
+
 
 const getFileList = async(pid, userId) =>{
   try {
@@ -455,7 +469,44 @@ const updatetable = (data) => {
   tableData.value = data
 }
 
-let tableData = ref([])
+let tableData = ref([
+  {
+    fileId: 0,
+    fileName: "我的文件",
+  }
+])
+
+// 面包屑列表
+const breadcrumbList = ref([
+  {
+    fileId: 0,
+    fileName: "我的文件",
+    userId: nowUserId,
+  }
+]);
+
+// 更新面包屑列表
+const updateBreadcrumb = (item) => {
+  let i = 0;
+  for(i; i < breadcrumbList.value.length; i++){
+    if(breadcrumbList.value[i].fileId == item.fileId){
+      breadcrumbList.value.length = i + 1;
+      console.log(i);
+      break;
+    }
+  }
+  if(i == breadcrumbList.value.length){
+    breadcrumbList.value.push(item);
+  }
+  console.log("面包屑",breadcrumbList.value);
+}
+
+// 处理面包屑点击事件
+const handleBreadcrumbClick = async (item) => {
+  await getFileList(item.fileId, item.userId);
+  updateBreadcrumb(item);
+}
+
 
 // 显示文件选择器
 const showFileInput = () => {
@@ -604,7 +655,7 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     const end = Math.min(start + chunkSize, fileSize);
     const chunkFile = file.slice(start, end);
     let  userId=localStorage.getItem('UserId');
-    userId='274';
+    userId='1000000001';
     const formData = new FormData();
     formData.append('file', chunkFile);
     formData.append('fileName', file.name);
@@ -613,9 +664,6 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     formData.append('chunks', chunks.toString());
     formData.append('filePid', currentFile.filePid);
     formData.append('userId',userId);
-    if(currentFile.fileId){
-      formData.append('fileId',currentFile.fileId);
-    }
 
     try {
       const response = await fetch('/file/uploadFile', {
@@ -633,7 +681,6 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       currentFile.chunkIndex = i;
 
       if (result.data.fileId) {
-      console.log(result);
         currentFile.fileId = result.data.fileId;
       }
 
@@ -691,7 +738,8 @@ const handleFileClick = (item: any) => {
 
 const handleViewClick = (item) => {
   if (item.folderType == 1){
-    getFileList(item.fileId, item.userId)
+    getFileList(item.fileId, item.userId);
+    updateBreadcrumb(item);
   }
   else{
 
