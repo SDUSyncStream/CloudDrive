@@ -25,6 +25,9 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
     
     @Autowired
     private UserSubscriptionService userSubscriptionService;
+    
+    @Autowired
+    private UserService userService;
 
     public PaymentOrderDTO createPaymentOrder(CreatePaymentOrderRequest request) {
         MembershipLevel level = membershipLevelService.getById(request.getMembershipLevelId());
@@ -75,6 +78,16 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
             order.getPaymentMethod(),
             order.getAmount()
         );
+
+        // 更新用户存储配额
+        MembershipLevel level = membershipLevelService.getById(order.getMembershipLevelId());
+        if (level != null) {
+            boolean updateResult = userService.updateUserStorageQuota(order.getUserId(), level.getStorageQuota());
+            if (!updateResult) {
+                // 记录警告日志，但不影响支付流程
+                System.err.println("Warning: Failed to update user storage quota for user: " + order.getUserId());
+            }
+        }
 
         return convertToDTO(order);
     }
