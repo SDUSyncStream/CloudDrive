@@ -170,6 +170,11 @@ public class PaymentService extends ServiceImpl<PaymentOrderMapper, PaymentOrder
     }
 
     public List<PaymentOrderDTO> getUserPaymentOrders(String userId) {
+        // 首先检查用户是否存在
+        if (userService.getUserById(userId) == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
         QueryWrapper<PaymentOrder> wrapper = new QueryWrapper<>();
         wrapper.eq("user_id", userId).orderByDesc("created_at");
         

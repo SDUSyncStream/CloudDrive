@@ -51,8 +51,12 @@ public class PaymentController {
 
     @GetMapping("/orders/user/{userId}")
     public Result<List<PaymentOrderDTO>> getUserPaymentOrders(@PathVariable String userId) {
-        List<PaymentOrderDTO> orders = paymentService.getUserPaymentOrders(userId);
-        return Result.success(orders);
+        try {
+            List<PaymentOrderDTO> orders = paymentService.getUserPaymentOrders(userId);
+            return Result.success(orders);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @PostMapping("/orders/{orderId}/cancel")
