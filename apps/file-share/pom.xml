@@ -12,12 +12,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.pan</groupId>
-    <artifactId>pan</artifactId>
+    <groupId>cn.sdu.clouddrive.cloudd.fileshare</groupId>
+    <artifactId>file-share</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
-    <name>pan</name>
-    <description>pan</description>
+    <name>file-share</name>
+    <description>file-share</description>
 
     <properties>
         <java.version>17</java.version>
