@@ -1,5 +1,5 @@
 // src/main/java/cn/sdu/clouddrive/admin/Service/EmailService.java
-package cn.sdu.clouddrive.admin.Service;
+package cn.sdu.clouddrive.admin.Service.Impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
@@ -40,14 +40,12 @@ public class EmailService {
                         "  - 开始日期: %s\n" +
                         "  - 结束日期: %s\n" +
                         "  - 当前状态: %s\n" +
-                        "  - 支付金额: %s 元\n\n" +
                         "感谢您的使用！\n云盘管理团队",
                 message.getUsername(),
                 message.getMembershipLevelId(),
                 message.getStartDate(),
                 message.getEndDate(),
-                message.getStatus(),
-                message.getPaymentAmount()
+                message.getStatus()
         );
 
         sendSimpleEmail(message.getUserEmail(), subject, emailText);
