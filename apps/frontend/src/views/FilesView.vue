@@ -16,27 +16,27 @@
               <el-progress
                 :percentage="item.uploadProgress"
                 v-if="
-                  item.status == STATUS.uploading.value ||
-                  item.status == STATUS.upload_seconds.value ||
-                  item.status == STATUS.upload_finish.value
+                  item.status == 'uploading' ||
+                  item.status == 'upload_seconds' ||
+                  item.status == 'upload_finish'
                 "
               />
             </div>
             <div class="upload-status">
               <span
-                :class="['iconfont', 'icon-' + STATUS[item.status].icon]"
-                :style="{ color: STATUS[item.status].color }"
+                :class="['iconfont', 'icon-' + (getStatusInfo(item.status)?.icon || 'question')]"
+                :style="{ color: getStatusInfo(item.status)?.color || '#909399' }"
               ></span>
               <span
                 class="status"
-                :style="{ color: STATUS[item.status].color }"
+                :style="{ color: getStatusInfo(item.status)?.color || '#909399' }"
                 >{{
-                  item.status == "fail" ? item.errorMsg : STATUS[item.status].desc
+                  item.status == "fail" ? item.errorMsg : (getStatusInfo(item.status)?.desc || item.status)
                 }}</span
               >
               <span
                 class="upload-info"
-                v-if="item.status == STATUS.uploading.value"
+                v-if="item.status == 'uploading'"
               >
                 {{ size2Str(item.uploadSize) }}/{{
                   size2Str(item.totalSize)
@@ -49,10 +49,10 @@
               type="circle"
               :width="50"
               :percentage="item.md5Progress"
-              v-if="item.status == STATUS.init.value"
+              v-if="item.status == 'init'"
             />
             <div class="op-btn">
-              <span v-if="item.status === STATUS.uploading.value">
+              <span v-if="item.status === 'uploading'">
                 <el-button
                   link
                   type="primary"
@@ -80,9 +80,9 @@
                 size="small"
                 title="删除"
                 v-if="
-                  item.status != STATUS.init.value &&
-                  item.status != STATUS.upload_finish.value &&
-                  item.status != STATUS.upload_seconds.value
+                  item.status != 'init' &&
+                  item.status != 'upload_finish' &&
+                  item.status != 'upload_seconds'
                 "
                 @click.stop="delUpload(item.uid, index)"
               >
@@ -94,8 +94,8 @@
                 size="small"
                 title="清除"
                 v-if="
-                  item.status == STATUS.upload_finish.value ||
-                  item.status == STATUS.upload_seconds.value
+                  item.status == 'upload_finish' ||
+                  item.status == 'upload_seconds'
                 "
                 @click.stop="delUpload(item.uid, index)"
               >
@@ -357,7 +357,6 @@ const delList = ref<any[]>([]);
 let nowfilePid = 0;
 let nowUserId = localStorage.getItem("UserId") || '2'; // 默认用户ID为2
 onMounted(() => {
-//  userId = localStorage.getItem("UserId");
   nowfilePid = 0;
   getFileList(nowfilePid, nowUserId);
 })
@@ -526,7 +525,7 @@ const handleFileChange = (event: Event) => {
   if (target.files && target.files.length > 0) {
     for (let i = 0; i < target.files.length; i++) {
       const file = target.files[i];
-      addFile(file, '0'); // '0' 表示根目录
+      addFile(file, nowfilePid); // '0' 表示根目录
     }
     showUploader.value = true;
   }
@@ -540,7 +539,7 @@ const addFile = async (file: File, filePid: string) => {
     md5Progress: 0,
     md5: null,
     fileName: file.name,
-    status: STATUS.init.value,
+    status: 'init',
     uploadSize: 0,
     totalSize: file.size,
     uploadProgress: 0,
@@ -551,14 +550,16 @@ const addFile = async (file: File, filePid: string) => {
   };
 
   fileList.value.unshift(fileItem);
-
   if (fileItem.totalSize === 0) {
-    fileItem.status = STATUS.emptyfile.value;
+    fileItem.status = 'emptyfile';
     return;
   }
 
   const md5FileUid = await computeMD5(fileItem);
   if (md5FileUid) {
+    fileItem.status = 'uploading';
+    // 强制触发Vue响应式更新
+    fileList.value = [...fileList.value];
     uploadFile(md5FileUid);
   }
 };
@@ -590,7 +591,7 @@ const delUpload = (uid: string, index: number) => {
 };
 
 // 计算MD5
-const computeMD5 = (fileItem: any) => {
+const computeMD5 = (fileItem: any): Promise<string | null> => {
   return new Promise((resolve) => {
     const file = fileItem.file;
     const blobSlice = File.prototype.slice;
@@ -618,8 +619,10 @@ const computeMD5 = (fileItem: any) => {
       } else {
         const md5 = spark.end();
         fileItem.md5Progress = 100;
-        fileItem.status = STATUS.uploading.value;
+        fileItem.status = 'uploading';
         fileItem.md5 = md5;
+        // 强制触发Vue响应式更新
+        fileList.value = [...fileList.value];
         resolve(fileItem.uid);
         spark.destroy();
       }
@@ -627,7 +630,8 @@ const computeMD5 = (fileItem: any) => {
 
     fileReader.onerror = () => {
       fileItem.md5Progress = -1;
-      fileItem.status = STATUS.fail.value;
+      fileItem.status = 'fail';
+      console.error('MD5计算失败');
       resolve(null);
     };
 
@@ -638,7 +642,10 @@ const computeMD5 = (fileItem: any) => {
 // 上传文件
 const uploadFile = async (uid: string, chunkIndex = 0) => {
   const currentFile = getFileByUid(uid);
-  if (!currentFile) return;
+  if (!currentFile) {
+    console.error('找不到文件，uid:', uid);
+    return;
+  }
 
   const file = currentFile.file;
   const fileSize = currentFile.totalSize;
@@ -646,7 +653,9 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
 
   // 初始化已上传大小为之前的分片大小
   currentFile.uploadSize = chunkIndex * chunkSize;
-
+  // 确保uploadProgress有初始值
+  currentFile.uploadProgress = currentFile.uploadProgress || 0;
+  
   for (let i = chunkIndex; i < chunks; i++) {
     // 检查是否被删除
     if (delList.value.includes(uid)) {
@@ -670,8 +679,8 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     formData.append('fileMd5', currentFile.md5 || '');
     formData.append('chunkIndex', i.toString());
     formData.append('chunks', chunks.toString());
-    formData.append('filePid', currentFile.filePid);
-    formData.append('userId',userId);
+    formData.append('filePid', nowfilePid);
+    formData.append('userId', userId);
      if(currentFile.fileId){
         formData.append('fileId', currentFile.fileId); // 如果有文件 ID，添加到表单数据中
       }
@@ -687,11 +696,11 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       }
 
       const result = await response.json();
-      currentFile.status = STATUS[result.data.status].value;
+      // 直接使用后端返回的状态值，不需要通过STATUS对象转换
+      currentFile.status = result.data.status;
       currentFile.chunkIndex = i;
 
       if (result.data.fileId) {
-      console.log(result);
         currentFile.fileId = result.data.fileId;
       }
 
@@ -701,19 +710,19 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
         100,
         Math.floor((currentFile.uploadSize / fileSize) * 100)
       );
-
+      
       // 上传完成
       if (
-        result.data.status === STATUS.upload_seconds.value ||
-        result.data.status === STATUS.upload_finish.value
+        result.data.status === 'upload_seconds' ||
+        result.data.status === 'upload_finish'
       ) {
         currentFile.uploadProgress = 100;
         ElMessage.success(`文件 ${file.name} 上传成功`);
-        getFileList(currentFile.filePid, userId);
+        getFileList(nowfilePid, userId);
         break;
       }
     } catch (error: any) {
-      currentFile.status = STATUS.fail.value;
+      currentFile.status = 'fail';
       currentFile.errorMsg = error.message || '上传出错';
       break;
     }
@@ -814,8 +823,23 @@ const handleDownload=async (row:any)=>{
     downloadingFiles.value.delete(row.fileId);
   }
 }
-const handleRowClick =  (row: any) => {
 
+// 根据状态值获取STATUS信息
+const getStatusInfo = (status: string) => {
+  // 找到STATUS对象中value匹配的项
+  const statusKeys = Object.keys(STATUS) as (keyof typeof STATUS)[];
+  for (const key of statusKeys) {
+    if (STATUS[key].value === status) {
+      return STATUS[key];
+    }
+  }
+  // 如果没找到，返回默认值
+  return {
+    value: status,
+    desc: status,
+    color: "#909399",
+    icon: "question"
+  };
 };
 </script>
 
