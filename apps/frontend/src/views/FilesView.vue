@@ -16,27 +16,27 @@
               <el-progress
                 :percentage="item.uploadProgress"
                 v-if="
-                  item.status == 'uploading' ||
-                  item.status == 'upload_seconds' ||
-                  item.status == 'upload_finish'
+                  item.status == STATUS.uploading.value ||
+                  item.status == STATUS.upload_seconds.value ||
+                  item.status == STATUS.upload_finish.value
                 "
               />
             </div>
             <div class="upload-status">
               <span
-                :class="['iconfont', 'icon-' + (getStatusInfo(item.status)?.icon || 'question')]"
-                :style="{ color: getStatusInfo(item.status)?.color || '#909399' }"
+                :class="['iconfont', 'icon-' + STATUS[item.status].icon]"
+                :style="{ color: STATUS[item.status].color }"
               ></span>
               <span
                 class="status"
-                :style="{ color: getStatusInfo(item.status)?.color || '#909399' }"
+                :style="{ color: STATUS[item.status].color }"
                 >{{
-                  item.status == "fail" ? item.errorMsg : (getStatusInfo(item.status)?.desc || item.status)
+                  item.status == "fail" ? item.errorMsg : STATUS[item.status].desc
                 }}</span
               >
               <span
                 class="upload-info"
-                v-if="item.status == 'uploading'"
+                v-if="item.status == STATUS.uploading.value"
               >
                 {{ size2Str(item.uploadSize) }}/{{
                   size2Str(item.totalSize)
@@ -49,10 +49,10 @@
               type="circle"
               :width="50"
               :percentage="item.md5Progress"
-              v-if="item.status == 'init'"
+              v-if="item.status == STATUS.init.value"
             />
             <div class="op-btn">
-              <span v-if="item.status === 'uploading'">
+              <span v-if="item.status === STATUS.uploading.value">
                 <el-button
                   link
                   type="primary"
@@ -80,9 +80,9 @@
                 size="small"
                 title="删除"
                 v-if="
-                  item.status != 'init' &&
-                  item.status != 'upload_finish' &&
-                  item.status != 'upload_seconds'
+                  item.status != STATUS.init.value &&
+                  item.status != STATUS.upload_finish.value &&
+                  item.status != STATUS.upload_seconds.value
                 "
                 @click.stop="delUpload(item.uid, index)"
               >
@@ -94,8 +94,8 @@
                 size="small"
                 title="清除"
                 v-if="
-                  item.status == 'upload_finish' ||
-                  item.status == 'upload_seconds'
+                  item.status == STATUS.upload_finish.value ||
+                  item.status == STATUS.upload_seconds.value
                 "
                 @click.stop="delUpload(item.uid, index)"
               >
@@ -190,7 +190,7 @@
               <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(row)">
                 <el-icon><View /></el-icon>
               </el-button>
-              <el-button link type="primary" size="small" title="分享文件" @click="handleShare(row)">
+              <el-button link type="primary" size="small" title="分享文件">
                 <el-icon><Share /></el-icon>
               </el-button>
               <el-button link type="primary" size="small" title="下载文件" @click="handleDownload(row)">
@@ -242,7 +242,7 @@
                 <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(item)">
                   <el-icon><View /></el-icon>
                 </el-button>
-                <el-button link type="primary" size="small" title="分享文件" @click="handleShare(item)">
+                <el-button link type="primary" size="small" title="分享文件">
                   <el-icon><Share /></el-icon>
                 </el-button>
                 <el-button link type="primary" size="small" title="下载文件" @click="handleDownload(item)">
@@ -286,30 +286,33 @@
       style="display: none"
       multiple
     />
-
-    <el-dialog v-model="shareDialogVisible" title="创建分享" width="400px">
-      <el-form :model="shareForm">
-        <el-form-item label="有效期">
-          <el-select v-model="shareForm.expireDays" placeholder="请选择">
-            <el-option label="1天" :value="1" />
-            <el-option label="7天" :value="7" />
-            <el-option label="永久" :value="0" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="shareDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitShare">创建分享</el-button>
+    <!-- 预览对话框 -->
+    <el-dialog
+        v-model="previewDialogVisible"
+        title="文件预览"
+        width="80%"
+        height="80%"
+        :before-close="handleClosePreview"
+    >
+      <template #content>
+        <div v-if="previewType == 'image'" class="preview-image-container">
+          <img :src="previewUrl" :alt="previewFileName" class="preview-image" />
+        </div>
+        <div v-else-if="previewType == 'text'" class="preview-text-container">
+          <pre class="preview-text">{{ previewContent }}</pre>
+        </div>
+        <div v-else class="preview-unsupported">
+          <el-icon><Document /></el-icon>
+          <p>不支持预览此文件类型</p>
+          <p>文件类型: {{ previewFileExtension }}</p>
+        </div>
       </template>
-    </el-dialog>
-    <el-dialog v-model="shareResultVisible" title="分享成功" width="400px">
-      <div style="margin-bottom: 10px;">
-        分享链接：<el-input v-model="shareUrl" readonly style="width: 90%;" />
-      </div>
-      <div v-if="shareCode" style="margin-bottom: 10px;">
-        提取码：<el-input v-model="shareCode" readonly style="width: 90%;" />
-      </div>
-      <el-button type="primary" @click="copyShareUrl">复制链接</el-button>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="previewDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleDownload(previewFile)">下载文件</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -382,6 +385,7 @@ const delList = ref<any[]>([]);
 let nowfilePid = 0;
 let nowUserId = localStorage.getItem("UserId") || '2'; // 默认用户ID为2
 onMounted(() => {
+//  userId = localStorage.getItem("UserId");
   nowfilePid = 0;
   getFileList(nowfilePid, nowUserId);
 })
@@ -550,7 +554,7 @@ const handleFileChange = (event: Event) => {
   if (target.files && target.files.length > 0) {
     for (let i = 0; i < target.files.length; i++) {
       const file = target.files[i];
-      addFile(file, nowfilePid); // '0' 表示根目录
+      addFile(file, '0'); // '0' 表示根目录
     }
     showUploader.value = true;
   }
@@ -564,7 +568,7 @@ const addFile = async (file: File, filePid: string) => {
     md5Progress: 0,
     md5: null,
     fileName: file.name,
-    status: 'init',
+    status: STATUS.init.value,
     uploadSize: 0,
     totalSize: file.size,
     uploadProgress: 0,
@@ -575,16 +579,14 @@ const addFile = async (file: File, filePid: string) => {
   };
 
   fileList.value.unshift(fileItem);
+
   if (fileItem.totalSize === 0) {
-    fileItem.status = 'emptyfile';
+    fileItem.status = STATUS.emptyfile.value;
     return;
   }
 
   const md5FileUid = await computeMD5(fileItem);
   if (md5FileUid) {
-    fileItem.status = 'uploading';
-    // 强制触发Vue响应式更新
-    fileList.value = [...fileList.value];
     uploadFile(md5FileUid);
   }
 };
@@ -616,7 +618,7 @@ const delUpload = (uid: string, index: number) => {
 };
 
 // 计算MD5
-const computeMD5 = (fileItem: any): Promise<string | null> => {
+const computeMD5 = (fileItem: any) => {
   return new Promise((resolve) => {
     const file = fileItem.file;
     const blobSlice = File.prototype.slice;
@@ -644,10 +646,8 @@ const computeMD5 = (fileItem: any): Promise<string | null> => {
       } else {
         const md5 = spark.end();
         fileItem.md5Progress = 100;
-        fileItem.status = 'uploading';
+        fileItem.status = STATUS.uploading.value;
         fileItem.md5 = md5;
-        // 强制触发Vue响应式更新
-        fileList.value = [...fileList.value];
         resolve(fileItem.uid);
         spark.destroy();
       }
@@ -655,8 +655,7 @@ const computeMD5 = (fileItem: any): Promise<string | null> => {
 
     fileReader.onerror = () => {
       fileItem.md5Progress = -1;
-      fileItem.status = 'fail';
-      console.error('MD5计算失败');
+      fileItem.status = STATUS.fail.value;
       resolve(null);
     };
 
@@ -667,10 +666,7 @@ const computeMD5 = (fileItem: any): Promise<string | null> => {
 // 上传文件
 const uploadFile = async (uid: string, chunkIndex = 0) => {
   const currentFile = getFileByUid(uid);
-  if (!currentFile) {
-    console.error('找不到文件，uid:', uid);
-    return;
-  }
+  if (!currentFile) return;
 
   const file = currentFile.file;
   const fileSize = currentFile.totalSize;
@@ -678,9 +674,7 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
 
   // 初始化已上传大小为之前的分片大小
   currentFile.uploadSize = chunkIndex * chunkSize;
-  // 确保uploadProgress有初始值
-  currentFile.uploadProgress = currentFile.uploadProgress || 0;
-  
+
   for (let i = chunkIndex; i < chunks; i++) {
     // 检查是否被删除
     if (delList.value.includes(uid)) {
@@ -697,15 +691,15 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
     const end = Math.min(start + chunkSize, fileSize);
     const chunkActualSize = end - start; // 当前分片实际大小
     const chunkFile = file.slice(start, end);
-    let  userId=localStorage.getItem('UserId');                             //测试专用
+    let  userId=localStorage.getItem('UserId') || '2';                             //测试专用
     const formData = new FormData();
     formData.append('file', chunkFile);
     formData.append('fileName', file.name);
     formData.append('fileMd5', currentFile.md5 || '');
     formData.append('chunkIndex', i.toString());
     formData.append('chunks', chunks.toString());
-    formData.append('filePid', nowfilePid);
-    formData.append('userId', userId);
+    formData.append('filePid', currentFile.filePid);
+    formData.append('userId',userId);
      if(currentFile.fileId){
         formData.append('fileId', currentFile.fileId); // 如果有文件 ID，添加到表单数据中
       }
@@ -721,11 +715,11 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
       }
 
       const result = await response.json();
-      // 直接使用后端返回的状态值，不需要通过STATUS对象转换
-      currentFile.status = result.data.status;
+      currentFile.status = STATUS[result.data.status].value;
       currentFile.chunkIndex = i;
 
       if (result.data.fileId) {
+      console.log(result);
         currentFile.fileId = result.data.fileId;
       }
 
@@ -735,19 +729,19 @@ const uploadFile = async (uid: string, chunkIndex = 0) => {
         100,
         Math.floor((currentFile.uploadSize / fileSize) * 100)
       );
-      
+
       // 上传完成
       if (
-        result.data.status === 'upload_seconds' ||
-        result.data.status === 'upload_finish'
+        result.data.status === STATUS.upload_seconds.value ||
+        result.data.status === STATUS.upload_finish.value
       ) {
         currentFile.uploadProgress = 100;
         ElMessage.success(`文件 ${file.name} 上传成功`);
-        getFileList(nowfilePid, userId);
+        getFileList(currentFile.filePid, userId);
         break;
       }
     } catch (error: any) {
-      currentFile.status = 'fail';
+      currentFile.status = STATUS.fail.value;
       currentFile.errorMsg = error.message || '上传出错';
       break;
     }
@@ -782,15 +776,124 @@ const handleFileClick = (item: any) => {
   console.log('File clicked:', item)
 }
 
-const handleViewClick = (item) => {
-  if (item.folderType == 1){
+// 预览相关状态
+const previewDialogVisible = ref(false)
+const previewType = ref('') // 'image', 'text', 'unsupported'
+const previewUrl = ref('')
+const previewContent = ref('')
+const previewFileName = ref('')
+const previewFileExtension = ref('')
+const previewFile = ref(null)
+
+// 支持预览的图片格式
+const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']
+// 支持预览的文本格式
+const textExtensions = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'ts', 'java', 'py', 'php', 'c', 'cpp', 'cs', 'sql']
+const urlPreFix = "file:///E:/IDEA java project/CloudDrive/";
+
+// 获取文件扩展名
+const getFileExtension = (fileName: string) => {
+  if (!fileName || typeof fileName !== 'string') return ''
+  const parts = fileName.split('.')
+  return parts.length > 1 ? parts.pop()?.toLowerCase() || '' : ''
+}
+
+// 检查文件是否为图片
+const isImageFile = (fileName: string) => {
+  const ext = getFileExtension(fileName)
+  return imageExtensions.includes(ext)
+}
+
+const isTextFile = (fileName: string) => {
+  const ext = getFileExtension(fileName)
+  return textExtensions.includes(ext)
+}
+
+const handleViewClick = async (item) => {
+  if (item.folderType == 1) {
     getFileList(item.fileId, item.userId);
     updateBreadcrumb(item);
-  }
-  else{
+  } else {
+    previewFile.value = item
+    previewFileName.value = item.fileName
+    previewFileExtension.value = getFileExtension(item.fileName)
 
+    if (isImageFile(item.fileName)) {
+      previewType.value = 'image'
+      try {
+        // 1. 创建下载链接获取code
+        const userId = localStorage.getItem('UserId') || '2'; // 测试专用，实际应使用localStorage.getItem('userId')
+        const createUrlRes = await axios.get(`/fileup/createDownloadUrl/${item.fileId}`, {
+          params: { userId }
+        });
+        if (createUrlRes.data.code !== 200) {
+          throw new Error(createUrlRes.data.message || '获取下载链接失败');
+        }
+        const  downloadcode  = createUrlRes.data.data; // 获取后端返回的下载code
+        if (downloadcode== null || downloadcode === undefined) {
+          throw new Error('获取下载链接失败');
+        }
+
+        // 2. 使用code下载文件
+        const downloadRes = await axios.get(`/fileup/download/${downloadcode}`, {
+          responseType: 'blob'
+        });
+
+        let blob = new Blob([downloadRes.data], { type: 'image/jpeg' })
+        console.log(blob.type)
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob);
+
+        window.open(url)
+
+      } catch (error: any) {
+        console.error('获取预览链接失败:', error);
+        ElMessage.error(`预览失败: ${error.response?.data?.message || error.message || '未知错误'}`);
+      }
+    } else if (isTextFile(item.fileName)) {
+      previewType.value = 'text'
+      try {
+        // 1. 创建下载链接获取code
+        const userId = localStorage.getItem('UserId') || '2'; // 测试专用，实际应使用localStorage.getItem('userId')
+        const createUrlRes = await axios.get(`/fileup/createDownloadUrl/${item.fileId}`, {
+          params: { userId }
+        });
+        if (createUrlRes.data.code !== 200) {
+          throw new Error(createUrlRes.data.message || '获取下载链接失败');
+        }
+        const  downloadcode  = createUrlRes.data.data; // 获取后端返回的下载code
+        if (downloadcode== null || downloadcode === undefined) {
+          throw new Error('获取下载链接失败');
+        }
+
+        // 2. 使用code下载文件
+        const downloadRes = await axios.get(`/fileup/download/${downloadcode}`, {
+          responseType: 'text'
+        });
+        let blob = new Blob([downloadRes.data], { type: 'text/plain' })
+        console.log(blob.type)
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob);
+
+        window.open(url)
+      } catch (error: any) {
+        console.error('获取文件内容失败:', error);
+        ElMessage.error(`预览失败: ${error.response?.data?.message || error.message || '未知错误'}`);
+      }
+    } else {
+      previewType.value = 'unsupported'
+      previewDialogVisible.value = true
+    }
   }
 }
+
+const handleClosePreview = () => {
+  previewDialogVisible.value = false
+  previewUrl.value = ''
+  previewContent.value = ''
+}
+
+
 const handleDownload=async (row:any)=>{
  // 如果是文件夹，提示不能下载
   if (row.folderType === 1) {
@@ -810,7 +913,7 @@ const handleDownload=async (row:any)=>{
     ElMessage.info(`开始下载: ${row.fileName}`);
 
     // 1. 创建下载链接获取code
-    const userId = localStorage.getItem('UserId'); // 测试专用，实际应使用localStorage.getItem('userId')
+    const userId = localStorage.getItem('UserId') || '2'; // 测试专用，实际应使用localStorage.getItem('userId')
     const createUrlRes = await axios.get(`/fileup/createDownloadUrl/${row.fileId}`, {
       params: { userId }
     });
@@ -848,75 +951,9 @@ const handleDownload=async (row:any)=>{
     downloadingFiles.value.delete(row.fileId);
   }
 }
+const handleRowClick =  (row: any) => {
 
-// 根据状态值获取STATUS信息
-const getStatusInfo = (status: string) => {
-  // 找到STATUS对象中value匹配的项
-  const statusKeys = Object.keys(STATUS) as (keyof typeof STATUS)[];
-  for (const key of statusKeys) {
-    if (STATUS[key].value === status) {
-      return STATUS[key];
-    }
-  }
-  // 如果没找到，返回默认值
-  return {
-    value: status,
-    desc: status,
-    color: "#909399",
-    icon: "question"
-  };
 };
-
-const shareDialogVisible = ref(false)
-const shareResultVisible = ref(false)
-const shareForm = ref({
-  fileId: null,
-  expireDays: 7,
-})
-const shareUrl = ref('')
-const shareCode = ref('')
-
-const handleShare = (row: any) => {
-  shareForm.value = {
-    fileId: row.fileId,
-    expireDays: 7,
-  }
-  shareDialogVisible.value = true
-}
-
-const validTypeMap = { 1: 1, 7: 2, 0: 0 } // 1天=1, 7天=2, 永久=0
-
-const submitShare = async () => {
-  try {
-    // 始终生成5位随机提取码
-    const code = Math.random().toString(36).slice(-5)
-    const res = await axios.post('/share/shareFile', null, {
-      params: {
-        fileId: shareForm.value.fileId,
-        validType: validTypeMap[shareForm.value.expireDays],
-        code,
-        userId: localStorage.getItem('UserId') || '2'
-      }
-    })
-    if (res.data.code !== 200 && res.data.status !== 0) {
-      ElMessage.error(res.data.message || '分享失败')
-      return
-    }
-    const shareData = res.data.data || res.data
-    shareUrl.value = `${window.location.origin}/share/${shareData.shareId || shareData.share_id}`
-    shareCode.value = code
-    shareDialogVisible.value = false
-    shareResultVisible.value = true
-  } catch (e) {
-    ElMessage.error('分享失败')
-  }
-}
-
-const copyShareUrl = () => {
-  const text = shareUrl.value + (shareCode.value ? ` 提取码:${shareCode.value}` : '')
-  navigator.clipboard.writeText(text)
-  ElMessage.success('已复制到剪贴板')
-}
 </script>
 
 <style scoped>
@@ -1171,5 +1208,49 @@ const copyShareUrl = () => {
 .file-card-actions .el-button .el-icon {
   color: #677AFA !important;
   font-size: 14px;
+}
+
+/* 预览对话框样式 */
+.preview-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.preview-text-container {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.preview-text {
+  font-family: monospace;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background-color: #f5f5f5;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.preview-unsupported {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  color: #909399;
+}
+
+.preview-unsupported .el-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
 }
 </style>
