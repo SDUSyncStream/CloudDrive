@@ -190,7 +190,7 @@
               <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(row)">
                 <el-icon><View /></el-icon>
               </el-button>
-              <el-button link type="primary" size="small" title="分享文件">
+              <el-button link type="primary" size="small" title="分享文件" @click="handleShare(row)">
                 <el-icon><Share /></el-icon>
               </el-button>
               <el-button link type="primary" size="small" title="下载文件" @click="handleDownload(row)">
@@ -242,7 +242,7 @@
                 <el-button link type="primary" size="small" title="查看文件" @click="handleViewClick(item)">
                   <el-icon><View /></el-icon>
                 </el-button>
-                <el-button link type="primary" size="small" title="分享文件">
+                <el-button link type="primary" size="small" title="分享文件" @click="handleShare(item)">
                   <el-icon><Share /></el-icon>
                 </el-button>
                 <el-button link type="primary" size="small" title="下载文件" @click="handleDownload(item)">
@@ -314,6 +314,32 @@
         </span>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="shareDialogVisible" title="创建分享" width="400px">
+      <el-form :model="shareForm">
+        <el-form-item label="有效期">
+          <el-select v-model="shareForm.expireDays" placeholder="请选择">
+            <el-option label="1天" :value="1" />
+            <el-option label="7天" :value="7" />
+            <el-option label="永久" :value="0" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="shareDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitShare">创建分享</el-button>
+      </template>
+    </el-dialog>
+    <el-dialog v-model="shareResultVisible" title="分享成功" width="400px">
+      <div style="margin-bottom: 10px;">
+        分享链接：<el-input v-model="shareUrl" readonly style="width: 90%;" />
+      </div>
+      <div v-if="shareCode" style="margin-bottom: 10px;">
+        提取码：<el-input v-model="shareCode" readonly style="width: 90%;" />
+      </div>
+      <el-button type="primary" @click="copyShareUrl">复制链接</el-button>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -898,6 +924,57 @@ const handleViewClick = async (item) => {
       previewDialogVisible.value = true
     }
   }
+}
+
+const shareDialogVisible = ref(false)
+const shareResultVisible = ref(false)
+const shareForm = ref({
+  fileId: null,
+  expireDays: 7,
+})
+const shareUrl = ref('')
+const shareCode = ref('')
+
+const handleShare = (row: any) => {
+  shareForm.value = {
+    fileId: row.fileId,
+    expireDays: 7,
+  }
+  shareDialogVisible.value = true
+}
+
+const validTypeMap = { 1: 1, 7: 2, 0: 0 } // 1天=1, 7天=2, 永久=0
+
+const submitShare = async () => {
+  try {
+    // 始终生成5位随机提取码
+    const code = Math.random().toString(36).slice(-5)
+    const res = await axios.post('/share/shareFile', null, {
+      params: {
+        fileId: shareForm.value.fileId,
+        validType: validTypeMap[shareForm.value.expireDays],
+        code,
+        userId: localStorage.getItem('UserId') || '2'
+      }
+    })
+    if (res.data.code !== 200 && res.data.status !== 0) {
+      ElMessage.error(res.data.message || '分享失败')
+      return
+    }
+    const shareData = res.data.data || res.data
+    shareUrl.value = `${window.location.origin}/share/${shareData.shareId || shareData.share_id}`
+    shareCode.value = code
+    shareDialogVisible.value = false
+    shareResultVisible.value = true
+  } catch (e) {
+    ElMessage.error('分享失败')
+  }
+}
+
+const copyShareUrl = () => {
+  const text = shareUrl.value + (shareCode.value ? ` 提取码:${shareCode.value}` : '')
+  navigator.clipboard.writeText(text)
+  ElMessage.success('已复制到剪贴板')
 }
 
 const handleClosePreview = () => {
