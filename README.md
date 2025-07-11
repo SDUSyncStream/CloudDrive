@@ -1,579 +1,197 @@
-# CloudDrive
+# CloudDrive - 多用户线上网盘
 
-一个基于 Vue 3 + Spring Cloud Alibaba 的企业级云存储系统，采用微服务架构 + 大数据技术栈
+> 基于微服务架构的现代化云存储解决方案
 
-## 🚀 项目状态
+## 📋 项目概述
 
-| 模块 | 状态 | 说明 |
-|------|------|------|
-| 🎨 **前端 (Vue 3)** | ✅ **完成** | 完整的用户界面，可独立运行 |
-| 🌐 **API网关** | ✅ **完成** | Spring Cloud Gateway (8080) |
-| 🔐 **认证服务** | ✅ **完成** | JWT认证 + Redis Token管理 (8081) |
-| 📁 **文件服务** | ⏳ **架构完成** | Hadoop HDFS + Flink集成 (8082) |
-| 🛠️ **管理服务** | ⏳ **架构完成** | 系统管理 + 监控 (8083) |
-| 💎 **会员服务** | ✅ **完成** | 订阅管理 + 支付 (8084) |
-| 📊 **服务注册** | ✅ **完成** | Nacos服务发现 + 配置中心 |
-| 🔴 **Redis缓存** | ✅ **完成** | Token存储 + 会话管理 |
-| 🐳 **容器化** | ✅ **完成** | 微服务Docker编排 |
-| 🗄️ **数据库** | ✅ **完成** | MySQL + 会员表设计 |
-| 🔄 **CI/CD** | ✅ **完成** | GitHub Actions自动化 |
+CloudDrive是一个功能完整的多用户线上网盘系统，采用前后端分离架构，支持文件上传下载、分享、会员订阅等核心功能。系统基于Spring Cloud微服务架构，提供高可用、高性能的云存储服务。
 
-## 🏗️ 微服务架构
+## 🏗️ 技术架构
 
-本项目采用**Spring Cloud Alibaba微服务架构**，支持高可用、可扩展的企业级部署：
+### 后端微服务架构
+- **网关服务** (Gateway): Spring Cloud Gateway - 统一API入口
+- **用户服务** (User Service): 用户认证和权限管理
+- **文件服务** (File Service): 文件上传、下载、管理
+- **管理服务** (Admin Service): 系统管理和监控
+- **会员服务** (Membership Service): 订阅管理和支付处理
+- **邮件服务** (Mail Service): 邮件通知和验证
+- **认证服务** (Auth Service): JWT认证服务
+
+### 前端技术栈
+- **Vue 3.3.4** + TypeScript + Vite
+- **Element Plus** UI组件库
+- **Pinia** 状态管理
+- **Vue Router 4** 路由管理
+- **ECharts** 数据可视化
+
+### 基础设施
+- **Nacos**: 服务注册与发现、配置管理
+- **MySQL**: 主数据库
+- **Redis**: 缓存和会话存储
+- **RabbitMQ**: 消息队列
+- **Docker**: 容器化部署
+
+## ✨ 核心功能
+
+### 👤 用户功能
+- **用户管理**: 注册、登录、个人资料
+- **文件管理**: 上传、下载、文件夹管理、回收站
+- **文件分享**: 密码保护的分享链接
+- **会员系统**: 多级会员订阅、存储空间升级
+- **订单管理**: 支付订单跟踪
+
+### 🔧 管理功能
+- **系统仪表板**: 用户增长、存储使用趋势
+- **用户管理**: 用户信息管理、会员状态修改
+- **文件管理**: 全局文件监控和管理
+- **订单管理**: 支付订单监控
+
+### 💎 会员系统
+| 等级 | 价格 | 存储空间 | 单文件限制 |
+|------|------|----------|------------|
+| 免费版 | ¥0.00 | 1GB | 100MB |
+| 标准版 | ¥19.99 | 5GB | 500MB |
+| 高级版 | ¥39.99 | 50GB | 5GB |
+| 专业版 | ¥79.99 | 200GB | 10GB |
+| 企业版 | ¥199.99 | 1TB | 20GB |
+
+## 🚀 快速开始
+
+### 环境要求
+- **Java 17+**
+- **Node.js 18+**
+- **Docker & Docker Compose**
+- **MySQL 8.0+**
+- **Redis 7+**
+
+### 一键启动
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/SDUSyncStream/CloudDrive.git
+cd CloudDrive
+
+# 2. 启动基础设施和微服务
+cd docker
+docker-compose up -d
+
+# 3. 数据库初始化
+docker exec -i mysql mysql -u root -p123456 < ../sql/01_create_database.sql
+docker exec -i mysql mysql -u root -p123456 < ../sql/02_insert_data.sql
+
+# 4. 启动前端
+cd ../apps/frontend
+npm install
+npm run dev
+```
+
+### 访问地址
+- **前端应用**: http://localhost:3000
+- **API网关**: http://localhost:8080
+- **Nacos控制台**: http://localhost:8848/nacos
+- **系统管理**: http://localhost:3000/admin (admin/password)
+
+## 📁 项目结构
 
 ```
 CloudDrive/
-├── .github/workflows/      # ✅ CI/CD自动化
-├── apps/                   # 微服务应用
-│   ├── frontend/           # ✅ Vue 3前端 (3000)
-│   ├── gateway/            # ✅ API网关 (8080)
-│   ├── user-service/       # ✅ 用户服务 (8081)
-│   ├── file-service/       # ⏳ 文件服务 (8082)
-│   ├── admin-service/      # ⏳ 管理服务 (8083)
-│   └── membership-service/ # ⏳ 会员服务 (8084)
-├── docker/                 # ✅ 微服务容器编排
-│   ├── docker-compose.microservices.yml  # 微服务栈
-│   └── Dockerfile.*        # 各服务镜像
-├── scripts/                # ✅ 自动化脚本
-│   ├── build-all.sh        # 一键构建
-│   └── start-microservices.sh # 一键启动
-├── sql/                    # ✅ 数据库脚本 + 会员表
-└── README-MICROSERVICES.md # 微服务详细文档
+├── apps/                      # 应用层
+│   ├── gateway/              # API网关
+│   ├── user-service/         # 用户服务
+│   ├── file-service/         # 文件服务
+│   ├── admin-service/        # 管理服务
+│   ├── membership-service/   # 会员服务
+│   ├── mail-service/         # 邮件服务
+│   ├── auth-service/         # 认证服务
+│   └── frontend/             # Vue前端应用
+├── docker/                   # Docker配置
+├── sql/                      # 数据库脚本
+├── scripts/                  # 部署脚本
+└── docs/                     # 项目文档
 ```
 
-### 🎯 技术栈架构图
-```
-Frontend (Vue3) → Gateway (8080) → Microservices
-                      ↓
-┌─────────────────────────────────────────────────┐
-│  Infrastructure Services                        │
-│  • Nacos (8848) - 服务发现 + 配置中心              │
-│  • MySQL - 业务数据                              │
-│  • Redis - Token存储 + 缓存 ✅                   │
-│  • Hadoop HDFS - 分布式文件存储                   │
-│  • Flink - 实时流处理                            │
-└─────────────────────────────────────────────────┘
-                      ↓
-┌─────────────────────────────────────────────────┐
-│  Business Microservices                         │
-│  • Auth Service (8081) - JWT认证 + Token管理 ✅ │
-│  • File Service (8082) - 文件操作               │
-│  • Admin Service (8083) - 系统管理              │
-│  • Membership Service (8084) - 会员管理 ✅      │
-└─────────────────────────────────────────────────┘
-```
+## 🔧 服务端口
 
-## 🛠️ 技术栈
-
-### 前端技术 ✅
-- **Vue.js 3** + **Composition API**
-- **TypeScript** 类型安全
-- **Element Plus** UI组件库
-- **Vue Router** 路由管理
-- **Pinia** 状态管理
-- **Axios** HTTP客户端
-- **Vite** 构建工具
-
-### 微服务后端 ✅
-- **Spring Cloud Alibaba** 微服务生态
-- **Spring Boot 2.7** 服务框架
-- **Nacos** 服务发现 + 配置中心
-- **Spring Cloud Gateway** API网关
-- **Spring Security + JWT** 认证授权
-- **MyBatis Plus** 数据访问层
-- **MySQL 8.0** 关系数据库
-- **Redis 7** 缓存中间件
-
-### 大数据技术 ⏳
-- **Hadoop HDFS** 分布式文件存储
-- **Apache Flink** 实时流处理
-- **分布式计算** 大文件处理
-
-### 开发运维 ✅
-- **Maven** Java构建工具
-- **Docker** 容器化技术
-- **Docker Compose** 服务编排
-- **GitHub Actions** CI/CD
-- **Java 17** 运行环境
-
-## 🏃‍♂️ 快速开始
-
-### 📋 环境要求与安装指南
-
-#### 🪟 Windows 系统环境配置
-
-**前提条件：**
-- **Docker Desktop** for Windows
-- **WSL2** (推荐)
-- **Git** for Windows
-- **Java 17+** & **Maven 3.6+** (可选，用于本地开发)
-- **Node.js 18+** & **npm** (可选，用于前端开发)
-
-**安装步骤：**
-```powershell
-# 1. 安装 Docker Desktop
-# 下载地址: https://www.docker.com/products/docker-desktop/
-# 确保启用WSL2集成
-
-# 2. 验证Docker安装
-docker --version
-docker-compose --version
-
-# 3. 克隆项目
-git clone https://github.com/your-repo/CloudDrive.git
-cd CloudDrive
-
-# 4. 直接启动 (无需Shell脚本)
-docker-compose -f docker/docker-compose.microservices.yml up --build
-```
-
-#### 🍎 macOS 系统环境配置
-
-**前提条件：**
-- **Docker Desktop** for Mac
-- **Homebrew** (推荐)
-- **Java 17+** & **Maven 3.6+** (可选，用于本地开发)
-- **Node.js 18+** & **npm** (可选，用于前端开发)
-
-**安装步骤：**
-```bash
-# 1. 安装 Docker Desktop
-# 下载地址: https://www.docker.com/products/docker-desktop/
-
-# 2. 使用 Homebrew 安装开发工具 (可选)
-brew install openjdk@17 maven node
-
-# 3. 验证安装
-docker --version
-docker-compose --version
-
-# 4. 克隆项目
-git clone https://github.com/your-repo/CloudDrive.git
-cd CloudDrive
-
-# 5. 一键启动
-chmod +x scripts/*.sh
-./scripts/start-microservices.sh
-```
-
-#### 🐧 Linux 系统环境配置
-
-**前提条件：**
-- **Docker** & **Docker Compose**
-- **Java 17+** & **Maven 3.6+** (可选)
-- **Node.js 18+** & **npm** (可选)
-
-**安装步骤：**
-```bash
-# 1. 安装 Docker (Ubuntu/Debian)
-sudo apt update
-sudo apt install docker.io docker-compose
-
-# 2. 启动Docker服务
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# 3. 添加用户到docker组 (避免sudo)
-sudo usermod -aG docker $USER
-newgrp docker
-
-# 4. 验证安装
-docker --version
-docker-compose --version
-
-# 5. 克隆并启动项目
-git clone https://github.com/your-repo/CloudDrive.git
-cd CloudDrive
-chmod +x scripts/*.sh
-./scripts/start-microservices.sh
-```
-
-### 🚀 一键启动微服务 (推荐)
-
-#### 🍎 macOS / Linux 系统
-```bash
-# 1. 克隆项目
-git clone <your-repo-url>
-cd CloudDrive
-
-# 2. 启动最小可用版本 (推荐新手) - 包含前端
-./scripts/start-minimal.sh
-
-# 或启动完整微服务栈
-./scripts/start-microservices.sh
-```
-
-#### 🪟 Windows 系统
-```cmd
-# 1. 克隆项目
-git clone <your-repo-url>
-cd CloudDrive
-
-# 2. 启动最小可用版本 (推荐新手) - 包含前端
-docker-compose -f docker/docker-compose.minimal.yml up --build
-
-# 或启动完整微服务栈
-docker-compose -f docker/docker-compose.microservices.yml up --build
-```
-
-#### 🔧 PowerShell 替代方案 (Windows)
-```powershell
-# 1. 克隆项目
-git clone <your-repo-url>
-Set-Location CloudDrive
-
-# 2. 构建所有微服务
-Get-ChildItem -Path "apps" -Directory | ForEach-Object {
-    if (Test-Path "$($_.FullName)/pom.xml") {
-        Write-Host "Building $($_.Name)..."
-        Set-Location $_.FullName
-        mvn clean package -DskipTests
-        Set-Location ".."
-    }
-}
-
-# 3. 启动服务
-docker-compose -f docker/docker-compose.microservices.yml up --build
-```
-
-> 💡 **环境要求**: Docker + Docker Compose + Node.js 18+  
-> 🍎 **Apple Silicon用户**: 已完美支持ARM64架构，无需额外配置  
-> 🪟 **Windows用户**: 需要安装Docker Desktop，推荐使用WSL2  
-> 📖 **详细安装指南**: 参见下方系统特定说明
-
-### 📱 访问服务
-启动成功后，可访问以下服务：
-
-| 服务 | 地址 | 说明 |
+| 服务 | 端口 | 说明 |
 |------|------|------|
-| 🎨 **前端界面** | http://localhost:3000 | Vue 3 用户界面 (✅ 已集成) |
-| 🌐 **API网关** | http://localhost:8080 | 统一API入口 |
-| 👤 **用户服务** | http://localhost:8081 | 认证和用户管理 |
-| 📊 **Nacos控制台** | http://localhost:8848/nacos | 服务注册中心 (nacos/nacos) |
-| 🗄️ **MySQL数据库** | localhost:3307 | 业务数据存储 |
-| 🔴 **Redis缓存** | localhost:6379 | 缓存服务 |
-| 🗂️ **Hadoop控制台** | http://localhost:9870 | HDFS文件系统 |
-| ⚡ **Flink控制台** | http://localhost:8081 | 流处理监控 |
-
-### 🔧 本地开发模式
-
-#### 🍎 macOS / Linux 系统
-```bash
-# 1. 启动基础设施 (MySQL, Redis, Nacos)
-docker-compose -f docker/docker-compose.minimal.yml up mysql redis nacos -d
-
-# 2. 本地运行服务
-cd apps/user-service && mvn spring-boot:run  # 用户服务
-cd apps/gateway && mvn spring-boot:run       # API网关
-cd apps/frontend && npm run dev              # 前端
-
-# 3. 访问 http://localhost:3000
-```
-
-#### 🪟 Windows 系统
-```cmd
-REM 1. 启动基础设施 (MySQL, Redis, Nacos)
-docker-compose -f docker/docker-compose.minimal.yml up mysql redis nacos -d
-
-REM 2. 本地运行服务 (需要多个终端窗口)
-REM 终端1: 用户服务
-cd apps\user-service
-mvn spring-boot:run
-
-REM 终端2: API网关
-cd apps\gateway
-mvn spring-boot:run
-
-REM 终端3: 前端
-cd apps\frontend
-npm run dev
-
-REM 3. 访问 http://localhost:3000
-```
-
-### 🛠️ 故障排除指南
-
-#### 🪟 Windows 常见问题
-
-**问题1: Shell脚本无法执行**
-```cmd
-# 解决方案: 直接使用docker-compose命令
-docker-compose -f docker/docker-compose.microservices.yml up --build
-```
-
-**问题2: WSL2相关错误**
-```powershell
-# 确保WSL2已启用并设为默认
-wsl --set-default-version 2
-wsl --list --verbose
-
-# 重启Docker Desktop服务
-```
-
-**问题3: 端口冲突**
-```cmd
-# 检查端口占用
-netstat -ano | findstr :3000
-netstat -ano | findstr :8080
-
-# 结束占用进程
-taskkill /PID <进程ID> /F
-```
-
-**问题4: Docker构建失败**
-```cmd
-# 清理Docker缓存
-docker system prune -a
-docker-compose down --volumes
-
-# 重新构建
-docker-compose -f docker/docker-compose.microservices.yml up --build --force-recreate
-```
-
-#### 🍎 macOS 常见问题
-
-**问题1: Permission denied for shell scripts**
-```bash
-# 赋予执行权限
-chmod +x scripts/*.sh
-sudo chown -R $(whoami) scripts/
-```
-
-**问题2: Apple Silicon 兼容性**
-```bash
-# 项目已完美支持ARM64，如遇问题可强制使用x86_64
-docker run --platform linux/amd64 <image-name>
-```
-
-**问题3: 端口冲突 (MySQL 3306)**
-```bash
-# 项目使用3307端口避免冲突，如仍有问题：
-sudo lsof -i :3307
-sudo kill -9 <PID>
-```
-
-**问题4: Docker Desktop资源不足**
-```bash
-# 在Docker Desktop设置中增加资源分配：
-# Memory: 至少 4GB
-# CPUs: 至少 2核
-# Disk: 至少 10GB
-```
-
-#### 🐧 Linux 常见问题
-
-**问题1: Docker权限问题**
-```bash
-# 确保用户在docker组中
-sudo usermod -aG docker $USER
-newgrp docker
-
-# 重启系统或重新登录
-```
-
-**问题2: 防火墙端口问题**
-```bash
-# Ubuntu/Debian
-sudo ufw allow 3000
-sudo ufw allow 8080
-sudo ufw allow 3307
-
-# CentOS/RHEL
-sudo firewall-cmd --permanent --add-port=3000/tcp
-sudo firewall-cmd --permanent --add-port=8080/tcp
-sudo firewall-cmd --reload
-```
-
-### 🍎 Apple Silicon (ARM64) 支持
-项目已完美支持Apple Silicon Mac，包括：
-- ✅ **Nacos服务** - 使用平台兼容性配置 (`platform: linux/amd64`)
-- ✅ **端口冲突解决** - MySQL使用3307端口避免与本地服务冲突
-- ✅ **前端容器化** - nginx配置正确路由到Gateway
-- ✅ **Docker镜像优化** - 添加.dockerignore优化构建性能
-
-### 🌟 功能体验
-**当前可体验的完整功能：**
-- ✅ **微服务架构** - 完整的Spring Cloud Alibaba技术栈
-- ✅ **用户认证** - JWT登录 + Redis Token管理 + 注册功能
-- ✅ **API网关** - 统一路由和负载均衡
-- ✅ **服务发现** - Nacos自动服务注册发现
-- ✅ **响应式前端** - Vue 3 + Element Plus UI (已集成到微服务)
-- ✅ **容器化部署** - 一键Docker启动
-- ✅ **跨平台支持** - 完美支持x86_64和ARM64(Apple Silicon)架构
-- ✅ **前后端联调** - 前端通过Gateway与微服务通信
-- ✅ **Redis集成** - Token存储 + 多数据库支持
-- ✅ **会员管理** - 完整的订阅和支付功能
-- ✅ **跨服务认证** - 微服务间Token验证API
-
-### 🔐 认证服务特性 (Redis配置已修复)
-**完整的企业级认证功能：**
-- ✅ **用户注册** - 支持用户名 + 邮箱注册，UUID生成
-- ✅ **JWT登录** - 安全的Token生成和验证
-- ✅ **Redis Token存储** - 分布式Token管理 (database 0)
-- ✅ **验证码系统** - 邮箱验证码存储 (database 1)
-- ✅ **Token验证API** - 供其他微服务调用的认证接口
-- ✅ **安全登出** - Token失效和清理
-- ✅ **密码重置** - 基于验证码的密码重置功能
-- ✅ **会话管理** - 完整的用户会话生命周期
-
-**测试命令示例：**
-```bash
-# 用户注册
-curl -X POST "http://localhost:8080/api/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "passwordHash": "hashed_password", "email": "test@example.com"}'
-
-# 用户登录
-curl -X POST "http://localhost:8080/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "passwordHash": "hashed_password"}'
-
-# Token验证 (跨服务调用)
-curl -X POST "http://localhost:8080/api/auth/verify" \
-  -H "Content-Type: application/json" \
-  -d '{"token": "your_jwt_token"}'
-
-# 安全登出
-curl -X POST "http://localhost:8080/api/auth/logout" \
-  -H "Authorization: Bearer your_jwt_token"
-```
-
-## 📱 项目预览
-
-### 首页
-- 现代化设计风格
-- 功能特性展示
-- 响应式布局
-
-### 登录页面  
-- 优雅的表单设计
-- 实时验证反馈
-- 友好的用户体验
-
-### 文件管理
-- 仿云盘界面设计
-- 多视图模式切换
-- 完整的操作工具栏
+| Gateway | 8080 | API网关 |
+| User Service | 8081 | 用户服务 |
+| File Service | 8082 | 文件服务 |
+| Admin Service | 8083 | 管理服务 |
+| Membership Service | 8084 | 会员服务 |
+| Mail Service | 8085 | 邮件服务 |
+| Frontend | 3000 | 前端应用 |
+| Nacos | 8848 | 服务注册中心 |
+| MySQL | 3307 | 数据库 |
+| Redis | 6379 | 缓存服务 |
 
 ## 🛠️ 开发指南
 
-### 项目结构说明
+### 本地开发
 ```bash
-apps/frontend/               # 前端应用 (已完成)
-├── src/
-│   ├── views/              # 页面组件
-│   │   ├── HomeView.vue    # 首页
-│   │   ├── LoginView.vue   # 登录页
-│   │   └── FilesView.vue   # 文件管理页
-│   ├── stores/             # Pinia状态管理
-│   ├── router/             # Vue Router路由配置
-│   ├── types/              # TypeScript类型定义
-│   └── utils/              # 工具函数
-├── package.json
-└── vite.config.ts
+# 启动后端微服务
+./scripts/start-microservices.sh
 
-apps/backend/               # 后端应用 (待开发)
-└── (Spring Boot项目)
+# 启动前端开发服务器
+./scripts/start-frontend.sh
 
-docker/                     # Docker配置 (已完成)
-├── docker-compose.yml      # 服务编排
-├── Dockerfile.frontend     # 前端容器
-├── Dockerfile.backend      # 后端容器
-└── nginx.conf             # Nginx配置
-
-sql/                        # 数据库 (已完成)
-└── init.sql               # 数据库初始化脚本
+# 构建所有服务
+./scripts/build-all.sh
 ```
 
-### 🗓️ 开发路线图
+### API文档
+网关统一路由规则：
+- `/api/users/**` → user-service
+- `/api/files/**` → file-service  
+- `/api/admin/**` → admin-service
+- `/api/membership/**` → membership-service
 
-#### Phase 1: 核心微服务完善 🎯
-- [x] ✅ 认证服务 - JWT + Redis Token管理 (完全完成)
-- [x] ✅ API网关 - 路由 + 负载均衡  
-- [x] ✅ 服务注册 - Nacos集成
-- [x] ✅ 会员服务 - 订阅 + 支付模块 (完全完成)
-- [x] ✅ Redis集成 - Token存储 + 多数据库支持
-- [ ] 🔄 文件服务 - Hadoop HDFS集成
-- [ ] 🔄 管理服务 - 跨服务管理APIs
+详细API文档请参考：[Gateway架构文档](docs/GATEWAY_ARCHITECTURE.md)
 
-#### Phase 2: 大数据集成 📊
-- [ ] 🔄 Flink流处理 - 文件实时处理
-- [ ] 🔄 HDFS集成 - 大文件分布式存储
-- [ ] 🔄 数据管道 - 文件上传处理流程
-- [ ] 🔄 性能优化 - 缓存 + 负载均衡
+## 🔒 安全特性
 
-#### Phase 3: 高级功能 🚀
-- [ ] 🔄 文件分享 - 分享码 + 权限控制
-- [ ] 🔄 实时监控 - Prometheus + Grafana
-- [ ] 🔄 服务网格 - Istio集成 (可选)
-- [ ] 🔄 多租户支持 - 企业级功能
+- **JWT认证**: 基于Token的无状态认证
+- **密码加密**: SHA-256密码哈希
+- **CORS保护**: 跨域请求安全配置
+- **输入验证**: 前后端双重验证
+- **权限控制**: 基于角色的访问控制
 
-## 🔗 相关链接
+## 📊 监控与日志
 
-### 前端技术
-- [Vue 3 文档](https://vuejs.org/)
-- [Element Plus 组件库](https://element-plus.org/)
-- [TypeScript 文档](https://www.typescriptlang.org/)
+- **健康检查**: Spring Boot Actuator
+- **日志聚合**: 统一日志收集
+- **性能监控**: 实时性能指标
+- **错误追踪**: 分布式链路追踪
 
-### 后端微服务
-- [Spring Cloud Alibaba](https://spring-cloud-alibaba-group.github.io/github-pages/hoxton/en-us/index.html)
-- [Nacos 官方文档](https://nacos.io/zh-cn/docs/what-is-nacos.html)
-- [Spring Cloud Gateway](https://spring.io/projects/spring-cloud-gateway)
+## 🚀 部署说明
 
-### 大数据技术
-- [Hadoop HDFS 文档](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsUserGuide.html)
-- [Apache Flink 文档](https://flink.apache.org/)
+### Docker部署
+```bash
+# 生产环境部署
+docker-compose -f docker/docker-compose.services.yml up -d
+```
 
-### 详细文档
-- [📚 微服务架构文档](./README-MICROSERVICES.md)
-
-## 📝 更新日志
-
-### v0.2.2 (当前版本) - 认证服务Redis配置修复
-- ✅ **Redis配置修复** - 完全解决auth-service的Redis连接问题
-- ✅ **认证功能完善** - 用户登录/登出/Token验证功能全部正常
-- ✅ **配置现代化** - 升级到Spring Boot 3.x推荐的Redis配置方式
-- ✅ **多数据库支持** - Redis database 0(token) + database 1(验证码)
-- ✅ **环境变量优化** - 完全通过环境变量控制Redis连接
-- ✅ **连接池优化** - 添加Jedis连接池配置，提升性能
-- ✅ **微服务认证** - 跨服务Token验证API完全可用
-
-### v0.2.1 - 前端集成完成
-- ✅ **前端微服务集成** - Vue 3前端完全集成到微服务架构
-- ✅ **ARM64完美支持** - Apple Silicon Mac零配置运行
-- ✅ **端口冲突解决** - MySQL使用3307端口避免冲突
-- ✅ **nginx配置修复** - 前端正确路由到Gateway
-- ✅ **Docker优化** - 添加.dockerignore优化构建性能
-- ✅ **启动脚本完善** - start-minimal.sh包含完整前后端服务
-
-### v0.2.0 - 微服务架构
-- ✅ Spring Cloud Alibaba微服务架构完成
-- ✅ Nacos服务注册发现 + 配置中心
-- ✅ Spring Cloud Gateway API网关
-- ✅ User Service完整实现 (JWT认证)
-- ✅ 微服务Docker编排 (12个容器)
-- ✅ Hadoop HDFS + Flink大数据集成
-- ✅ 数据库扩展 (会员表设计)
-- ✅ 一键启动脚本
-
-### v0.1.0 (历史版本)
-- ✅ 项目架构搭建完成
-- ✅ 前端Vue 3应用完整实现
-- ✅ Docker容器化配置
-- ✅ CI/CD自动化流程
-- ✅ 数据库设计和初始化脚本
+### 环境配置
+- **开发环境**: `application-dev.yml`
+- **生产环境**: `application-prod.yml`
 
 ## 🤝 贡献指南
 
-1. Fork 本项目
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
+1. Fork本项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 提交Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 📞 联系我们
+
+- **项目主页**: https://github.com/SDUSyncStream/CloudDrive
+- **问题反馈**: https://github.com/SDUSyncStream/CloudDrive/issues
 
 ---
 
-**🎯 当前状态**: 微服务架构已完成，可立即体验完整技术栈！企业级云存储系统正在完善中...
-
-**🚀 快速体验**: `./scripts/start-microservices.sh` 一键启动所有服务！
+⭐ 如果这个项目对你有帮助，请给我们一个星标！
