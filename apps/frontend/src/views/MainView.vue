@@ -10,7 +10,7 @@
                 </div>
                 <div class="header-actions">
                     <!--令button为圆形-->
-                    <el-button type="primary" :icon="Bell" circle title="通知"></el-button>
+                    <!-- <el-button type="primary" :icon="Bell" circle title="通知"></el-button> -->
                     <!-- <el-button :icon="FolderAdd">新建文件夹</el-button> -->
                     <el-dropdown @command="handleUserAction">
                         <el-avatar :src="avatar || undefined">
