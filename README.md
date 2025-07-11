@@ -61,34 +61,81 @@ CloudDrive是一个功能完整的多用户线上网盘系统，采用前后端�
 - **Java 17+**
 - **Node.js 18+**
 - **Docker & Docker Compose**
-- **MySQL 8.0+**
-- **Redis 7+**
+- **至少4GB RAM**
 
-### 一键启动
+### 部署步骤
 
+#### 1. 启动基础服务
 ```bash
-# 1. 克隆项目
+# 克隆项目
 git clone https://github.com/SDUSyncStream/CloudDrive.git
 cd CloudDrive
 
-# 2. 启动基础设施和微服务
+# 启动基础服务 (MySQL, Redis, Nacos, RabbitMQ)
 cd docker
-docker-compose up -d
+docker-compose -f docker-compose.services.yml up -d
 
-# 3. 数据库初始化
+# 等待服务启动完成 (大约2-3分钟)
+docker-compose -f docker-compose.services.yml ps
+```
+
+#### 2. 数据库初始化
+```bash
+# 数据库初始化
 docker exec -i mysql mysql -u root -p123456 < ../sql/01_create_database.sql
 docker exec -i mysql mysql -u root -p123456 < ../sql/02_insert_data.sql
+```
 
-# 4. 启动前端
-cd ../apps/frontend
-npm install
-npm run dev
+#### 3. 启动应用服务
+```bash
+# 启动网关服务
+docker-compose -f docker-compose.gateway.yml up -d
+
+# 启动认证服务
+docker-compose -f docker-compose.auth-service.yml up -d
+
+# 启动用户服务
+docker-compose -f docker-compose.user-service.yml up -d
+
+# 启动管理服务
+docker-compose -f docker-compose.admin-service.yml up -d
+
+# 启动会员服务
+docker-compose -f docker-compose.membership-service.yml up -d
+
+# 启动邮件服务
+docker-compose -f docker-compose.mail-service.yml up -d
+
+# 启动文件相关服务
+docker-compose -f docker-compose.file-manage-service.yml up -d
+docker-compose -f docker-compose.file-share.yml up -d
+docker-compose -f docker-compose.fileupdown-service.yml up -d
+
+# 启动前端服务
+docker-compose -f docker-compose.frontend.yml up -d
+```
+
+#### 4. 一键启动所有服务 (可选)
+```bash
+# 启动所有应用服务
+docker-compose -f docker-compose.gateway.yml \
+               -f docker-compose.auth-service.yml \
+               -f docker-compose.user-service.yml \
+               -f docker-compose.admin-service.yml \
+               -f docker-compose.membership-service.yml \
+               -f docker-compose.mail-service.yml \
+               -f docker-compose.file-manage-service.yml \
+               -f docker-compose.file-share.yml \
+               -f docker-compose.fileupdown-service.yml \
+               -f docker-compose.frontend.yml \
+               up -d
 ```
 
 ### 访问地址
 - **前端应用**: http://localhost:3000
 - **API网关**: http://localhost:8080
 - **Nacos控制台**: http://localhost:8848/nacos
+- **RabbitMQ管理**: http://localhost:15672 (guest/guest)
 - **系统管理**: http://localhost:3000/admin (admin/password)
 
 ## 📁 项目结构
@@ -114,29 +161,51 @@ CloudDrive/
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
+| **基础服务** | | |
+| MySQL | 3306 | 数据库 |
+| Redis | 6379 | 缓存服务 |
+| Nacos | 8848 | 服务注册中心 |
+| RabbitMQ | 5672 | 消息队列 |
+| RabbitMQ管理 | 15672 | 管理界面 |
+| **应用服务** | | |
+| Frontend | 3000 | 前端应用 |
 | Gateway | 8080 | API网关 |
-| User Service | 8081 | 用户服务 |
-| File Service | 8082 | 文件服务 |
+| Auth Service | 8081 | 认证服务 |
+| User Service | 8082 | 用户服务 |
 | Admin Service | 8083 | 管理服务 |
 | Membership Service | 8084 | 会员服务 |
 | Mail Service | 8085 | 邮件服务 |
-| Frontend | 3000 | 前端应用 |
-| Nacos | 8848 | 服务注册中心 |
-| MySQL | 3307 | 数据库 |
-| Redis | 6379 | 缓存服务 |
+| FileUpDown Service | 8090 | 文件上传下载 |
+| File Share | 8093 | 文件分享 |
+| File Manage Service | 8099 | 文件管理 |
 
 ## 🛠️ 开发指南
 
 ### 本地开发
 ```bash
-# 启动后端微服务
-./scripts/start-microservices.sh
+# 启动基础服务
+cd docker
+docker-compose -f docker-compose.services.yml up -d
+
+# 启动特定微服务进行开发
+docker-compose -f docker-compose.auth-service.yml up -d
+docker-compose -f docker-compose.user-service.yml up -d
 
 # 启动前端开发服务器
-./scripts/start-frontend.sh
+cd ../apps/frontend
+npm install && npm run dev
+```
 
-# 构建所有服务
-./scripts/build-all.sh
+### 服务管理
+```bash
+# 查看服务状态
+docker-compose -f docker-compose.services.yml ps
+
+# 查看服务日志
+docker logs -f auth-service
+
+# 重启服务
+docker-compose -f docker-compose.auth-service.yml restart
 ```
 
 ### API文档
@@ -165,15 +234,35 @@ CloudDrive/
 
 ## 🚀 部署说明
 
-### Docker部署
+### Docker模块化部署
+项目采用模块化的Docker Compose配置，支持按需部署：
+
 ```bash
-# 生产环境部署
-docker-compose -f docker/docker-compose.services.yml up -d
+# 基础服务部署
+cd docker
+docker-compose -f docker-compose.services.yml up -d
+
+# 核心服务部署
+docker-compose -f docker-compose.gateway.yml up -d
+docker-compose -f docker-compose.auth-service.yml up -d
+
+# 完整系统部署
+docker-compose -f docker-compose.gateway.yml \
+               -f docker-compose.auth-service.yml \
+               -f docker-compose.user-service.yml \
+               -f docker-compose.admin-service.yml \
+               -f docker-compose.membership-service.yml \
+               -f docker-compose.mail-service.yml \
+               -f docker-compose.file-manage-service.yml \
+               -f docker-compose.file-share.yml \
+               -f docker-compose.fileupdown-service.yml \
+               -f docker-compose.frontend.yml \
+               up -d
 ```
 
 ### 环境配置
-- **开发环境**: `application-dev.yml`
-- **生产环境**: `application-prod.yml`
+- **开发环境**: `SPRING_PROFILES_ACTIVE=docker`
+- **生产环境**: 修改各服务的docker-compose文件中的环境变量
 
 ## 🤝 贡献指南
 
